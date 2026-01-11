@@ -797,14 +797,14 @@ export const washRequestService = {
         }));
 
         return {
-          id: wr.id,
-          clientCompanyId: wr.client_company_id,
-          providerId: wr.provider_id || undefined,
-          address: wr.address,
-          dateTime: parseDate(wr.date_time),
-          status: wr.status,
-          notes: wr.notes || undefined,
-          createdAt: parseDate(wr.created_at),
+      id: wr.id,
+      clientCompanyId: wr.client_company_id,
+      providerId: wr.provider_id || undefined,
+      address: wr.address,
+      dateTime: parseDate(wr.date_time),
+      status: wr.status,
+      notes: wr.notes || undefined,
+      createdAt: parseDate(wr.created_at),
           vehicles,
           clientCompany: clientCompany || undefined,
         };
@@ -816,8 +816,9 @@ export const washRequestService = {
 
   /**
    * Récupère les demandes avec le statut 'pending' (sans provider assigné)
+   * Si providerId est fourni, inclut aussi les demandes annulées par ce provider
    */
-  async getPendingRequests(): Promise<WashRequest[]> {
+  async getPendingRequests(providerId?: string): Promise<{ requests: WashRequest[]; cancelledIds: string[] }> {
     console.log('🔧 getPendingRequests appelé');
     
     // Test 1: Vérifier toutes les demandes (sans filtre)
@@ -867,8 +868,14 @@ export const washRequestService = {
 
     console.log('✅ Demandes pending trouvées (sans provider):', requestsData?.length || 0);
 
+    // Récupérer les IDs des demandes annulées par ce provider si providerId est fourni
+    let cancelledIds: string[] = [];
+    if (providerId) {
+      cancelledIds = await this.getCancelledRequestIds(providerId);
+    }
+
     if (!requestsData || requestsData.length === 0) {
-      return [];
+      return { requests: [], cancelledIds };
     }
 
     // Charger les informations complètes pour chaque demande
@@ -954,7 +961,7 @@ export const washRequestService = {
     );
 
     console.log('✅ Demandes complètes chargées:', requestsWithDetails.length);
-    return requestsWithDetails;
+    return { requests: requestsWithDetails, cancelledIds };
   },
 
   /**
@@ -984,7 +991,7 @@ export const washRequestService = {
    */
   async update(id: string, updates: Partial<Omit<WashRequest, 'id' | 'createdAt'>>): Promise<WashRequest> {
     const updateData: any = {};
-    if (updates.providerId !== undefined) updateData.provider_id = updates.providerId;
+    if (updates.providerId !== undefined) updateData.provider_id = updates.providerId ?? null;
     if (updates.address) updateData.address = updates.address;
     if (updates.dateTime) updateData.date_time = updates.dateTime.toISOString();
     if (updates.status) updateData.status = updates.status;
@@ -1010,6 +1017,58 @@ export const washRequestService = {
       createdAt: parseDate(data.created_at),
       vehicles: [], // TODO: Charger les véhicules
     };
+  },
+
+  /**
+   * Met à jour automatiquement les demandes expirées (date_time < now()) au statut 'completed'
+   */
+  async updateExpiredRequests(): Promise<void> {
+    const { error } = await supabase
+      .from('wash_requests')
+      .update({ status: 'completed' })
+      .lt('date_time', new Date().toISOString())
+      .neq('status', 'completed');
+
+    if (error) {
+      console.error('❌ Erreur lors de la mise à jour des demandes expirées:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Enregistre qu'un provider a annulé une demande
+   */
+  async recordProviderCancellation(providerId: string, washRequestId: string): Promise<void> {
+    const { error } = await supabase
+      .from('provider_cancelled_requests')
+      .upsert({
+        provider_id: providerId,
+        wash_request_id: washRequestId,
+      }, {
+        onConflict: 'provider_id,wash_request_id'
+      });
+
+    if (error) {
+      console.error('❌ Erreur lors de l\'enregistrement de l\'annulation:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupère les IDs des demandes annulées par un provider
+   */
+  async getCancelledRequestIds(providerId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('provider_cancelled_requests')
+      .select('wash_request_id')
+      .eq('provider_id', providerId);
+
+    if (error) {
+      console.error('❌ Erreur lors de la récupération des annulations:', error);
+      throw error;
+    }
+
+    return (data || []).map((item: any) => item.wash_request_id);
   },
 };
 

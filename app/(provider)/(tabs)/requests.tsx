@@ -22,6 +22,7 @@ export default function ProviderRequestsScreen() {
   const router = useRouter();
   const { provider } = useAuth();
   const [pendingRequests, setPendingRequests] = useState<WashRequest[]>([]);
+  const [cancelledRequestIds, setCancelledRequestIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [acceptingRequestId, setAcceptingRequestId] = useState<string | null>(null);
 
@@ -29,9 +30,10 @@ export default function ProviderRequestsScreen() {
     setIsLoading(true);
     console.log('📥 Chargement des demandes en attente...');
     try {
-      const requests = await washRequestService.getPendingRequests();
-      setPendingRequests(requests);
-      console.log('📥 Demandes chargées:', requests.length);
+      const result = await washRequestService.getPendingRequests(provider?.id);
+      setPendingRequests(result.requests);
+      setCancelledRequestIds(new Set(result.cancelledIds));
+      console.log('📥 Demandes chargées:', result.requests.length);
     } catch (error: any) {
       console.error('❌ Erreur lors du chargement des demandes en attente:', error);
       Alert.alert('Erreur', 'Impossible de charger les demandes');
@@ -120,12 +122,14 @@ export default function ProviderRequestsScreen() {
           </View>
         ) : pendingRequests.length > 0 ? (
           <React.Fragment>
-            {pendingRequests.map((request) => (
-              <View key={request.id} style={commonStyles.card}>
+            {pendingRequests.map((request) => {
+              const isCancelled = cancelledRequestIds.has(request.id);
+              return (
+                <View key={request.id} style={commonStyles.card}>
                 <View style={styles.requestHeader}>
                   <Text style={styles.clientName}>{request.clientCompany?.name || 'Client inconnu'}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: colors.warning }]}>
-                    <Text style={styles.statusText}>Nouveau</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: isCancelled ? colors.error : colors.warning }]}>
+                    <Text style={styles.statusText}>{isCancelled ? 'Annulé' : 'Nouveau'}</Text>
                   </View>
                 </View>
                 <Text style={styles.requestDate}>{formatDate(request.dateTime)}</Text>
@@ -162,31 +166,34 @@ export default function ProviderRequestsScreen() {
                     </Text>
                   </View>
                 )}
-                <View style={styles.requestActions}>
-                  <TouchableOpacity
-                    style={[buttonStyles.outline, styles.detailsButton]}
-                    onPress={() => router.push(`/(provider)/requests/detail?id=${request.id}`)}
-                  >
-                    <Text style={commonStyles.buttonTextOutline}>Voir détails</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      buttonStyles.accent,
-                      styles.acceptButton,
-                      acceptingRequestId === request.id && styles.buttonDisabled
-                    ]}
-                    onPress={() => handleAcceptRequest(request.id)}
-                    disabled={acceptingRequestId === request.id}
-                  >
-                    {acceptingRequestId === request.id ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={commonStyles.buttonText}>Accepter</Text>
-                    )}
-                  </TouchableOpacity>
+                {!isCancelled && (
+                  <View style={styles.requestActions}>
+                    <TouchableOpacity
+                      style={[buttonStyles.outline, styles.detailsButton]}
+                      onPress={() => router.push(`/(provider)/requests/detail?id=${request.id}`)}
+                    >
+                      <Text style={commonStyles.buttonTextOutline}>Voir détails</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        buttonStyles.accent,
+                        styles.acceptButton,
+                        acceptingRequestId === request.id && styles.buttonDisabled
+                      ]}
+                      onPress={() => handleAcceptRequest(request.id)}
+                      disabled={acceptingRequestId === request.id}
+                    >
+                      {acceptingRequestId === request.id ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={commonStyles.buttonText}>Accepter</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </React.Fragment>
         ) : (
           <View style={styles.emptyState}>

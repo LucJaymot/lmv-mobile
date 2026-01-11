@@ -34,9 +34,20 @@ export default function ProviderDashboardScreen() {
       const requests = await washRequestService.getByProviderId(provider.id);
       console.log('📥 Jobs chargés:', requests.length);
       
-      // Filtrer pour n'afficher que les jobs acceptés (on peut filtrer par date si besoin)
+      // Obtenir la date du jour (aujourd'hui) à minuit
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      // Filtrer pour n'afficher que les jobs acceptés pour la date du jour
       const acceptedJobs = requests
-        .filter(req => req.status === 'accepted' || req.status === 'in_progress')
+        .filter(req => {
+          const jobDate = new Date(req.dateTime);
+          jobDate.setHours(0, 0, 0, 0);
+          const isToday = jobDate.getTime() >= today.getTime() && jobDate.getTime() < tomorrow.getTime();
+          return (req.status === 'accepted' || req.status === 'in_progress') && isToday;
+        })
         .sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime()); // Trier par date croissante
       
       setTodayJobs(acceptedJobs);

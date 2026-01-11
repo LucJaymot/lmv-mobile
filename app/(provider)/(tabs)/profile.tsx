@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,23 +19,63 @@ import { IconSymbol } from '@/components/IconSymbol';
 export default function ProviderProfileScreen() {
   const router = useRouter();
   const { user, provider, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Déconnexion',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            console.log('Logged out');
+  const handleLogout = async () => {
+    if (isLoggingOut) return; // Empêcher les clics multiples
+    
+    console.log('handleLogout called');
+    
+    // Sur web, utiliser window.confirm
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+      if (!confirmed) {
+        return;
+      }
+      
+      setIsLoggingOut(true);
+      try {
+        console.log('Logging out...');
+        await logout();
+        console.log('Logout successful, redirecting...');
+        router.replace('/auth/login');
+      } catch (error: any) {
+        console.error('Erreur lors de la déconnexion:', error);
+        alert(error.message || 'Impossible de se déconnecter');
+        setIsLoggingOut(false);
+      }
+    } else {
+      // Sur mobile, utiliser Alert.alert
+      Alert.alert(
+        'Déconnexion',
+        'Êtes-vous sûr de vouloir vous déconnecter ?',
+        [
+          { 
+            text: 'Annuler', 
+            style: 'cancel',
+            onPress: () => console.log('Logout cancelled')
           },
-        },
-      ]
-    );
+          {
+            text: 'Déconnexion',
+            style: 'destructive',
+            onPress: async () => {
+              setIsLoggingOut(true);
+              try {
+                console.log('Logging out...');
+                await logout();
+                console.log('Logout successful, redirecting...');
+                router.replace('/auth/login');
+              } catch (error: any) {
+                console.error('Erreur lors de la déconnexion:', error);
+                Alert.alert('Erreur', error.message || 'Impossible de se déconnecter');
+                setIsLoggingOut(false);
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   const getServiceLabel = (service: string) => {
@@ -59,7 +101,7 @@ export default function ProviderProfileScreen() {
           <View style={styles.avatarContainer}>
             <IconSymbol
               ios_icon_name="sparkles"
-              android_material_icon_name="local_car_wash"
+              android_material_icon_name="local-car-wash"
               size={48}
               color={colors.primary}
             />
@@ -100,7 +142,7 @@ export default function ProviderProfileScreen() {
             <View style={styles.infoRow}>
               <IconSymbol
                 ios_icon_name="location.fill"
-                android_material_icon_name="location_on"
+                android_material_icon_name="location-on"
                 size={20}
                 color={colors.textSecondary}
               />
@@ -139,7 +181,10 @@ export default function ProviderProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={() => router.push('/(provider)/profile/edit')}
+          >
             <IconSymbol
               ios_icon_name="pencil"
               android_material_icon_name="edit"
@@ -149,27 +194,15 @@ export default function ProviderProfileScreen() {
             <Text style={styles.actionText}>Modifier le profil</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
+              android_material_icon_name="chevron-right"
               size={20}
               color={colors.textSecondary}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
-            <IconSymbol
-              ios_icon_name="star.fill"
-              android_material_icon_name="star"
-              size={20}
-              color={colors.text}
-            />
-            <Text style={styles.actionText}>Mes avis</Text>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={() => router.push('/(provider)/profile/notifications')}
+          >
             <IconSymbol
               ios_icon_name="bell.fill"
               android_material_icon_name="notifications"
@@ -179,7 +212,7 @@ export default function ProviderProfileScreen() {
             <Text style={styles.actionText}>Notifications</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
+              android_material_icon_name="chevron-right"
               size={20}
               color={colors.textSecondary}
             />
@@ -187,10 +220,15 @@ export default function ProviderProfileScreen() {
         </View>
 
         <TouchableOpacity
-          style={[buttonStyles.outline, styles.logoutButton]}
+          style={[buttonStyles.outline, styles.logoutButton, isLoggingOut && styles.buttonDisabled]}
           onPress={handleLogout}
+          disabled={isLoggingOut}
         >
-          <Text style={commonStyles.buttonTextOutline}>Déconnexion</Text>
+          {isLoggingOut ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Text style={commonStyles.buttonTextOutline}>Déconnexion</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -308,5 +346,8 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

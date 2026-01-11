@@ -25,6 +25,7 @@ export default function ProviderRequestDetailScreen() {
   const [washRequest, setWashRequest] = useState<WashRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const loadWashRequest = async () => {
@@ -191,8 +192,8 @@ export default function ProviderRequestDetailScreen() {
         status: 'accepted',
       });
       Alert.alert('Succès', 'Demande acceptée avec succès', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      { text: 'OK', onPress: () => router.back() },
+    ]);
     } catch (error: any) {
       console.error('Erreur lors de l\'acceptation:', error);
       Alert.alert('Erreur', error.message || 'Impossible d\'accepter la demande');
@@ -217,6 +218,59 @@ export default function ProviderRequestDetailScreen() {
         },
       ]
     );
+  };
+
+  const handleCancel = async () => {
+    if (!washRequest) {
+      Alert.alert('Erreur', 'Demande non trouvée');
+      return;
+    }
+
+    // Confirmation
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm('Êtes-vous sûr de vouloir annuler cette demande ?');
+      if (!confirmed) {
+        return;
+      }
+    } else {
+      Alert.alert(
+        'Annuler la demande',
+        'Êtes-vous sûr de vouloir annuler cette demande ?',
+        [
+          { text: 'Non', style: 'cancel' },
+          {
+            text: 'Oui, annuler',
+            style: 'destructive',
+            onPress: async () => {
+              await cancelRequest();
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    await cancelRequest();
+  };
+
+  const cancelRequest = async () => {
+    if (!washRequest || !provider) return;
+
+    try {
+      setIsCancelling(true);
+      // Remettre la demande en pending et retirer le provider_id
+      await washRequestService.update(washRequest.id, {
+        status: 'pending',
+        providerId: null as any, // Retirer le provider_id (remettre à null pour que la demande soit visible pour les autres providers)
+      });
+      // Enregistrer l'annulation pour ce provider
+      await washRequestService.recordProviderCancellation(provider.id, washRequest.id);
+      router.back();
+    } catch (error: any) {
+      console.error('Erreur lors de l\'annulation:', error);
+      Alert.alert('Erreur', error.message || 'Impossible d\'annuler la demande');
+      setIsCancelling(false);
+    }
   };
 
   if (isLoading) {
@@ -254,29 +308,29 @@ export default function ProviderRequestDetailScreen() {
         <Text style={styles.subtitle}>Créée le {formatDate(washRequest.createdAt)}</Text>
 
         {washRequest.clientCompany && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Client</Text>
-            <View style={commonStyles.card}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Client</Text>
+          <View style={commonStyles.card}>
               <Text style={styles.clientName}>{washRequest.clientCompany.name}</Text>
               {washRequest.clientCompany.contact && (
-                <View style={styles.infoRow}>
-                  <IconSymbol
-                    ios_icon_name="person.fill"
-                    android_material_icon_name="person"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
+            <View style={styles.infoRow}>
+              <IconSymbol
+                ios_icon_name="person.fill"
+                android_material_icon_name="person"
+                size={16}
+                color={colors.textSecondary}
+              />
                   <Text style={styles.infoText}>{washRequest.clientCompany.contact}</Text>
-                </View>
+            </View>
               )}
               {washRequest.clientCompany.phone && (
-                <View style={styles.infoRow}>
-                  <IconSymbol
-                    ios_icon_name="phone.fill"
-                    android_material_icon_name="phone"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
+            <View style={styles.infoRow}>
+              <IconSymbol
+                ios_icon_name="phone.fill"
+                android_material_icon_name="phone"
+                size={16}
+                color={colors.textSecondary}
+              />
                   <Text style={styles.infoText}>{washRequest.clientCompany.phone}</Text>
                 </View>
               )}
@@ -337,16 +391,16 @@ export default function ProviderRequestDetailScreen() {
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>Notes</Text>
                   <Text style={styles.detailValue}>{washRequest.notes}</Text>
-                </View>
               </View>
+            </View>
             )}
           </View>
         </View>
 
         {washRequest.vehicles && washRequest.vehicles.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Véhicules</Text>
-            <View style={commonStyles.card}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Véhicules</Text>
+          <View style={commonStyles.card}>
               {washRequest.vehicles.map((vehicleRequest) => (
                 <View key={vehicleRequest.id} style={styles.vehicleItem}>
                   {vehicleRequest.vehicle && (
@@ -367,22 +421,38 @@ export default function ProviderRequestDetailScreen() {
         )}
 
         {washRequest.status === 'pending' && (
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={[buttonStyles.outline, styles.declineButton]}
-              onPress={handleDecline}
-            >
-              <Text style={commonStyles.buttonTextOutline}>Refuser</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[buttonStyles.outline, styles.declineButton]}
+            onPress={handleDecline}
+          >
+            <Text style={commonStyles.buttonTextOutline}>Refuser</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
               style={[buttonStyles.accent, styles.acceptButton, isAccepting && styles.buttonDisabled]}
-              onPress={handleAccept}
+            onPress={handleAccept}
               disabled={isAccepting}
-            >
+          >
               {isAccepting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={commonStyles.buttonText}>Accepter</Text>
+            <Text style={commonStyles.buttonText}>Accepter</Text>
+              )}
+          </TouchableOpacity>
+        </View>
+        )}
+
+        {washRequest.status === 'accepted' && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[buttonStyles.outline, styles.cancelButton, isCancelling && styles.buttonDisabled]}
+              onPress={handleCancel}
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <Text style={[commonStyles.buttonTextOutline, { color: colors.error }]}>Annuler</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -498,6 +568,10 @@ const styles = StyleSheet.create({
   },
   acceptButton: {
     flex: 1,
+  },
+  cancelButton: {
+    flex: 1,
+    borderColor: colors.error,
   },
   loadingContainer: {
     flex: 1,

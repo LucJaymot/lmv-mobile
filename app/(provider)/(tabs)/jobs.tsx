@@ -1,62 +1,57 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { WashRequest } from '@/types';
+import { washRequestService } from '@/services/databaseService';
 
 export default function ProviderJobsScreen() {
   const router = useRouter();
+  const { provider } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<'accepted' | 'in_progress' | 'completed'>('accepted');
+  const [jobs, setJobs] = useState<WashRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const jobs: WashRequest[] = [
-    {
-      id: '1',
-      clientCompanyId: '1',
-      providerId: '1',
-      address: '123 Rue de la Paix, Paris',
-      dateTime: new Date('2024-02-15T10:00:00'),
-      status: 'accepted',
-      createdAt: new Date(),
-      vehicles: [],
-      clientCompany: {
-        id: '1',
-        userId: '1',
-        name: 'Garage Dupont',
-        address: '123 Rue de la Paix, Paris',
-        contact: 'Jean Dupont',
-        phone: '+33 1 23 45 67 89',
-        email: 'contact@garagedupont.fr',
-      },
-    },
-    {
-      id: '2',
-      clientCompanyId: '2',
-      providerId: '1',
-      address: '456 Avenue des Champs, Paris',
-      dateTime: new Date('2024-02-10T14:00:00'),
-      status: 'completed',
-      createdAt: new Date(),
-      vehicles: [],
-      clientCompany: {
-        id: '2',
-        userId: '2',
-        name: 'Location Auto Pro',
-        address: '456 Avenue des Champs, Paris',
-        contact: 'Marie Martin',
-        phone: '+33 1 98 76 54 32',
-        email: 'contact@locationauto.fr',
-      },
-    },
-  ];
+  const loadJobs = async () => {
+    if (!provider) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      // Mettre à jour automatiquement les demandes expirées
+      await washRequestService.updateExpiredRequests();
+      // Charger les jobs du provider
+      const requests = await washRequestService.getByProviderId(provider.id);
+      setJobs(requests);
+    } catch (error: any) {
+      console.error('❌ Erreur lors du chargement des jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+  }, [provider]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadJobs();
+    }, [provider])
+  );
 
   const filteredJobs = jobs.filter(j => j.status === selectedStatus);
 
@@ -137,11 +132,15 @@ export default function ProviderJobsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredJobs.length > 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : filteredJobs.length > 0 ? (
           <React.Fragment>
             {filteredJobs.map((job, index) => (
               <TouchableOpacity
-                key={index}
+                key={job.id || index}
                 style={commonStyles.card}
                 onPress={() => router.push(`/(provider)/requests/detail?id=${job.id}`)}
               >
@@ -151,21 +150,16 @@ export default function ProviderJobsScreen() {
                   </View>
                   <Text style={styles.jobDate}>{formatDate(job.dateTime)}</Text>
                 </View>
-                <Text style={styles.clientName}>{job.clientCompany?.name}</Text>
+                <Text style={styles.clientName}>{job.clientCompany?.name || 'Client inconnu'}</Text>
                 <View style={styles.jobInfo}>
                   <IconSymbol
                     ios_icon_name="location.fill"
-                    android_material_icon_name="location_on"
+                    android_material_icon_name="location-on"
                     size={16}
                     color={colors.textSecondary}
                   />
                   <Text style={styles.jobAddress}>{job.address}</Text>
                 </View>
-                {job.status === 'accepted' && (
-                  <TouchableOpacity style={styles.startButton}>
-                    <Text style={styles.startButtonText}>Démarrer le lavage</Text>
-                  </TouchableOpacity>
-                )}
                 {job.status === 'in_progress' && (
                   <TouchableOpacity style={styles.completeButton}>
                     <Text style={styles.completeButtonText}>Marquer comme terminé</Text>
@@ -293,6 +287,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
   },
   emptyState: {
     alignItems: 'center',
