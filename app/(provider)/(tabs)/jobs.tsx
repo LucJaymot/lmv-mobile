@@ -102,31 +102,33 @@ export default function ProviderJobsScreen() {
         <Text style={styles.title}>Mes jobs</Text>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersContainer}
-      >
-        {statusFilters.map((filter, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.filterChip,
-              selectedStatus === filter.value && styles.filterChipActive,
-            ]}
-            onPress={() => setSelectedStatus(filter.value)}
-          >
-            <Text
+      <View style={styles.filtersWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContainer}
+        >
+          {statusFilters.map((filter, index) => (
+            <TouchableOpacity
+              key={index}
               style={[
-                styles.filterChipText,
-                selectedStatus === filter.value && styles.filterChipTextActive,
+                styles.filterChip,
+                selectedStatus === filter.value && styles.filterChipActive,
               ]}
+              onPress={() => setSelectedStatus(filter.value)}
             >
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedStatus === filter.value && styles.filterChipTextActive,
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -199,9 +201,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
+  filtersWrapper: {
+    paddingBottom: 16,
+  },
   filtersContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
     gap: 8,
   },
   filterChip: {
@@ -211,6 +215,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.card,
+    width: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterChipActive: {
     backgroundColor: colors.primary,

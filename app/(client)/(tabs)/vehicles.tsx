@@ -24,6 +24,7 @@ export default function VehiclesScreen() {
   const { clientCompany } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const loadVehicles = async () => {
     if (!clientCompany) {
@@ -144,11 +145,15 @@ export default function VehiclesScreen() {
             {vehicles.map((vehicle) => (
               <View key={vehicle.id} style={commonStyles.card}>
                 <View style={styles.vehicleHeader}>
-                  {vehicle.imageUrl ? (
+                  {vehicle.imageUrl && !imageErrors.has(vehicle.id) ? (
                     <Image
                       source={{ uri: vehicle.imageUrl }}
                       style={styles.vehicleImage}
-                      resizeMode="cover"
+                      resizeMode="contain"
+                      onError={() => {
+                        console.warn('⚠️ Erreur lors du chargement de l\'image pour le véhicule:', vehicle.id);
+                        setImageErrors(prev => new Set(prev).add(vehicle.id));
+                      }}
                     />
                   ) : (
                   <View style={styles.vehicleIcon}>
@@ -272,6 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginRight: 16,
     backgroundColor: colors.background,
+    padding: 8,
   },
   vehicleInfo: {
     flex: 1,

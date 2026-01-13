@@ -9,17 +9,49 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { pickImage, uploadAvatar } from '@/services/storageService';
 
 export default function ClientProfileScreen() {
   const router = useRouter();
-  const { user, clientCompany, logout } = useAuth();
+  const { user, clientCompany, logout, updateProfile } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarPress = async () => {
+    try {
+      const result = await pickImage();
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset.uri || !user?.id || !clientCompany) {
+        return;
+      }
+
+      setIsUploadingAvatar(true);
+      
+      // Upload l'image vers Supabase Storage
+      const avatarUrl = await uploadAvatar(asset.uri, user.id);
+      
+      // Mettre à jour le profil avec la nouvelle URL
+      await updateProfile({ avatarUrl });
+      
+      Alert.alert('Succès', 'Photo de profil mise à jour avec succès');
+    } catch (error: any) {
+      console.error('Erreur lors de l\'upload de l\'avatar:', error);
+      Alert.alert('Erreur', error.message || 'Impossible de mettre à jour la photo de profil');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return; // Empêcher les clics multiples
@@ -86,14 +118,38 @@ export default function ClientProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <IconSymbol
-              ios_icon_name="building.2.fill"
-              android_material_icon_name="business"
-              size={48}
-              color={colors.primary}
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handleAvatarPress}
+            disabled={isUploadingAvatar}
+            activeOpacity={0.7}
+          >
+            {isUploadingAvatar ? (
+              <ActivityIndicator size="large" color={colors.primary} />
+            ) : clientCompany?.avatarUrl ? (
+              <Image
+                source={{ uri: clientCompany.avatarUrl }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <IconSymbol
+                ios_icon_name="building.2.fill"
+                android_material_icon_name="business"
+                size={48}
+                color={colors.primary}
+              />
+            )}
+            {!isUploadingAvatar && (
+              <View style={styles.avatarOverlay}>
+                <IconSymbol
+                  ios_icon_name="camera.fill"
+                  android_material_icon_name="camera-alt"
+                  size={20}
+                  color="#FFFFFF"
+                />
+              </View>
+            )}
+          </TouchableOpacity>
           <Text style={styles.companyName}>{clientCompany?.name}</Text>
           <Text style={styles.email}>{user?.email}</Text>
         </View>
@@ -190,6 +246,24 @@ export default function ClientProfileScreen() {
               color={colors.textSecondary}
             />
           </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={() => router.push('/(client)/(tabs)/invoices')}
+          >
+            <IconSymbol
+              ios_icon_name="doc.text.fill"
+              android_material_icon_name="description"
+              size={20}
+              color={colors.text}
+            />
+            <Text style={styles.actionText}>Factures</Text>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -216,7 +290,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'web' ? 100 : 120,
   },
   header: {
     alignItems: 'center',
@@ -232,6 +306,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   companyName: {
     fontSize: 24,

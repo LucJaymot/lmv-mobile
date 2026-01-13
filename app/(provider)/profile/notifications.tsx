@@ -90,7 +90,6 @@ export default function NotificationsScreen() {
     // Si on désactive les notifications push, désactiver aussi les sous-options
     if (key === 'pushEnabled' && !value) {
       newSettings.newRequests = false;
-      newSettings.confirmations = false;
       newSettings.reminders = false;
       newSettings.statusUpdates = false;
     }
@@ -166,31 +165,6 @@ export default function NotificationsScreen() {
                     onValueChange={(value) => updateSetting('newRequests', value)}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={settings.newRequests ? colors.primary : '#F4F3F4'}
-                    ios_backgroundColor={colors.border}
-                  />
-                </View>
-
-                <View style={styles.divider} />
-                <View style={styles.settingRow}>
-                  <View style={styles.settingContent}>
-                    <IconSymbol
-                      ios_icon_name="checkmark.circle.fill"
-                      android_material_icon_name="check-circle"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                    <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Confirmations</Text>
-                      <Text style={styles.settingDescription}>
-                        Notifier lors de la confirmation d'une demande
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={settings.confirmations}
-                    onValueChange={(value) => updateSetting('confirmations', value)}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={settings.confirmations ? colors.primary : '#F4F3F4'}
                     ios_backgroundColor={colors.border}
                   />
                 </View>

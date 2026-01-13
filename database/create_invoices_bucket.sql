@@ -1,0 +1,25 @@
+-- ============================================
+-- CRÉATION DU BUCKET "invoices" DANS SUPABASE STORAGE
+-- ============================================
+-- Ce script crée le bucket pour stocker les factures PDF
+-- À exécuter dans l'éditeur SQL de Supabase
+--
+-- IMPORTANT : 
+-- Ce script doit être exécuté dans l'éditeur SQL de Supabase.
+-- Le bucket doit être créé via l'interface Supabase Dashboard > Storage > Create bucket
+-- Nom du bucket : "invoices"
+-- Public : false (privé)
+-- File size limit : 10485760 (10 MB)
+-- Allowed MIME types : application/pdf
+
+-- Note : Supabase Storage ne permet pas de créer des buckets via SQL.
+-- Vous devez créer le bucket manuellement via l'interface :
+-- 1. Allez dans Storage > Create bucket
+-- 2. Nom : "invoices"
+-- 3. Public : true (activé) - IMPORTANT : Le bucket doit être public pour que les URLs publiques fonctionnent
+--    Les politiques RLS garantissent que seuls les clients propriétaires peuvent voir leurs factures
+-- 4. File size limit : 10485760 (10 MB)
+-- 5. Allowed MIME types : application/pdf
+--
+-- Ensuite, exécutez le script fix_storage_rls_invoices.sql pour créer les politiques RLS
+

@@ -30,6 +30,16 @@ export interface TabBarItem {
   label: string;
 }
 
+// Mapping des icônes Material Icons vers les noms SF Symbols pour iOS
+const iconMapping: Record<string, { android: keyof typeof MaterialIcons.glyphMap; ios: string }> = {
+  'home': { android: 'home', ios: 'house.fill' },
+  'directions_car': { android: 'directions-car', ios: 'car.fill' },
+  'list': { android: 'list', ios: 'list.bullet' },
+  'person': { android: 'person', ios: 'person.fill' },
+  'work': { android: 'work', ios: 'briefcase.fill' },
+  'description': { android: 'description', ios: 'doc.text.fill' },
+};
+
 interface FloatingTabBarProps {
   tabs: TabBarItem[];
   containerWidth?: number;
@@ -39,7 +49,7 @@ interface FloatingTabBarProps {
 
 export default function FloatingTabBar({
   tabs,
-  containerWidth = screenWidth / 2.5,
+  containerWidth = Platform.OS === 'web' ? screenWidth / 2.5 : screenWidth - 40,
   borderRadius = 35,
   bottomMargin
 }: FloatingTabBarProps) {
@@ -47,6 +57,22 @@ export default function FloatingTabBar({
   const pathname = usePathname();
   const theme = useTheme();
   const animatedValue = useSharedValue(0);
+
+  // Hide tab bar on modal/detail screens
+  const shouldHideTabBar = React.useMemo(() => {
+    // Liste des routes qui ne doivent pas afficher le tab bar
+    const hiddenRoutes = [
+      '/requests/detail',
+      '/profile/edit',
+      '/profile/notifications',
+      '/vehicles/add',
+      '/vehicles/edit',
+      '/requests/create',
+    ];
+    
+    const pathnameStr = typeof pathname === 'string' ? pathname : String(pathname);
+    return hiddenRoutes.some(route => pathnameStr.includes(route));
+  }, [pathname]);
 
   // Improved active tab detection with better path matching
   const activeTabIndex = React.useMemo(() => {
@@ -154,6 +180,11 @@ export default function FloatingTabBar({
     },
   };
 
+  // Don't render if we're on a modal/detail screen
+  if (shouldHideTabBar) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={[
@@ -172,6 +203,9 @@ export default function FloatingTabBar({
           <View style={styles.tabsContainer}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
+              const iconMap = iconMapping[tab.icon] || { android: tab.icon, ios: 'circle' };
+              const androidIcon = iconMap.android as keyof typeof MaterialIcons.glyphMap;
+              const iosIcon = iconMap.ios;
 
               return (
                 <React.Fragment key={index}>
@@ -183,8 +217,8 @@ export default function FloatingTabBar({
                 >
                   <View key={index} style={styles.tabContent}>
                     <IconSymbol
-                      android_material_icon_name={tab.icon}
-                      ios_icon_name={tab.icon}
+                      android_material_icon_name={androidIcon}
+                      ios_icon_name={iosIcon}
                       size={24}
                       color={isActive ? theme.colors.primary : (theme.dark ? '#98989D' : '#000000')}
                     />
@@ -242,7 +276,7 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    height: 60,
+    height: Platform.OS === 'web' ? 60 : 68,
     alignItems: 'center',
     paddingHorizontal: 4,
   },

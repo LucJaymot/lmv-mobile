@@ -15,7 +15,7 @@ export default function ClientTabLayout() {
     {
       name: 'vehicles',
       route: '/(client)/(tabs)/vehicles',
-      icon: 'directions_car',
+      icon: 'directions_car' as any, // Mappé dans FloatingTabBar
       label: 'Véhicules',
     },
     {

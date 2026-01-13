@@ -29,6 +29,12 @@ export default function AddVehicleScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  
+  // États pour les erreurs de validation
+  const [licensePlateError, setLicensePlateError] = useState('');
+  const [brandError, setBrandError] = useState('');
+  const [modelError, setModelError] = useState('');
+  const [typeError, setTypeError] = useState('');
 
   const formatLicensePlate = (text: string): string => {
     // Supprimer tous les caractères non alphanumériques et les tirets
@@ -53,6 +59,49 @@ export default function AddVehicleScreen() {
   const handleLicensePlateChange = (text: string) => {
     const formatted = formatLicensePlate(text);
     setLicensePlate(formatted);
+    // Nettoyer l'erreur quand l'utilisateur commence à taper
+    if (licensePlateError) {
+      setLicensePlateError('');
+    }
+  };
+  
+  const validateForm = (): boolean => {
+    let isValid = true;
+    const cleanedPlate = licensePlate.replace(/-/g, '');
+    
+    // Validation de la plaque d'immatriculation
+    if (!cleanedPlate || cleanedPlate.length !== 8) {
+      setLicensePlateError('La plaque d\'immatriculation doit contenir 8 caractères (format: XXXX-XX-XX)');
+      isValid = false;
+    } else {
+      setLicensePlateError('');
+    }
+    
+    // Validation de la marque
+    if (!brand || brand.trim() === '') {
+      setBrandError('La marque est obligatoire');
+      isValid = false;
+    } else {
+      setBrandError('');
+    }
+    
+    // Validation du modèle
+    if (!model || model.trim() === '') {
+      setModelError('Le modèle est obligatoire');
+      isValid = false;
+    } else {
+      setModelError('');
+    }
+    
+    // Validation du type
+    if (!type || type.trim() === '') {
+      setTypeError('Le type est obligatoire');
+      isValid = false;
+    } else {
+      setTypeError('');
+    }
+    
+    return isValid;
   };
 
   const searchVehicleInfo = async () => {
@@ -112,12 +161,43 @@ export default function AddVehicleScreen() {
     }
   };
 
+  const fetchBrandLogo = async (brandName: string): Promise<string | undefined> => {
+    try {
+      // Récupérer le CLIENT_ID Brandfetch depuis les variables d'environnement
+      const brandfetchClientId = Constants.expoConfig?.extra?.brandfetchClientId || 
+                                process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID;
+      
+      if (!brandfetchClientId) {
+        console.warn('⚠️ BRANDFETCH_CLIENT_ID non configurée');
+        return undefined;
+      }
+
+      // Normaliser le nom de la marque (minuscules, sans espaces)
+      const normalizedBrand = brandName.toLowerCase().replace(/\s+/g, '');
+      
+      // Construire l'URL Brandfetch selon la documentation
+      // Format: https://cdn.brandfetch.io/{identifier}/w/{width}/h/{height}/type/{type}?c={CLIENT_ID}
+      // On utilise le format domaine avec fallback transparent pour garantir qu'une image est toujours retournée
+      // Si le logo n'existe pas, Brandfetch retournera le fallback défini (transparent par défaut pour type=icon)
+      const brandfetchUrl = `https://cdn.brandfetch.io/${normalizedBrand}.com/w/400/h/400/type/icon/fallback/transparent?c=${brandfetchClientId}`;
+      
+      console.log('🖼️ Récupération du logo Brandfetch pour:', brandName);
+      console.log('🌐 URL:', brandfetchUrl.replace(brandfetchClientId, '[CLIENT_ID_MASQUÉ]'));
+      
+      // Retourner l'URL directement - React Native Image gérera les erreurs avec onError
+      // Brandfetch retournera une image (logo ou fallback transparent si non trouvé)
+      console.log('✅ URL du logo Brandfetch générée');
+      return brandfetchUrl;
+    } catch (error: any) {
+      console.warn('⚠️ Erreur lors de la génération de l\'URL Brandfetch:', error.message);
+      return undefined;
+    }
+  };
+
   const handleSave = async () => {
-    // Nettoyer la plaque d'immatriculation (enlever les tirets pour la validation)
-    const cleanedPlate = licensePlate.replace(/-/g, '');
-    
-    if (!cleanedPlate || cleanedPlate.length !== 8 || !brand || !model || !type) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs. La plaque doit contenir 8 caractères (format: XXXX-XX-XX)');
+    // Valider le formulaire avant la soumission
+    if (!validateForm()) {
+      // Scroll vers le premier champ avec erreur
       return;
     }
 
@@ -128,149 +208,13 @@ export default function AddVehicleScreen() {
 
     setIsLoading(true);
     try {
-      // Récupérer l'image du véhicule depuis l'API CarsXE Images
-      // TODO: À réactiver quand le problème CORS sera résolu (via proxy backend ou Edge Function)
-      let imageUrl: string | undefined = undefined;
-      
-      // TEMPORAIREMENT DÉSACTIVÉ - Bloqué pour le moment
-      const API_CARSXE_ENABLED = false;
-      
-      if (API_CARSXE_ENABLED) {
-        try {
-          // Clé API forcée directement
-          const apiKey = 'dgt1u9e9g_52f67iguv_kkw6yvdzh';
-          
-          // Vérifier si on est sur web (CORS bloqué)
-          const isWeb = Platform.OS === 'web' || typeof window !== 'undefined';
-          
-          // Sur web, on saute l'appel API à cause de CORS
-          if (isWeb) {
-            console.log('');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('⚠️  APPEL API CarsXE Images - SKIPPÉ (Web)');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('   L\'API CarsXE bloque les requêtes CORS depuis le navigateur.');
-            console.log('   Le véhicule sera créé sans image.');
-            console.log('   💡 Solution: Utiliser un proxy backend ou Edge Function.');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('');
-          } else if (apiKey && brand && model && year) {
-          // Préparer les paramètres exactement comme dans la spécification curl
-          const params = new URLSearchParams({
-            key: apiKey,
-            make: brand.toLowerCase(),
-            model: model.toLowerCase(),
-            year: year,
-            format: 'json',
-          });
-
-          const apiUrl = `https://api.carsxe.com/images?${params.toString()}`;
-          
-          // === DEBUG: Affichage de l'appel API CarsXE Images ===
-          console.log('');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('🖼️  APPEL API - CarsXE Images');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('');
-          console.log('📡 Équivalent curl:');
-          console.log(`curl -G https://api.carsxe.com/images \\`);
-          console.log(`  -d key=${apiKey ? '[API_KEY_MASQUÉE]' : 'CARSXE_API_KEY'} \\`);
-          console.log(`  -d make=${brand.toLowerCase()} \\`);
-          console.log(`  -d model=${model.toLowerCase()} \\`);
-          console.log(`  -d year=${year} \\`);
-          console.log(`  -d format=json`);
-          console.log('');
-          console.log('🌐 URL complète:', apiUrl.replace(apiKey, '[API_KEY_MASQUÉE]'));
-          console.log('');
-          console.log('📋 Paramètres envoyés:');
-          console.log(JSON.stringify({
-            key: '[MASQUÉ]',
-            make: brand.toLowerCase(),
-            model: model.toLowerCase(),
-            year: year,
-            format: 'json',
-          }, null, 2));
-          console.log('');
-          console.log('⏳ Envoi de la requête...');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('');
-          
-          const imageResponse = await fetch(apiUrl);
-          const imageData = await imageResponse.json();
-
-          console.log('');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('📦 RÉPONSE API - CarsXE Images');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('📊 Statut HTTP:', imageResponse.status, imageResponse.statusText);
-          console.log('📦 Corps de la réponse:');
-          console.log(JSON.stringify(imageData, null, 2));
-          console.log('');
-
-          if (imageResponse.ok && imageData.success) {
-            // L'API peut retourner l'image dans différents champs selon la réponse
-            imageUrl = imageData.image || imageData.url || imageData.imageUrl || imageData.image_url;
-            if (imageUrl) {
-              console.log('✅ Image récupérée avec succès:');
-              console.log('   URL:', imageUrl);
-            } else {
-              console.log('⚠️ Aucune URL d\'image trouvée dans la réponse');
-            }
-          } else {
-            console.log('⚠️ Erreur API ou aucune image disponible:');
-            console.log('   Message:', imageData.message || 'Réponse non réussie');
-          }
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('');
-          } else {
-            console.log('');
-            console.log('⚠️ APPEL API CarsXE Images - ANNULÉ');
-            console.log('⚠️ Paramètres manquants:');
-            console.log('   API Key:', apiKey ? '✅ Présente' : '❌ Manquante');
-            console.log('   Brand:', brand ? '✅ Présente' : '❌ Manquante');
-            console.log('   Model:', model ? '✅ Présente' : '❌ Manquante');
-            console.log('   Year:', year ? '✅ Présente' : '❌ Manquante');
-            console.log('');
-          }
-        } catch (imageError: any) {
-          console.log('');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('❌ ERREUR - Appel API CarsXE Images');
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.warn('⚠️ Erreur lors de la récupération de l\'image:', imageError);
-          console.log('   Type:', imageError?.constructor?.name);
-          console.log('   Message:', imageError?.message);
-          
-          // Détecter spécifiquement l'erreur CORS
-          const isCorsError = imageError?.message?.includes('CORS') || 
-                             imageError?.message?.includes('Failed to fetch') ||
-                             imageError?.message?.includes('blocked by CORS');
-          
-          if (isCorsError) {
-            console.log('   ⚠️ Erreur CORS détectée: L\'API CarsXE bloque les requêtes depuis le navigateur.');
-            console.log('   💡 Solution: L\'appel API doit être effectué depuis un serveur (proxy/backend).');
-            console.log('   ✅ Le véhicule sera créé sans image.');
-          }
-          
-          console.log('   Stack:', imageError?.stack);
-          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('');
-          // On continue quand même la création du véhicule même si l'image échoue
-        }
-      } else {
-        // API désactivée - pas d'appel
-        console.log('');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('⚠️  APPEL API CarsXE Images - DÉSACTIVÉ');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('   L\'appel API est temporairement désactivé.');
-        console.log('   Le véhicule sera créé sans image.');
-        console.log('   💡 Pour réactiver: mettre API_CARSXE_ENABLED à true');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('');
-      }
+      // Récupérer le logo de la marque via Brandfetch API
+      const brandLogoUrl = await fetchBrandLogo(brand);
       
       // Sauvegarder la plaque avec les tirets
+      // Utiliser le logo Brandfetch si disponible
+      const finalImageUrl = brandLogoUrl;
+      
       const vehicle = await vehicleService.create({
         clientCompanyId: clientCompany.id,
         licensePlate: licensePlate, // Sauvegarder avec les tirets
@@ -278,7 +222,7 @@ export default function AddVehicleScreen() {
         model,
         type,
         year: year ? parseInt(year) : undefined,
-        imageUrl,
+        imageUrl: finalImageUrl,
       });
       
       // Redirection immédiate vers la liste des véhicules
@@ -304,7 +248,10 @@ export default function AddVehicleScreen() {
         <View style={styles.inputContainer}>
           <Text style={commonStyles.inputLabel}>Plaque d&apos;immatriculation *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              licensePlateError && styles.inputError
+            ]}
             placeholder="XXXX-XX-XX"
             placeholderTextColor={colors.textSecondary}
             value={licensePlate}
@@ -312,6 +259,9 @@ export default function AddVehicleScreen() {
             autoCapitalize="characters"
             maxLength={10}
           />
+          {licensePlateError ? (
+            <Text style={styles.errorText}>{licensePlateError}</Text>
+          ) : null}
         </View>
 
         {false && (
@@ -345,34 +295,61 @@ export default function AddVehicleScreen() {
         <View style={styles.inputContainer}>
           <Text style={commonStyles.inputLabel}>Marque *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              brandError && styles.inputError
+            ]}
             placeholder="Renault"
             placeholderTextColor={colors.textSecondary}
             value={brand}
-            onChangeText={setBrand}
+            onChangeText={(text) => {
+              setBrand(text);
+              if (brandError) setBrandError('');
+            }}
           />
+          {brandError ? (
+            <Text style={styles.errorText}>{brandError}</Text>
+          ) : null}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={commonStyles.inputLabel}>Modèle *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              modelError && styles.inputError
+            ]}
             placeholder="Clio"
             placeholderTextColor={colors.textSecondary}
             value={model}
-            onChangeText={setModel}
+            onChangeText={(text) => {
+              setModel(text);
+              if (modelError) setModelError('');
+            }}
           />
+          {modelError ? (
+            <Text style={styles.errorText}>{modelError}</Text>
+          ) : null}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={commonStyles.inputLabel}>Type *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              typeError && styles.inputError
+            ]}
             placeholder="Berline"
             placeholderTextColor={colors.textSecondary}
             value={type}
-            onChangeText={setType}
+            onChangeText={(text) => {
+              setType(text);
+              if (typeError) setTypeError('');
+            }}
           />
+          {typeError ? (
+            <Text style={styles.errorText}>{typeError}</Text>
+          ) : null}
         </View>
 
         <View style={styles.inputContainer}>
@@ -454,5 +431,15 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: 1,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });

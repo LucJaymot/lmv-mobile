@@ -16,6 +16,7 @@ export interface ClientCompany {
   contact: string;
   phone: string;
   email: string;
+  avatarUrl?: string;
 }
 
 export interface Provider {
@@ -29,6 +30,7 @@ export interface Provider {
   services: ServiceType[];
   averageRating?: number;
   totalRatings?: number;
+  avatarUrl?: string;
 }
 
 export type ServiceType = 'exterior' | 'interior' | 'complete';
@@ -54,6 +56,7 @@ export interface WashRequest {
   dateTime: Date;
   status: WashRequestStatus;
   notes?: string;
+  invoiceUrl?: string;
   createdAt: Date;
   vehicles: WashRequestVehicle[];
   clientCompany?: ClientCompany;

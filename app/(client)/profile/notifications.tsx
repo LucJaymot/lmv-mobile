@@ -69,7 +69,6 @@ export default function NotificationsScreen() {
     
     // Si on désactive les notifications push, désactiver aussi les sous-options
     if (key === 'pushEnabled' && !value) {
-      newSettings.newRequests = false;
       newSettings.confirmations = false;
       newSettings.reminders = false;
       newSettings.statusUpdates = false;
@@ -96,138 +95,115 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications Push</Text>
-          <View style={commonStyles.card}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingContent}>
-                <IconSymbol
-                  ios_icon_name="bell.fill"
-                  android_material_icon_name="notifications"
-                  size={24}
-                  color={colors.primary}
+        {Platform.OS !== 'web' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Notifications Push</Text>
+            <View style={commonStyles.card}>
+              <View style={styles.settingRow}>
+                <View style={styles.settingContent}>
+                  <IconSymbol
+                    ios_icon_name="bell.fill"
+                    android_material_icon_name="notifications"
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <View style={styles.settingText}>
+                    <Text style={styles.settingTitle}>Activer les notifications push</Text>
+                    <Text style={styles.settingDescription}>
+                      Recevoir des notifications sur votre appareil
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={settings.pushEnabled}
+                  onValueChange={(value) => updateSetting('pushEnabled', value)}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={settings.pushEnabled ? colors.primary : '#F4F3F4'}
+                  ios_backgroundColor={colors.border}
                 />
-                <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Activer les notifications push</Text>
-                  <Text style={styles.settingDescription}>
-                    Recevoir des notifications sur votre appareil
-                  </Text>
-                </View>
               </View>
-              <Switch
-                value={settings.pushEnabled}
-                onValueChange={(value) => updateSetting('pushEnabled', value)}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={settings.pushEnabled ? colors.primary : '#F4F3F4'}
-                ios_backgroundColor={colors.border}
-              />
+
+              {settings.pushEnabled && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={styles.settingContent}>
+                      <IconSymbol
+                        ios_icon_name="checkmark.circle.fill"
+                        android_material_icon_name="check-circle"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <View style={styles.settingText}>
+                        <Text style={styles.settingTitle}>Confirmations</Text>
+                        <Text style={styles.settingDescription}>
+                          Notifier lors de la confirmation d'une demande
+                        </Text>
+                      </View>
+                    </View>
+                    <Switch
+                      value={settings.confirmations}
+                      onValueChange={(value) => updateSetting('confirmations', value)}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                      thumbColor={settings.confirmations ? colors.primary : '#F4F3F4'}
+                      ios_backgroundColor={colors.border}
+                    />
+                  </View>
+
+                  <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={styles.settingContent}>
+                      <IconSymbol
+                        ios_icon_name="clock.fill"
+                        android_material_icon_name="schedule"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <View style={styles.settingText}>
+                        <Text style={styles.settingTitle}>Rappels</Text>
+                        <Text style={styles.settingDescription}>
+                          Recevoir des rappels avant un lavage programmé
+                        </Text>
+                      </View>
+                    </View>
+                    <Switch
+                      value={settings.reminders}
+                      onValueChange={(value) => updateSetting('reminders', value)}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                      thumbColor={settings.reminders ? colors.primary : '#F4F3F4'}
+                      ios_backgroundColor={colors.border}
+                    />
+                  </View>
+
+                  <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={styles.settingContent}>
+                      <IconSymbol
+                        ios_icon_name="arrow.triangle.2.circlepath"
+                        android_material_icon_name="sync"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <View style={styles.settingText}>
+                        <Text style={styles.settingTitle}>Mises à jour de statut</Text>
+                        <Text style={styles.settingDescription}>
+                          Notifier lors des changements de statut des demandes
+                        </Text>
+                      </View>
+                    </View>
+                    <Switch
+                      value={settings.statusUpdates}
+                      onValueChange={(value) => updateSetting('statusUpdates', value)}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                      thumbColor={settings.statusUpdates ? colors.primary : '#F4F3F4'}
+                      ios_backgroundColor={colors.border}
+                    />
+                  </View>
+                </>
+              )}
             </View>
-
-            {settings.pushEnabled && (
-              <>
-                <View style={styles.divider} />
-                <View style={styles.settingRow}>
-                  <View style={styles.settingContent}>
-                    <IconSymbol
-                      ios_icon_name="doc.text.fill"
-                      android_material_icon_name="description"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                    <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Nouvelles demandes</Text>
-                      <Text style={styles.settingDescription}>
-                        Notifier lors de la création d'une nouvelle demande
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={settings.newRequests}
-                    onValueChange={(value) => updateSetting('newRequests', value)}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={settings.newRequests ? colors.primary : '#F4F3F4'}
-                    ios_backgroundColor={colors.border}
-                  />
-                </View>
-
-                <View style={styles.divider} />
-                <View style={styles.settingRow}>
-                  <View style={styles.settingContent}>
-                    <IconSymbol
-                      ios_icon_name="checkmark.circle.fill"
-                      android_material_icon_name="check-circle"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                    <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Confirmations</Text>
-                      <Text style={styles.settingDescription}>
-                        Notifier lors de la confirmation d'une demande
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={settings.confirmations}
-                    onValueChange={(value) => updateSetting('confirmations', value)}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={settings.confirmations ? colors.primary : '#F4F3F4'}
-                    ios_backgroundColor={colors.border}
-                  />
-                </View>
-
-                <View style={styles.divider} />
-                <View style={styles.settingRow}>
-                  <View style={styles.settingContent}>
-                    <IconSymbol
-                      ios_icon_name="clock.fill"
-                      android_material_icon_name="schedule"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                    <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Rappels</Text>
-                      <Text style={styles.settingDescription}>
-                        Recevoir des rappels avant un lavage programmé
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={settings.reminders}
-                    onValueChange={(value) => updateSetting('reminders', value)}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={settings.reminders ? colors.primary : '#F4F3F4'}
-                    ios_backgroundColor={colors.border}
-                  />
-                </View>
-
-                <View style={styles.divider} />
-                <View style={styles.settingRow}>
-                  <View style={styles.settingContent}>
-                    <IconSymbol
-                      ios_icon_name="arrow.triangle.2.circlepath"
-                      android_material_icon_name="sync"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                    <View style={styles.settingText}>
-                      <Text style={styles.settingTitle}>Mises à jour de statut</Text>
-                      <Text style={styles.settingDescription}>
-                        Notifier lors des changements de statut des demandes
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={settings.statusUpdates}
-                    onValueChange={(value) => updateSetting('statusUpdates', value)}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={settings.statusUpdates ? colors.primary : '#F4F3F4'}
-                    ios_backgroundColor={colors.border}
-                  />
-                </View>
-              </>
-            )}
           </View>
-        </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifications Email</Text>

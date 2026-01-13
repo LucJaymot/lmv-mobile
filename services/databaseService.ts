@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { User, ClientCompany, Provider, WashRequest, Vehicle, Rating } from '@/types';
+import { User, ClientCompany, Provider, WashRequest, WashRequestStatus, Vehicle, Rating } from '@/types';
 
 // ============================================
 // UTILITAIRES
@@ -123,6 +123,43 @@ export const authService = {
     if (error) throw error;
     return session;
   },
+
+  /**
+   * Vérifie si un email existe dans auth.users
+   */
+  async checkEmailExists(email: string): Promise<boolean> {
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+      const { data, error } = await supabase.rpc('check_email_exists', {
+        p_email: normalizedEmail,
+      });
+
+      if (error) {
+        console.error('Error checking email:', error);
+        // En cas d'erreur (par exemple si la fonction n'existe pas), retourner false
+        return false;
+      }
+
+      return data === true;
+    } catch (error) {
+      console.error('Error in checkEmailExists:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Envoie un email de réinitialisation de mot de passe
+   */
+  async resetPasswordForEmail(email: string, redirectTo?: string) {
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    const { data, error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: redirectTo,
+    });
+
+    if (error) throw error;
+    return data;
+  },
 };
 
 // ============================================
@@ -140,7 +177,14 @@ export const userService = {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // Si l'utilisateur n'existe pas (PGRST116 = no rows returned)
+      if (error.code === 'PGRST116') {
+        console.warn('⚠️ User not found in users table, might need to run fix_missing_users.sql');
+        return null;
+      }
+      throw error;
+    }
     if (!data) return null;
 
     return {
@@ -303,6 +347,7 @@ export const clientCompanyService = {
       contact: data.contact,
       phone: data.phone,
       email: data.email,
+      avatarUrl: data.avatar_url || undefined,
     };
   },
 
@@ -316,6 +361,7 @@ export const clientCompanyService = {
     if (updates.contact) updateData.contact = updates.contact;
     if (updates.phone) updateData.phone = updates.phone;
     if (updates.email) updateData.email = updates.email;
+    if (updates.avatarUrl !== undefined) updateData.avatar_url = updates.avatarUrl || null;
 
     const { data, error } = await supabase
       .from('client_companies')
@@ -334,6 +380,7 @@ export const clientCompanyService = {
       contact: data.contact,
       phone: data.phone,
       email: data.email,
+      avatarUrl: data.avatar_url || undefined,
     };
   },
 };
@@ -471,6 +518,7 @@ export const providerService = {
       services: data.services,
       averageRating: data.average_rating || 0,
       totalRatings: data.total_ratings || 0,
+      avatarUrl: data.avatar_url || undefined,
     };
   },
 
@@ -498,6 +546,7 @@ export const providerService = {
       services: data.services,
       averageRating: data.average_rating || 0,
       totalRatings: data.total_ratings || 0,
+      avatarUrl: data.avatar_url || undefined,
     };
   },
 
@@ -558,6 +607,7 @@ export const providerService = {
       services: data.services,
       averageRating: data.average_rating || 0,
       totalRatings: data.total_ratings || 0,
+      avatarUrl: data.avatar_url || undefined,
     };
   },
 };
@@ -619,6 +669,17 @@ export const washRequestService = {
       console.log('✅ wash_request_vehicles créés');
     }
 
+    // Envoyer une notification aux prestataires pour la nouvelle demande
+    if (data.status === 'pending') {
+      try {
+        const { notifyProvidersOfNewRequest } = await import('./notificationService');
+        await notifyProvidersOfNewRequest(result.id, result.address);
+      } catch (notificationError) {
+        // Ne pas faire échouer la création si la notification échoue
+        console.error('❌ Erreur lors de l\'envoi des notifications (non bloquant):', notificationError);
+      }
+    }
+
     return {
       id: result.id,
       clientCompanyId: result.client_company_id,
@@ -674,6 +735,7 @@ export const washRequestService = {
       dateTime: parseDate(data.date_time),
       status: data.status,
       notes: data.notes || undefined,
+      invoiceUrl: data.invoice_url || undefined,
       createdAt: parseDate(data.created_at),
       vehicles,
     };
@@ -725,6 +787,7 @@ export const washRequestService = {
       dateTime: parseDate(wr.date_time),
       status: wr.status,
       notes: wr.notes || undefined,
+      invoiceUrl: wr.invoice_url || undefined,
       createdAt: parseDate(wr.created_at),
           vehicles,
         };
@@ -804,6 +867,7 @@ export const washRequestService = {
       dateTime: parseDate(wr.date_time),
       status: wr.status,
       notes: wr.notes || undefined,
+      invoiceUrl: wr.invoice_url || undefined,
       createdAt: parseDate(wr.created_at),
           vehicles,
           clientCompany: clientCompany || undefined,
@@ -953,6 +1017,7 @@ export const washRequestService = {
           dateTime: parseDate(wr.date_time),
           status: wr.status,
           notes: wr.notes || undefined,
+          invoiceUrl: wr.invoice_url || undefined,
           createdAt: parseDate(wr.created_at),
           vehicles,
           clientCompany: clientCompany || undefined,
@@ -996,6 +1061,7 @@ export const washRequestService = {
     if (updates.dateTime) updateData.date_time = updates.dateTime.toISOString();
     if (updates.status) updateData.status = updates.status;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
+    if (updates.invoiceUrl !== undefined) updateData.invoice_url = updates.invoiceUrl || null;
 
     const { data, error } = await supabase
       .from('wash_requests')
@@ -1014,6 +1080,7 @@ export const washRequestService = {
       dateTime: parseDate(data.date_time),
       status: data.status,
       notes: data.notes || undefined,
+      invoiceUrl: data.invoice_url || undefined,
       createdAt: parseDate(data.created_at),
       vehicles: [], // TODO: Charger les véhicules
     };
@@ -1033,6 +1100,164 @@ export const washRequestService = {
       console.error('❌ Erreur lors de la mise à jour des demandes expirées:', error);
       throw error;
     }
+  },
+
+  /**
+   * Met à jour les demandes pending expirées (date_time < now() et status = 'pending') au statut 'cancelled'
+   * pour un client spécifique
+   */
+  async updateExpiredPendingRequests(clientCompanyId: string): Promise<void> {
+    const { error } = await supabase
+      .from('wash_requests')
+      .update({ status: 'cancelled' })
+      .eq('client_company_id', clientCompanyId)
+      .eq('status', 'pending')
+      .lt('date_time', new Date().toISOString());
+
+    if (error) {
+      console.error('❌ Erreur lors de la mise à jour des demandes pending expirées:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Met à jour les demandes acceptées expirées (date_time < now() et status = 'accepted') au statut 'completed'
+   * pour un client spécifique
+   */
+  async updateExpiredAcceptedRequests(clientCompanyId: string): Promise<void> {
+    const { error } = await supabase
+      .from('wash_requests')
+      .update({ status: 'completed' })
+      .eq('client_company_id', clientCompanyId)
+      .eq('status', 'accepted')
+      .lt('date_time', new Date().toISOString());
+
+    if (error) {
+      console.error('❌ Erreur lors de la mise à jour des demandes acceptées expirées:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupère les factures pour un client, groupées par date
+   */
+  async getInvoicesByClientCompanyId(clientCompanyId: string): Promise<WashRequest[]> {
+    const { data, error } = await supabase
+      .from('wash_requests')
+      .select('*')
+      .eq('client_company_id', clientCompanyId)
+      .eq('status', 'completed')
+      .not('invoice_url', 'is', null)
+      .order('date_time', { ascending: false });
+
+    if (error) throw error;
+
+    // Charger les informations du prestataire pour chaque demande
+    const requestsWithProvider = await Promise.all(
+      data.map(async (wr) => {
+        let provider = null;
+        if (wr.provider_id) {
+          try {
+            const { data: providerData } = await supabase
+              .from('providers')
+              .select('*')
+              .eq('id', wr.provider_id)
+              .single();
+            
+            if (providerData) {
+              provider = {
+                id: providerData.id,
+                userId: providerData.user_id,
+                name: providerData.name,
+                baseCity: providerData.base_city,
+                radiusKm: providerData.radius_km,
+                phone: providerData.phone,
+                description: providerData.description,
+                services: providerData.services,
+              };
+            }
+          } catch (error) {
+            console.warn('⚠️ Erreur lors du chargement du prestataire:', error);
+          }
+        }
+
+        return {
+          id: wr.id,
+          clientCompanyId: wr.client_company_id,
+          providerId: wr.provider_id || undefined,
+          address: wr.address,
+          dateTime: parseDate(wr.date_time),
+          status: wr.status as WashRequestStatus,
+          notes: wr.notes || undefined,
+          invoiceUrl: wr.invoice_url || undefined,
+          createdAt: parseDate(wr.created_at),
+          vehicles: [],
+          provider: provider || undefined,
+        };
+      })
+    );
+
+    return requestsWithProvider;
+  },
+
+  /**
+   * Récupère les factures pour un prestataire, groupées par date
+   */
+  async getInvoicesByProviderId(providerId: string): Promise<WashRequest[]> {
+    const { data, error } = await supabase
+      .from('wash_requests')
+      .select('*')
+      .eq('provider_id', providerId)
+      .eq('status', 'completed')
+      .not('invoice_url', 'is', null)
+      .order('date_time', { ascending: false });
+
+    if (error) throw error;
+
+    // Charger les informations du client pour chaque demande
+    const requestsWithClient = await Promise.all(
+      data.map(async (wr) => {
+        let clientCompany = null;
+        try {
+          const { data: clientData } = await supabase
+            .from('client_companies')
+            .select('*')
+            .eq('id', wr.client_company_id)
+            .single();
+          
+          if (clientData) {
+            clientCompany = {
+              id: clientData.id,
+              userId: clientData.user_id,
+              name: clientData.name,
+              address: clientData.address,
+              contact: clientData.contact,
+              phone: clientData.phone,
+              email: clientData.email,
+              avatarUrl: clientData.avatar_url || undefined,
+            };
+          }
+        } catch (error) {
+          console.warn('⚠️ Erreur lors du chargement du client:', error);
+        }
+
+        return {
+          id: wr.id,
+          clientCompanyId: wr.client_company_id,
+          providerId: wr.provider_id || undefined,
+          address: wr.address,
+          dateTime: parseDate(wr.date_time),
+          status: wr.status as WashRequestStatus,
+          notes: wr.notes || undefined,
+          invoiceUrl: wr.invoice_url || undefined,
+          createdAt: parseDate(wr.created_at),
+          vehicles: [],
+          clientCompany: clientCompany || undefined,
+        };
+      })
+    );
+
+    return requestsWithClient;
   },
 
   /**

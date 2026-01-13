@@ -9,6 +9,8 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
@@ -16,12 +18,18 @@ import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { washRequestService, providerService } from '@/services/databaseService';
 import { WashRequest } from '@/types'
+import { useAuth } from '@/contexts/AuthContextSupabase';
+import { pickInvoice, uploadInvoice } from '@/services/storageService';
 
 export default function RequestDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { user } = useAuth();
   const [washRequest, setWashRequest] = useState<WashRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [notes, setNotes] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [isUploadingInvoice, setIsUploadingInvoice] = useState(false);
 
   useEffect(() => {
     const loadWashRequest = async () => {
@@ -53,6 +61,7 @@ export default function RequestDetailScreen() {
 
         console.log('Demande chargée:', request);
         setWashRequest(request);
+        setNotes(request.notes || '');
       } catch (error: any) {
         console.error('Erreur lors du chargement de la demande:', error);
         Alert.alert('Erreur', error.message || 'Impossible de charger la demande');
@@ -160,6 +169,27 @@ export default function RequestDetailScreen() {
     }
   };
 
+  const handleSaveNotes = async () => {
+    if (!washRequest || !washRequest.id) {
+      return;
+    }
+
+    setIsSavingNotes(true);
+    try {
+      console.log('Sauvegarde des notes:', notes);
+      const updated = await washRequestService.update(washRequest.id, { notes: notes.trim() || undefined });
+      setWashRequest(updated);
+      console.log('✅ Notes sauvegardées avec succès');
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la sauvegarde des notes:', error);
+      Alert.alert('Erreur', error.message || 'Impossible de sauvegarder les notes');
+      // Restaurer les notes précédentes en cas d'erreur
+      setNotes(washRequest.notes || '');
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
   const handleCancelRequest = async () => {
     if (!washRequest || !washRequest.id) {
       return;
@@ -174,6 +204,66 @@ export default function RequestDetailScreen() {
     } catch (error: any) {
       console.error('❌ Erreur lors de la suppression de la demande:', error);
       Alert.alert('Erreur', error.message || 'Impossible d\'annuler la demande');
+    }
+  };
+
+  const handleUploadInvoice = async () => {
+    if (!washRequest || !washRequest.id || !user) {
+      return;
+    }
+
+    setIsUploadingInvoice(true);
+    try {
+      // Sélectionner le fichier PDF
+      const result = await pickInvoice();
+      
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        setIsUploadingInvoice(false);
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset.uri) {
+        setIsUploadingInvoice(false);
+        return;
+      }
+
+      // Vérifier que c'est bien un PDF
+      if (asset.mimeType !== 'application/pdf' && !asset.name?.endsWith('.pdf')) {
+        Alert.alert('Erreur', 'Veuillez sélectionner un fichier PDF');
+        setIsUploadingInvoice(false);
+        return;
+      }
+
+      // Uploader le PDF
+      const invoiceUrl = await uploadInvoice(asset.uri, washRequest.id);
+      
+      // Mettre à jour la demande avec l'URL de la facture
+      const updated = await washRequestService.update(washRequest.id, { invoiceUrl });
+      setWashRequest(updated);
+      
+      Alert.alert('Succès', 'Facture uploadée avec succès');
+    } catch (error: any) {
+      console.error('❌ Erreur lors de l\'upload de la facture:', error);
+      Alert.alert('Erreur', error.message || 'Impossible d\'uploader la facture');
+    } finally {
+      setIsUploadingInvoice(false);
+    }
+  };
+
+  const handleViewInvoice = () => {
+    if (!washRequest?.invoiceUrl) {
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      // Sur web, ouvrir dans un nouvel onglet
+      if (typeof window !== 'undefined' && window.open) {
+        window.open(washRequest.invoiceUrl, '_blank', 'noopener,noreferrer');
+      }
+    } else {
+      // Sur mobile, ouvrir avec Linking
+      Linking.openURL(washRequest.invoiceUrl);
     }
   };
 
@@ -199,10 +289,14 @@ export default function RequestDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(washRequest.status) }]}>
           <Text style={styles.statusText}>{getStatusLabel(washRequest.status)}</Text>
@@ -279,20 +373,35 @@ export default function RequestDetailScreen() {
                 <Text style={[styles.detailValue, styles.clickableAddress]}>{washRequest.address}</Text>
               </View>
             </TouchableOpacity>
-            {washRequest.notes && (
-              <View style={styles.detailRow}>
-                <IconSymbol
-                  ios_icon_name="note.text"
-                  android_material_icon_name="note"
-                  size={20}
-                  color={colors.textSecondary}
+            <View style={styles.detailRow}>
+              <IconSymbol
+                ios_icon_name="note.text"
+                android_material_icon_name="note"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Notes</Text>
+                <TextInput
+                  style={[styles.detailValue, styles.noteInput]}
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder="Ajoutez des notes..."
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  onBlur={handleSaveNotes}
+                  editable={!isSavingNotes}
                 />
-                <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Notes</Text>
-                  <Text style={styles.detailValue}>{washRequest.notes}</Text>
-                </View>
+                {isSavingNotes && (
+                  <View style={styles.savingIndicator}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={styles.savingText}>Sauvegarde...</Text>
+                  </View>
+                )}
               </View>
-            )}
+            </View>
           </View>
         </View>
 
@@ -322,6 +431,57 @@ export default function RequestDetailScreen() {
             </View>
           )}
         </View>
+
+        {washRequest.status === 'completed' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Facture</Text>
+            <View style={commonStyles.card}>
+              {washRequest.invoiceUrl ? (
+                <TouchableOpacity
+                  style={[buttonStyles.primary, styles.invoiceButton]}
+                  onPress={handleViewInvoice}
+                >
+                  <IconSymbol
+                    ios_icon_name="doc.fill"
+                    android_material_icon_name="description"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text style={[commonStyles.buttonText, styles.invoiceButtonText]}>
+                    Voir la facture
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[buttonStyles.primary, styles.invoiceButton, isUploadingInvoice && styles.buttonDisabled]}
+                  onPress={handleUploadInvoice}
+                  disabled={isUploadingInvoice}
+                >
+                  {isUploadingInvoice ? (
+                    <>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={[commonStyles.buttonText, styles.invoiceButtonText]}>
+                        Upload en cours...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <IconSymbol
+                        ios_icon_name="doc.badge.plus"
+                        android_material_icon_name="upload-file"
+                        size={20}
+                        color="#FFFFFF"
+                      />
+                      <Text style={[commonStyles.buttonText, styles.invoiceButtonText]}>
+                        Déposer une facture (PDF)
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
 
         {washRequest.status !== 'cancelled' && washRequest.status !== 'completed' && (
           <TouchableOpacity
@@ -353,7 +513,7 @@ export default function RequestDetailScreen() {
           </TouchableOpacity>
         )}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -444,6 +604,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+  noteInput: {
+    minHeight: 80,
+    padding: 8,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 4,
+  },
+  savingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  savingText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
   clickableAddress: {
     color: colors.primary,
     textDecorationLine: 'underline',
@@ -491,5 +671,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     paddingVertical: 16,
+  },
+  invoiceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  invoiceButtonText: {
+    marginLeft: 0,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

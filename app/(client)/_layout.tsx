@@ -27,9 +27,10 @@ export default function ClientLayout() {
       <Stack.Screen name="vehicles/add" options={{ presentation: 'modal', headerShown: true, title: 'Ajouter un véhicule' }} />
       <Stack.Screen name="vehicles/edit" options={{ presentation: 'modal', headerShown: true, title: 'Modifier le véhicule' }} />
       <Stack.Screen name="requests/create" options={{ presentation: 'modal', headerShown: true, title: 'Nouvelle demande' }} />
-      <Stack.Screen name="requests/detail" options={{ headerShown: true, title: 'Détail de la demande' }} />
+      <Stack.Screen name="requests/detail" options={{ presentation: 'modal', headerShown: true, title: 'Détail de la demande' }} />
       <Stack.Screen name="profile/edit" options={{ presentation: 'modal', headerShown: true, title: 'Modifier le profil' }} />
       <Stack.Screen name="profile/notifications" options={{ presentation: 'modal', headerShown: true, title: 'Notifications' }} />
+      <Stack.Screen name="invoices/index" options={{ presentation: 'modal', headerShown: true, title: 'Factures' }} />
     </Stack>
   );
 }

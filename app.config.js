@@ -105,6 +105,7 @@ module.exports = {
       supabaseUrl: env.EXPO_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
       carsxeApiKey: env.EXPO_PUBLIC_CARSXE_API_KEY || process.env.EXPO_PUBLIC_CARSXE_API_KEY,
+      brandfetchClientId: env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID || process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID,
     }
   },
   scheme: "WashFleet"

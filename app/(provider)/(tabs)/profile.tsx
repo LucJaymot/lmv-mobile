@@ -217,6 +217,24 @@ export default function ProviderProfileScreen() {
               color={colors.textSecondary}
             />
           </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={() => router.push('/(provider)/(tabs)/invoices')}
+          >
+            <IconSymbol
+              ios_icon_name="doc.text.fill"
+              android_material_icon_name="description"
+              size={20}
+              color={colors.text}
+            />
+            <Text style={styles.actionText}>Factures</Text>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -243,7 +261,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'web' ? 100 : 140,
   },
   header: {
     alignItems: 'center',

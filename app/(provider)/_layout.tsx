@@ -24,9 +24,10 @@ export default function ProviderLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="requests/detail" options={{ headerShown: true, title: 'Détail de la demande' }} />
+      <Stack.Screen name="requests/detail" options={{ presentation: 'modal', headerShown: true, title: 'Détail de la demande' }} />
       <Stack.Screen name="profile/edit" options={{ presentation: 'modal', headerShown: true, title: 'Modifier le profil' }} />
       <Stack.Screen name="profile/notifications" options={{ presentation: 'modal', headerShown: true, title: 'Notifications' }} />
+      <Stack.Screen name="invoices/index" options={{ presentation: 'modal', headerShown: true, title: 'Factures' }} />
     </Stack>
   );
 }

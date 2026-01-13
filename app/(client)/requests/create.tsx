@@ -176,6 +176,14 @@ export default function CreateRequestScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Calculer la date minimale (demain) pour empêcher la sélection de la date du jour
+  const getMinimumDate = (): Date => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
+  };
+
   // Charger les véhicules depuis la base de données
   useEffect(() => {
     const loadVehicles = async () => {
@@ -324,6 +332,19 @@ export default function CreateRequestScreen() {
 
       if (isNaN(dateTime.getTime())) {
         Alert.alert('Erreur', 'Date ou heure invalide');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Vérifier que la date sélectionnée n'est pas aujourd'hui
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDateOnly = new Date(selectedDate);
+      selectedDateOnly.setHours(0, 0, 0, 0);
+      
+      if (selectedDateOnly.getTime() <= today.getTime()) {
+        Alert.alert('Erreur', 'Vous ne pouvez pas sélectionner la date du jour. Veuillez choisir une date future.');
+        setIsSubmitting(false);
         return;
       }
 
@@ -505,7 +526,7 @@ export default function CreateRequestScreen() {
               <WebDateInput
                 value={formatDateForInput(selectedDate)}
                 onChange={onWebDateChange}
-                min={formatDateForInput(new Date())}
+                min={formatDateForInput(getMinimumDate())}
                 style={{
                   backgroundColor: colors.card,
                   borderWidth: 1,
@@ -552,11 +573,11 @@ export default function CreateRequestScreen() {
                     <View style={styles.pickerOverlay}>
                       <View style={styles.pickerContainer}>
                         <DateTimePicker
-                          value={selectedDate || new Date()}
+                          value={selectedDate || getMinimumDate()}
                           mode="date"
                           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                           onChange={onDateChange}
-                          minimumDate={new Date()}
+                          minimumDate={getMinimumDate()}
                         />
                         {Platform.OS === 'ios' && (
                           <View style={styles.iosPickerActions}>
