@@ -11,11 +11,14 @@ import {
   Alert,
   TextInput,
   KeyboardAvoidingView,
+  ViewStyle,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/theme/hooks';
 import { washRequestService, providerService } from '@/services/databaseService';
 import { WashRequest } from '@/types'
 import { useAuth } from '@/contexts/AuthContextSupabase';
@@ -25,6 +28,7 @@ export default function RequestDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [washRequest, setWashRequest] = useState<WashRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState('');
@@ -77,17 +81,17 @@ export default function RequestDetailScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return colors.warning;
+        return theme.colors.warning; // Orange/Jaune pour l'attente
       case 'accepted':
-        return colors.info;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour l'acceptation
       case 'in_progress':
-        return colors.primary;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour le progrès
       case 'completed':
-        return colors.accent;
+        return theme.colors.success; // Vert pour la réussite
       case 'cancelled':
-        return colors.error;
+        return theme.colors.error; // Rouge pour l'annulation
       default:
-        return colors.textSecondary;
+        return theme.colors.textMuted;
     }
   };
 
@@ -366,7 +370,7 @@ export default function RequestDetailScreen() {
                 ios_icon_name="location.fill"
                 android_material_icon_name="location-on"
                 size={20}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Lieu</Text>
@@ -419,7 +423,7 @@ export default function RequestDetailScreen() {
                       {vehicle.vehicle.brand} {vehicle.vehicle.model}
                     </Text>
                   )}
-                  <Text style={styles.serviceType}>
+                  <Text style={[styles.serviceType, { color: theme.colors.accent }]}>
                     Service: {getServiceTypeLabel(vehicle.serviceType)}
                   </Text>
                 </View>
@@ -437,55 +441,34 @@ export default function RequestDetailScreen() {
             <Text style={styles.sectionTitle}>Facture</Text>
             <View style={commonStyles.card}>
               {washRequest.invoiceUrl ? (
-                <TouchableOpacity
-                  style={[buttonStyles.primary, styles.invoiceButton]}
+                <Button
+                  variant="primary"
+                  size="md"
                   onPress={handleViewInvoice}
+                  style={styles.invoiceButton}
                 >
-                  <IconSymbol
-                    ios_icon_name="doc.fill"
-                    android_material_icon_name="description"
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                  <Text style={[commonStyles.buttonText, styles.invoiceButtonText]}>
-                    Voir la facture
-                  </Text>
-                </TouchableOpacity>
+                  Voir les factures
+                </Button>
               ) : (
-                <TouchableOpacity
-                  style={[buttonStyles.primary, styles.invoiceButton, isUploadingInvoice && styles.buttonDisabled]}
+                <Button
+                  variant="primary"
+                  size="md"
                   onPress={handleUploadInvoice}
                   disabled={isUploadingInvoice}
+                  loading={isUploadingInvoice}
+                  style={styles.invoiceButton}
                 >
-                  {isUploadingInvoice ? (
-                    <>
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                      <Text style={[commonStyles.buttonText, styles.invoiceButtonText]}>
-                        Upload en cours...
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <IconSymbol
-                        ios_icon_name="doc.badge.plus"
-                        android_material_icon_name="upload-file"
-                        size={20}
-                        color="#FFFFFF"
-                      />
-                      <Text style={[commonStyles.buttonText, styles.invoiceButtonText]}>
-                        Déposer une facture (PDF)
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  Déposer une facture (PDF)
+                </Button>
               )}
             </View>
           </View>
         )}
 
         {washRequest.status !== 'cancelled' && washRequest.status !== 'completed' && (
-          <TouchableOpacity
-            style={[buttonStyles.outline, styles.cancelButton]}
+          <Button
+            variant="ghost"
+            size="md"
             onPress={() => {
               // Utiliser window.confirm pour le web, Alert.alert pour mobile
               if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
@@ -508,9 +491,11 @@ export default function RequestDetailScreen() {
                 );
               }
             }}
+            style={{ ...styles.cancelButton, borderColor: theme.colors.error }}
+            textStyle={{ color: theme.colors.error }}
           >
-            <Text style={commonStyles.buttonTextOutline}>Annuler la demande</Text>
-          </TouchableOpacity>
+            Annuler la demande
+          </Button>
         )}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -644,7 +629,6 @@ const styles = StyleSheet.create({
   },
   serviceType: {
     fontSize: 14,
-    color: colors.primary,
     fontWeight: '500',
   },
   cancelButton: {
@@ -673,15 +657,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   invoiceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  invoiceButtonText: {
-    marginLeft: 0,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
+    width: '100%',
   },
 });

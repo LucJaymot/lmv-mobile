@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/databaseService';
 import { Vehicle } from '@/types';
 
@@ -215,15 +216,16 @@ export default function EditVehicleScreen() {
           </>
         )}
 
-        <TouchableOpacity
-          style={[buttonStyles.primary, styles.saveButton, isSaving && styles.buttonDisabled]}
+        <Button
+          variant="primary"
+          size="lg"
           onPress={handleSave}
           disabled={isSaving}
+          loading={isSaving}
+          style={styles.saveButton}
         >
-          <Text style={commonStyles.buttonText}>
-            {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-          </Text>
-        </TouchableOpacity>
+          Enregistrer les modifications
+        </Button>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -255,9 +257,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
   loadingContainer: {
     flex: 1,

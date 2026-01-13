@@ -1,11 +1,11 @@
 import React from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { useTheme } from "@react-navigation/native";
+import { useTheme } from "@/theme/hooks";
 import { modalDemos } from "@/components/homeData";
 import { DemoCard } from "@/components/DemoCard";
 
 export default function HomeScreen() {
-  const theme = useTheme();
+  const { theme } = useTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

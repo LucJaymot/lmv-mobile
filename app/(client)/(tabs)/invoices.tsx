@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useTheme } from '@/theme/hooks';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { washRequestService } from '@/services/databaseService';
 import { WashRequest } from '@/types';
@@ -25,6 +26,7 @@ interface GroupedInvoices {
 export default function InvoicesScreen() {
   const router = useRouter();
   const { clientCompany } = useAuth();
+  const { theme } = useTheme();
   const [invoices, setInvoices] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -109,7 +111,7 @@ export default function InvoicesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text style={styles.loadingText}>Chargement des factures...</Text>
         </View>
       </SafeAreaView>
@@ -154,7 +156,7 @@ export default function InvoicesScreen() {
                 ios_icon_name="calendar"
                 android_material_icon_name="event"
                 size={20}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
               <Text style={styles.dateLabel}>{formatDateLabel(dateKey)}</Text>
             </View>
@@ -172,7 +174,7 @@ export default function InvoicesScreen() {
                         ios_icon_name="doc.fill"
                         android_material_icon_name="description"
                         size={24}
-                        color={colors.primary}
+                        color={theme.colors.accent}
                       />
                       <View style={styles.invoiceDetails}>
                         <Text style={styles.invoiceTime}>{formatTime(invoice.dateTime)}</Text>
@@ -180,7 +182,7 @@ export default function InvoicesScreen() {
                           {invoice.address}
                         </Text>
                         {invoice.provider && (
-                          <Text style={styles.invoiceProvider}>{invoice.provider.name}</Text>
+                          <Text style={[styles.invoiceProvider, { color: theme.colors.accent }]}>{invoice.provider.name}</Text>
                         )}
                       </View>
                     </View>
@@ -271,11 +273,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB', // Bordure très claire pour white-first
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05, // Ombre très subtile pour white-first
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 1,
   },
   invoiceContent: {
     flexDirection: 'row',
@@ -306,7 +310,6 @@ const styles = StyleSheet.create({
   },
   invoiceProvider: {
     fontSize: 13,
-    color: colors.primary,
     fontWeight: '500',
   },
 });

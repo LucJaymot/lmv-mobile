@@ -13,12 +13,16 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
+import { Logo } from '@/components/Logo';
+import { useTheme } from '@/theme/hooks';
 import { WashRequest } from '@/types';
 import { washRequestService, providerService } from '@/services/databaseService';
 
 export default function ClientDashboardScreen() {
   const router = useRouter();
   const { clientCompany } = useAuth();
+  const { theme } = useTheme();
   const [recentWashes, setRecentWashes] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -78,17 +82,17 @@ export default function ClientDashboardScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return colors.warning;
+        return theme.colors.warning; // Orange/Jaune pour l'attente
       case 'accepted':
-        return colors.info;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour l'acceptation
       case 'in_progress':
-        return colors.primary;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour le progrès
       case 'completed':
-        return colors.accent;
+        return theme.colors.success; // Vert pour la réussite
       case 'cancelled':
-        return colors.error;
+        return theme.colors.error; // Rouge pour l'annulation
       default:
-        return colors.textSecondary;
+        return theme.colors.textMuted;
     }
   };
 
@@ -167,22 +171,21 @@ export default function ClientDashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>Bonjour,</Text>
-          <Text style={styles.companyName}>{clientCompany?.name}</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting}>Bonjour,</Text>
+            <Text style={styles.companyName}>{clientCompany?.name}</Text>
+          </View>
+          <Logo size="sm" />
         </View>
 
-        <TouchableOpacity
-          style={styles.createButton}
+        <Button
+          variant="primary"
+          size="lg"
           onPress={() => router.push('/(client)/requests/create')}
+          style={styles.createButton}
         >
-          <IconSymbol
-            ios_icon_name="plus.circle.fill"
-            android_material_icon_name="add-circle"
-            size={24}
-            color="#FFFFFF"
-          />
-          <Text style={styles.createButtonText}>Nouvelle demande de lavage</Text>
-        </TouchableOpacity>
+          Nouvelle demande de lavage
+        </Button>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Prochains lavages</Text>
@@ -218,9 +221,9 @@ export default function ClientDashboardScreen() {
                         ios_icon_name="car.fill"
                         android_material_icon_name="directions-car"
                         size={16}
-                        color={colors.primary}
+                        color={theme.colors.accent}
                       />
-                      <Text style={styles.serviceTypeText}>
+                      <Text style={[styles.serviceTypeText, { color: theme.colors.accent }]}>
                         {getServiceTypesForRequest(wash)}
                       </Text>
                     </View>
@@ -267,7 +270,13 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
   },
   greeting: {
     fontSize: 16,
@@ -280,19 +289,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   createButton: {
-    backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
     marginBottom: 32,
-    gap: 8,
-  },
-  createButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
   section: {
     marginBottom: 32,
@@ -351,7 +348,6 @@ const styles = StyleSheet.create({
   serviceTypeText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.primary,
   },
   rateButton: {
     flexDirection: 'row',

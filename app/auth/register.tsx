@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Logo } from '@/components/Logo';
 import { UserRole } from '@/types';
 
 // Validation email
@@ -278,12 +279,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <IconSymbol
-              ios_icon_name="car.fill"
-              android_material_icon_name="directions-car"
-              size={64}
-              color={colors.primary}
-            />
+            <Logo size="lg" withCircleBackground />
             <Text style={styles.title}>Inscription</Text>
             <Text style={styles.subtitle}>Choisissez votre profil</Text>
           </View>

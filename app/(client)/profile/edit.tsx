@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -15,6 +14,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+
+// Validation email
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Validation téléphone (format français : 9-15 chiffres)
+const validatePhone = (phone: string): boolean => {
+  const cleanPhone = phone.replace(/[\s\.\-\(\)]/g, '');
+  return /^[0-9]{9,15}$/.test(cleanPhone);
+};
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -27,6 +40,13 @@ export default function EditProfileScreen() {
     address: clientCompany?.address || '',
     email: clientCompany?.email || '',
   });
+  const [errors, setErrors] = useState<{
+    name?: string;
+    contact?: string;
+    phone?: string;
+    address?: string;
+    email?: string;
+  }>({});
 
   // Mettre à jour le formulaire quand clientCompany change
   useEffect(() => {
@@ -38,12 +58,48 @@ export default function EditProfileScreen() {
         address: clientCompany.address || '',
         email: clientCompany.email || '',
       });
+      setErrors({});
     }
   }, [clientCompany]);
 
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Validation nom de l'entreprise
+    if (!formData.name.trim()) {
+      newErrors.name = 'Le nom de l\'entreprise est requis';
+    }
+
+    // Validation contact
+    if (!formData.contact.trim()) {
+      newErrors.contact = 'Le nom du contact est requis';
+    }
+
+    // Validation téléphone
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Le téléphone est requis';
+    } else if (!validatePhone(formData.phone.trim())) {
+      newErrors.phone = 'Le format du téléphone n\'est pas valide (9-15 chiffres)';
+    }
+
+    // Validation email
+    if (!formData.email.trim()) {
+      newErrors.email = 'L\'email est requis';
+    } else if (!validateEmail(formData.email.trim())) {
+      newErrors.email = 'Le format de l\'email n\'est pas valide';
+    }
+
+    // Validation adresse
+    if (!formData.address.trim()) {
+      newErrors.address = 'L\'adresse est requise';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = async () => {
-    if (!formData.name || !formData.contact || !formData.phone || !formData.address || !formData.email) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+    if (!validateForm()) {
       return;
     }
 
@@ -59,7 +115,29 @@ export default function EditProfileScreen() {
       router.back();
     } catch (error: any) {
       console.error('Erreur lors de la mise à jour du profil:', error);
-      Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le profil');
+      
+      // Gérer les erreurs spécifiques de l'API
+      let errorMessage = 'Impossible de mettre à jour le profil';
+      const newErrors: typeof errors = {};
+      
+      if (error.message) {
+        errorMessage = error.message;
+        // Si l'erreur concerne un champ spécifique, l'afficher sous le champ
+        if (error.message.toLowerCase().includes('email')) {
+          newErrors.email = error.message;
+        } else if (error.message.toLowerCase().includes('téléphone') || error.message.toLowerCase().includes('phone')) {
+          newErrors.phone = error.message;
+        } else {
+          Alert.alert('Erreur', errorMessage);
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+          setErrors({ ...errors, ...newErrors });
+        }
+      } else {
+        Alert.alert('Erreur', errorMessage);
+      }
+      
       setIsSaving(false);
     }
   };
@@ -75,85 +153,102 @@ export default function EditProfileScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Nom de l'entreprise *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="Nom de l'entreprise"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.name}
-                onChangeText={(text) => setFormData({ ...formData, name: text })}
-              />
-            </View>
+            <Input
+              label="Nom de l'entreprise *"
+              placeholder="Nom de l'entreprise"
+              value={formData.name}
+              onChangeText={(text) => {
+                setFormData({ ...formData, name: text });
+                if (errors.name) {
+                  setErrors({ ...errors, name: undefined });
+                }
+              }}
+              error={errors.name}
+              containerStyle={styles.inputContainer}
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Contact *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="Nom du contact"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.contact}
-                onChangeText={(text) => setFormData({ ...formData, contact: text })}
-              />
-            </View>
+            <Input
+              label="Contact *"
+              placeholder="Nom du contact"
+              value={formData.contact}
+              onChangeText={(text) => {
+                setFormData({ ...formData, contact: text });
+                if (errors.contact) {
+                  setErrors({ ...errors, contact: undefined });
+                }
+              }}
+              error={errors.contact}
+              containerStyle={styles.inputContainer}
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Téléphone *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="Numéro de téléphone"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.phone}
-                onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                keyboardType="phone-pad"
-              />
-            </View>
+            <Input
+              label="Téléphone *"
+              placeholder="Numéro de téléphone"
+              value={formData.phone}
+              onChangeText={(text) => {
+                setFormData({ ...formData, phone: text });
+                if (errors.phone) {
+                  setErrors({ ...errors, phone: undefined });
+                }
+              }}
+              error={errors.phone}
+              keyboardType="phone-pad"
+              containerStyle={styles.inputContainer}
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Email *</Text>
-              <TextInput
-                style={commonStyles.input}
-                placeholder="Email"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.email}
-                onChangeText={(text) => setFormData({ ...formData, email: text })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+            <Input
+              label="Email *"
+              placeholder="Email"
+              value={formData.email}
+              onChangeText={(text) => {
+                setFormData({ ...formData, email: text });
+                if (errors.email) {
+                  setErrors({ ...errors, email: undefined });
+                }
+              }}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              containerStyle={styles.inputContainer}
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Adresse *</Text>
-              <TextInput
-                style={[commonStyles.input, styles.textArea]}
-                placeholder="Adresse complète"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.address}
-                onChangeText={(text) => setFormData({ ...formData, address: text })}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
+            <Input
+              label="Adresse *"
+              placeholder="Adresse complète"
+              value={formData.address}
+              onChangeText={(text) => {
+                setFormData({ ...formData, address: text });
+                if (errors.address) {
+                  setErrors({ ...errors, address: undefined });
+                }
+              }}
+              error={errors.address}
+              multiline
+              numberOfLines={3}
+              inputStyle={styles.textArea}
+              containerStyle={styles.inputContainer}
+            />
 
             <View style={styles.buttonsContainer}>
-              <TouchableOpacity
-                style={[buttonStyles.outline, styles.button]}
+              <Button
+                variant="ghost"
+                size="md"
                 onPress={() => router.back()}
                 disabled={isSaving}
+                style={styles.button}
               >
-                <Text style={commonStyles.buttonTextOutline}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[buttonStyles.primary, styles.button, isSaving && styles.buttonDisabled]}
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
                 onPress={handleSave}
                 disabled={isSaving}
+                loading={isSaving}
+                style={styles.button}
               >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={commonStyles.buttonText}>Enregistrer</Text>
-                )}
-              </TouchableOpacity>
+                Enregistrer
+              </Button>
             </View>
           </View>
         </ScrollView>
@@ -182,6 +277,7 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',
+    paddingTop: 12,
   },
   buttonsContainer: {
     flexDirection: 'row',

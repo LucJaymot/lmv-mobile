@@ -15,12 +15,15 @@ import {
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
+import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
 
 export default function AddVehicleScreen() {
   const router = useRouter();
   const { clientCompany } = useAuth();
+  const { theme } = useTheme();
   const [licensePlate, setLicensePlate] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
@@ -283,7 +286,7 @@ export default function AddVehicleScreen() {
 
         {!showManualEntry && (
           <TouchableOpacity
-            style={styles.manualEntryButton}
+            style={[styles.manualEntryButton, { backgroundColor: theme.colors.accent }]}
             onPress={() => setShowManualEntry(true)}
           >
             <Text style={styles.manualEntryButtonText}>Saisie manuelle</Text>
@@ -367,15 +370,16 @@ export default function AddVehicleScreen() {
           </>
         )}
 
-        <TouchableOpacity
-          style={[buttonStyles.primary, styles.saveButton, isLoading && styles.buttonDisabled]}
+        <Button
+          variant="primary"
+          size="lg"
           onPress={handleSave}
           disabled={isLoading}
+          loading={isLoading}
+          style={styles.saveButton}
         >
-          <Text style={commonStyles.buttonText}>
-            {isLoading ? 'Ajout en cours...' : 'Ajouter le véhicule'}
-          </Text>
-        </TouchableOpacity>
+          Ajouter le véhicule
+        </Button>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -414,7 +418,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   manualEntryButton: {
-    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -428,9 +431,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
   inputError: {
     borderColor: colors.error,

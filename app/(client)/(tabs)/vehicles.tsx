@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/theme/hooks';
 import { Vehicle } from '@/types';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
@@ -22,6 +24,7 @@ import { vehicleService } from '@/services/databaseService';
 export default function VehiclesScreen() {
   const router = useRouter();
   const { clientCompany } = useAuth();
+  const { theme } = useTheme();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
@@ -118,17 +121,19 @@ export default function VehiclesScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Mes véhicules</Text>
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          variant="ghost"
+          size="md"
           onPress={() => router.push('/(client)/vehicles/add')}
+          style={styles.addButton}
         >
           <IconSymbol
             ios_icon_name="plus"
             android_material_icon_name="add"
-            size={24}
-            color={colors.primary}
+            size={20}
+            color={theme.colors.accent}
           />
-        </TouchableOpacity>
+        </Button>
       </View>
 
       <ScrollView
@@ -182,9 +187,9 @@ export default function VehiclesScreen() {
                       ios_icon_name="pencil"
                       android_material_icon_name="edit"
                       size={20}
-                      color={colors.primary}
+                      color={theme.colors.accent}
                     />
-                    <Text style={styles.actionButtonText}>Modifier</Text>
+                    <Text style={[styles.actionButtonText, { color: theme.colors.accent }]}>Modifier</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.actionButton}
@@ -247,12 +252,11 @@ const styles = StyleSheet.create({
   addButton: {
     width: 44,
     height: 44,
+    minWidth: 44,
     borderRadius: 22,
-    backgroundColor: colors.card,
+    padding: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -317,7 +321,6 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.primary,
   },
   emptyState: {
     alignItems: 'center',

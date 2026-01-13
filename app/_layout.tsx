@@ -11,11 +11,13 @@ import { useNetworkState } from "expo-network";
 import {
   DarkTheme,
   DefaultTheme,
-  Theme,
-  ThemeProvider,
+  Theme as NavigationTheme,
+  ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@/contexts/AuthContextSupabase";
+import { ThemeProvider } from "@/theme/ThemeProvider";
+import { useTheme } from "@/theme/hooks";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,49 +54,51 @@ export default function RootLayout() {
     return null;
   }
 
-  const CustomDefaultTheme: Theme = {
-    ...DefaultTheme,
-    dark: false,
-    colors: {
-      primary: "#007BFF",
-      background: "#F5F5F5",
-      card: "#FFFFFF",
-      text: "#333333",
-      border: "#E0E0E0",
-      notification: "#DC3545",
-    },
-  };
+  return (
+    <>
+      <StatusBar style="light" animated />
+      <ThemeProvider initialMode="light">
+        <NavigationThemeWrapper>
+          <AuthProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="auth" />
+                <Stack.Screen name="(client)" />
+                <Stack.Screen name="(provider)" />
+                <Stack.Screen name="(admin)" />
+              </Stack>
+              <SystemBars style={"auto"} />
+            </GestureHandlerRootView>
+          </AuthProvider>
+        </NavigationThemeWrapper>
+      </ThemeProvider>
+    </>
+  );
+}
 
-  const CustomDarkTheme: Theme = {
-    ...DarkTheme,
+/**
+ * Wrapper pour synchroniser React Navigation Theme avec notre ThemeProvider
+ */
+function NavigationThemeWrapper({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+
+  // Adapter le thème React Navigation avec nos couleurs
+  const navigationTheme: NavigationTheme = {
+    ...DefaultTheme,
+    dark: theme.mode === 'dark' || theme.mode === 'trueBlack',
     colors: {
-      primary: "#007BFF",
-      background: "#1A1A1A",
-      card: "#2A2A2A",
-      text: "#FFFFFF",
-      border: "#3A3A3A",
-      notification: "#DC3545",
+      primary: theme.colors.accent,
+      background: theme.colors.background,
+      card: theme.colors.surface,
+      text: theme.colors.text,
+      border: theme.colors.border,
+      notification: theme.colors.error,
     },
   };
 
   return (
-    <>
-      <StatusBar style="auto" animated />
-      <ThemeProvider
-        value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
-      >
-        <AuthProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="auth" />
-              <Stack.Screen name="(client)" />
-              <Stack.Screen name="(provider)" />
-              <Stack.Screen name="(admin)" />
-            </Stack>
-            <SystemBars style={"auto"} />
-          </GestureHandlerRootView>
-        </AuthProvider>
-      </ThemeProvider>
-    </>
+    <NavigationThemeProvider value={navigationTheme}>
+      {children}
+    </NavigationThemeProvider>
   );
 }

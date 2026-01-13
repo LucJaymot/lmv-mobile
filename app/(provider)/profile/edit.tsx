@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { Button } from '@/components/ui/Button';
 import { ServiceType } from '@/types';
 
 export default function EditProviderProfileScreen() {
@@ -197,24 +198,25 @@ export default function EditProviderProfileScreen() {
             </View>
 
             <View style={styles.buttonsContainer}>
-              <TouchableOpacity
-                style={[buttonStyles.outline, styles.button]}
+              <Button
+                variant="ghost"
+                size="md"
                 onPress={() => router.back()}
                 disabled={isSaving}
+                style={styles.button}
               >
-                <Text style={commonStyles.buttonTextOutline}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[buttonStyles.primary, styles.button, isSaving && styles.buttonDisabled]}
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
                 onPress={handleSave}
                 disabled={isSaving}
+                loading={isSaving}
+                style={styles.button}
               >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={commonStyles.buttonText}>Enregistrer</Text>
-                )}
-              </TouchableOpacity>
+                Enregistrer
+              </Button>
             </View>
           </View>
         </ScrollView>

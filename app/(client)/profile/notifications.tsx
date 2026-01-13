@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, commonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 
 interface NotificationSettings {
@@ -27,6 +28,7 @@ const NOTIFICATION_STORAGE_KEY = '@lmv_notification_settings';
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [settings, setSettings] = useState<NotificationSettings>({
     pushEnabled: true,
     emailEnabled: true,
@@ -105,7 +107,7 @@ export default function NotificationsScreen() {
                     ios_icon_name="bell.fill"
                     android_material_icon_name="notifications"
                     size={24}
-                    color={colors.primary}
+                    color={theme.colors.accent}
                   />
                   <View style={styles.settingText}>
                     <Text style={styles.settingTitle}>Activer les notifications push</Text>
@@ -117,9 +119,9 @@ export default function NotificationsScreen() {
                 <Switch
                   value={settings.pushEnabled}
                   onValueChange={(value) => updateSetting('pushEnabled', value)}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor={settings.pushEnabled ? colors.primary : '#F4F3F4'}
-                  ios_backgroundColor={colors.border}
+                  trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                  thumbColor={settings.pushEnabled ? theme.colors.accent : '#F4F3F4'}
+                  ios_backgroundColor={theme.colors.border}
                 />
               </View>
 
@@ -144,9 +146,9 @@ export default function NotificationsScreen() {
                     <Switch
                       value={settings.confirmations}
                       onValueChange={(value) => updateSetting('confirmations', value)}
-                      trackColor={{ false: colors.border, true: colors.primary }}
-                      thumbColor={settings.confirmations ? colors.primary : '#F4F3F4'}
-                      ios_backgroundColor={colors.border}
+                      trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                      thumbColor={settings.confirmations ? theme.colors.accent : '#F4F3F4'}
+                      ios_backgroundColor={theme.colors.border}
                     />
                   </View>
 
@@ -169,9 +171,9 @@ export default function NotificationsScreen() {
                     <Switch
                       value={settings.reminders}
                       onValueChange={(value) => updateSetting('reminders', value)}
-                      trackColor={{ false: colors.border, true: colors.primary }}
-                      thumbColor={settings.reminders ? colors.primary : '#F4F3F4'}
-                      ios_backgroundColor={colors.border}
+                      trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                      thumbColor={settings.reminders ? theme.colors.accent : '#F4F3F4'}
+                      ios_backgroundColor={theme.colors.border}
                     />
                   </View>
 
@@ -194,9 +196,9 @@ export default function NotificationsScreen() {
                     <Switch
                       value={settings.statusUpdates}
                       onValueChange={(value) => updateSetting('statusUpdates', value)}
-                      trackColor={{ false: colors.border, true: colors.primary }}
-                      thumbColor={settings.statusUpdates ? colors.primary : '#F4F3F4'}
-                      ios_backgroundColor={colors.border}
+                      trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                      thumbColor={settings.statusUpdates ? theme.colors.accent : '#F4F3F4'}
+                      ios_backgroundColor={theme.colors.border}
                     />
                   </View>
                 </>
@@ -214,7 +216,7 @@ export default function NotificationsScreen() {
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={24}
-                  color={colors.primary}
+                  color={theme.colors.accent}
                 />
                 <View style={styles.settingText}>
                   <Text style={styles.settingTitle}>Activer les notifications email</Text>
@@ -226,9 +228,9 @@ export default function NotificationsScreen() {
               <Switch
                 value={settings.emailEnabled}
                 onValueChange={(value) => updateSetting('emailEnabled', value)}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={settings.emailEnabled ? colors.primary : '#F4F3F4'}
-                ios_backgroundColor={colors.border}
+                trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+                thumbColor={settings.emailEnabled ? theme.colors.accent : '#F4F3F4'}
+                ios_backgroundColor={theme.colors.border}
               />
             </View>
           </View>

@@ -15,12 +15,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { pickImage, uploadAvatar } from '@/services/storageService';
 
 export default function ClientProfileScreen() {
   const router = useRouter();
   const { user, clientCompany, logout, updateProfile } = useAuth();
+  const { theme } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
@@ -267,14 +269,19 @@ export default function ClientProfileScreen() {
         </View>
 
         <TouchableOpacity
-          style={[buttonStyles.outline, styles.logoutButton, isLoggingOut && styles.buttonDisabled]}
+          style={[
+            buttonStyles.outline,
+            styles.logoutButton,
+            { borderColor: theme.colors.error },
+            isLoggingOut && styles.buttonDisabled,
+          ]}
           onPress={handleLogout}
           disabled={isLoggingOut}
         >
           {isLoggingOut ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={theme.colors.error} />
           ) : (
-            <Text style={commonStyles.buttonTextOutline}>Déconnexion</Text>
+            <Text style={[commonStyles.buttonTextOutline, { color: theme.colors.error }]}>Déconnexion</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useTheme } from '@/theme/hooks';
 import { WashRequest, WashRequestStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { washRequestService, providerService } from '@/services/databaseService';
@@ -19,6 +20,7 @@ import { washRequestService, providerService } from '@/services/databaseService'
 export default function RequestsScreen() {
   const router = useRouter();
   const { clientCompany } = useAuth();
+  const { theme } = useTheme();
   const [selectedStatus, setSelectedStatus] = useState<WashRequestStatus | 'all'>('all');
   const [requests, setRequests] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,17 +83,17 @@ export default function RequestsScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return colors.warning;
+        return theme.colors.warning; // Orange/Jaune pour l'attente
       case 'accepted':
-        return colors.info;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour l'acceptation
       case 'in_progress':
-        return colors.primary;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour le progrès
       case 'completed':
-        return colors.accent;
+        return theme.colors.success; // Vert pour la réussite
       case 'cancelled':
-        return colors.error;
+        return theme.colors.error; // Rouge pour l'annulation
       default:
-        return colors.textSecondary;
+        return theme.colors.textMuted;
     }
   };
 
@@ -142,25 +144,31 @@ export default function RequestsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersContainer}
         >
-          {statusFilters.map((filter, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.filterChip,
-                selectedStatus === filter.value && styles.filterChipActive,
-              ]}
-              onPress={() => setSelectedStatus(filter.value)}
-            >
-              <Text
+          {statusFilters.map((filter, index) => {
+            const isActive = selectedStatus === filter.value;
+            return (
+              <TouchableOpacity
+                key={index}
                 style={[
-                  styles.filterChipText,
-                  selectedStatus === filter.value && styles.filterChipTextActive,
+                  styles.filterChip,
+                  isActive && {
+                    backgroundColor: theme.colors.accent,
+                    borderColor: theme.colors.accent,
+                  },
                 ]}
+                onPress={() => setSelectedStatus(filter.value)}
               >
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    isActive && { color: '#FFFFFF' },
+                  ]}
+                >
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
@@ -253,17 +261,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
   filterChipText: {
     fontSize: 14,
     fontWeight: '500',
     color: colors.text,
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
   },
   scrollContent: {
     paddingHorizontal: 20,

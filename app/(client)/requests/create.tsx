@@ -17,6 +17,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/theme/hooks';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
 import { washRequestService } from '@/services/databaseService';
@@ -163,6 +165,7 @@ const WebTimeInput = ({ value, onChange, style }: any) => {
 export default function CreateRequestScreen() {
   const router = useRouter();
   const { clientCompany } = useAuth();
+  const { theme } = useTheme();
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -433,7 +436,10 @@ export default function CreateRequestScreen() {
               </View>
               <View style={[
                 styles.checkbox,
-                selectedVehicles.includes(vehicle.id) && styles.checkboxActive,
+                selectedVehicles.includes(vehicle.id) && {
+                  backgroundColor: theme.colors.accent,
+                  borderColor: theme.colors.accent,
+                },
               ]}>
                 {selectedVehicles.includes(vehicle.id) && (
                   <IconSymbol
@@ -452,7 +458,10 @@ export default function CreateRequestScreen() {
                   <TouchableOpacity
                     style={[
                       styles.serviceButton,
-                      selectedServices[vehicle.id] === 'exterior' && styles.serviceButtonActive,
+                      selectedServices[vehicle.id] === 'exterior' && {
+                        backgroundColor: theme.colors.accent,
+                        borderColor: theme.colors.accent,
+                      },
                     ]}
                     onPress={() => setServiceForVehicle(vehicle.id, 'exterior')}
                   >
@@ -466,7 +475,10 @@ export default function CreateRequestScreen() {
                   <TouchableOpacity
                     style={[
                       styles.serviceButton,
-                      selectedServices[vehicle.id] === 'interior' && styles.serviceButtonActive,
+                      selectedServices[vehicle.id] === 'interior' && {
+                        backgroundColor: theme.colors.accent,
+                        borderColor: theme.colors.accent,
+                      },
                     ]}
                     onPress={() => setServiceForVehicle(vehicle.id, 'interior')}
                   >
@@ -480,7 +492,10 @@ export default function CreateRequestScreen() {
                   <TouchableOpacity
                     style={[
                       styles.serviceButton,
-                      selectedServices[vehicle.id] === 'complete' && styles.serviceButtonActive,
+                      selectedServices[vehicle.id] === 'complete' && {
+                        backgroundColor: theme.colors.accent,
+                        borderColor: theme.colors.accent,
+                      },
                     ]}
                     onPress={() => setServiceForVehicle(vehicle.id, 'complete')}
                   >
@@ -690,15 +705,16 @@ export default function CreateRequestScreen() {
           />
         </View>
 
-            <TouchableOpacity
-              style={[buttonStyles.primary, styles.submitButton, isSubmitting && styles.buttonDisabled]}
+            <Button
+              variant="primary"
+              size="lg"
               onPress={handleSubmit}
               disabled={isSubmitting || vehicles.length === 0}
+              loading={isSubmitting}
+              style={styles.submitButton}
             >
-              <Text style={commonStyles.buttonText}>
-                {isSubmitting ? 'Création en cours...' : 'Créer la demande'}
-              </Text>
-            </TouchableOpacity>
+              Créer la demande
+            </Button>
           </>
         )}
       </ScrollView>
@@ -757,10 +773,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
   servicesContainer: {
     marginTop: 12,
     paddingTop: 12,
@@ -786,10 +798,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.background,
     alignItems: 'center',
-  },
-  serviceButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   serviceButtonText: {
     fontSize: 12,
@@ -847,9 +855,6 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
   loadingContainer: {
     alignItems: 'center',
