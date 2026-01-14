@@ -15,10 +15,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Logo } from '@/components/Logo';
 import { UserRole } from '@/types';
+import { useTheme } from '@/theme/hooks';
+import { Button } from '@/components/ui/Button';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -42,6 +44,7 @@ const validatePhone = (phone: string): boolean => {
 export default function RegisterScreen() {
   const router = useRouter();
   const { register, user } = useAuth();
+  const { theme } = useTheme();
   const [step, setStep] = useState<'role' | 'credentials' | 'profile'>('role');
   const [role, setRole] = useState<UserRole>('client');
   const [email, setEmail] = useState('');
@@ -264,55 +267,55 @@ export default function RegisterScreen() {
 
   if (step === 'role') {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => router.replace('/auth/login')}
           >
             <IconSymbol
               ios_icon_name="chevron.left"
               android_material_icon_name="arrow-back"
               size={24}
-              color={colors.text}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
           <View style={styles.header}>
             <Logo size="lg" withCircleBackground />
-            <Text style={styles.title}>Inscription</Text>
-            <Text style={styles.subtitle}>Choisissez votre profil</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Inscription</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Choisissez votre profil</Text>
           </View>
 
           <View style={styles.roleContainer}>
             <TouchableOpacity
-              style={styles.roleCard}
+              style={[styles.roleCard, { backgroundColor: theme.colors.surface }]}
               onPress={() => handleRoleSelection('client')}
             >
               <IconSymbol
                 ios_icon_name="building.2.fill"
                 android_material_icon_name="business"
                 size={48}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
-              <Text style={styles.roleTitle}>Client</Text>
-              <Text style={styles.roleDescription}>
+              <Text style={[styles.roleTitle, { color: theme.colors.text }]}>Client</Text>
+              <Text style={[styles.roleDescription, { color: theme.colors.textMuted }]}>
                 Je gère une flotte de véhicules et je recherche des prestataires de lavage
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.roleCard}
+              style={[styles.roleCard, { backgroundColor: theme.colors.surface }]}
               onPress={() => handleRoleSelection('provider')}
             >
               <IconSymbol
                 ios_icon_name="sparkles"
                 android_material_icon_name="local-car-wash"
                 size={48}
-                color={colors.accent}
+                color={theme.colors.accent}
               />
-              <Text style={styles.roleTitle}>Prestataire</Text>
-              <Text style={styles.roleDescription}>
+              <Text style={[styles.roleTitle, { color: theme.colors.text }]}>Prestataire</Text>
+              <Text style={[styles.roleDescription, { color: theme.colors.textMuted }]}>
                 Je propose des services de lavage automobile sur site
               </Text>
             </TouchableOpacity>
@@ -324,7 +327,7 @@ export default function RegisterScreen() {
 
   if (step === 'credentials') {
     return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -342,13 +345,13 @@ export default function RegisterScreen() {
               ios_icon_name="chevron.left"
               android_material_icon_name="arrow-back"
               size={24}
-              color={colors.text}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>Vos identifiants</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Vos identifiants</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
               {role === 'client' ? 'Compte Client' : 'Compte Prestataire'}
             </Text>
           </View>
@@ -356,23 +359,27 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Email</Text>
               <View style={[
                 styles.inputWrapper,
-                emailFocused && styles.inputWrapperFocused,
-                emailError && styles.inputWrapperError,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: emailError ? theme.colors.error : (emailFocused ? theme.colors.accent : theme.colors.border),
+                },
+                emailFocused && { borderColor: theme.colors.accent },
+                emailError && { borderColor: theme.colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? colors.error : (emailFocused ? colors.primary : colors.textSecondary)}
+                  color={emailError ? theme.colors.error : (emailFocused ? theme.colors.accent : theme.colors.textMuted)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="votre@email.com"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={email}
                   onChangeText={handleEmailChange}
                   keyboardType="email-address"
@@ -389,33 +396,37 @@ export default function RegisterScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={colors.error}
+                    color={theme.colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={styles.errorText}>{emailError}</Text>
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{emailError}</Text>
                 </View>
               )}
             </View>
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Mot de passe</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Mot de passe</Text>
               <View style={[
                 styles.inputWrapper,
-                passwordFocused && styles.inputWrapperFocused,
-                passwordError && styles.inputWrapperError,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: passwordError ? theme.colors.error : (passwordFocused ? theme.colors.accent : theme.colors.border),
+                },
+                passwordFocused && { borderColor: theme.colors.accent },
+                passwordError && { borderColor: theme.colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={passwordError ? colors.error : (passwordFocused ? colors.primary : colors.textSecondary)}
+                  color={passwordError ? theme.colors.error : (passwordFocused ? theme.colors.accent : theme.colors.textMuted)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Minimum 6 caractères"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={password}
                   onChangeText={handlePasswordChange}
                   secureTextEntry={!showPassword}
@@ -432,7 +443,7 @@ export default function RegisterScreen() {
                     ios_icon_name={showPassword ? "eye.slash.fill" : "eye.fill"}
                     android_material_icon_name={showPassword ? "visibility-off" : "visibility"}
                     size={20}
-                    color={colors.textSecondary}
+                    color={theme.colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -442,33 +453,37 @@ export default function RegisterScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={colors.error}
+                    color={theme.colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={styles.errorText}>{passwordError}</Text>
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{passwordError}</Text>
                 </View>
               )}
             </View>
 
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Confirmer le mot de passe</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Confirmer le mot de passe</Text>
               <View style={[
                 styles.inputWrapper,
-                confirmPasswordFocused && styles.inputWrapperFocused,
-                confirmPasswordError && styles.inputWrapperError,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: confirmPasswordError ? theme.colors.error : (confirmPasswordFocused ? theme.colors.accent : theme.colors.border),
+                },
+                confirmPasswordFocused && { borderColor: theme.colors.accent },
+                confirmPasswordError && { borderColor: theme.colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={confirmPasswordError ? colors.error : (confirmPasswordFocused ? colors.primary : colors.textSecondary)}
+                  color={confirmPasswordError ? theme.colors.error : (confirmPasswordFocused ? theme.colors.accent : theme.colors.textMuted)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Retapez votre mot de passe"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={confirmPassword}
                   onChangeText={handleConfirmPasswordChange}
                   secureTextEntry={!showConfirmPassword}
@@ -486,7 +501,7 @@ export default function RegisterScreen() {
                     ios_icon_name={showConfirmPassword ? "eye.slash.fill" : "eye.fill"}
                     android_material_icon_name={showConfirmPassword ? "visibility-off" : "visibility"}
                     size={20}
-                    color={colors.textSecondary}
+                    color={theme.colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -496,20 +511,22 @@ export default function RegisterScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={colors.error}
+                    color={theme.colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={styles.errorText}>{confirmPasswordError}</Text>
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{confirmPasswordError}</Text>
                 </View>
               )}
             </View>
 
-            <TouchableOpacity
-              style={[buttonStyles.primary, styles.nextButton]}
+            <Button
+              variant="primary"
+              size="lg"
               onPress={handleCredentialsNext}
+              style={styles.nextButton}
             >
-              <Text style={commonStyles.buttonText}>Suivant</Text>
-            </TouchableOpacity>
+              Suivant
+            </Button>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -519,7 +536,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -534,13 +551,13 @@ export default function RegisterScreen() {
             ios_icon_name="chevron.left"
             android_material_icon_name="arrow-back"
             size={24}
-            color={colors.text}
+            color={theme.colors.text}
           />
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>Votre profil</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Votre profil</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
             {role === 'client' ? 'Informations entreprise' : 'Informations prestataire'}
           </Text>
         </View>
@@ -550,23 +567,27 @@ export default function RegisterScreen() {
             <React.Fragment>
               {/* Nom de l'entreprise */}
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Nom de l&apos;entreprise *</Text>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Nom de l&apos;entreprise *</Text>
                 <View style={[
                   styles.inputWrapper,
-                  clientNameFocused && styles.inputWrapperFocused,
-                  clientNameError && styles.inputWrapperError,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: clientNameError ? theme.colors.error : (clientNameFocused ? theme.colors.accent : theme.colors.border),
+                  },
+                  clientNameFocused && { borderColor: theme.colors.accent },
+                  clientNameError && { borderColor: theme.colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="building.2.fill"
                     android_material_icon_name="business"
                     size={20}
-                    color={clientNameError ? colors.error : (clientNameFocused ? colors.primary : colors.textSecondary)}
+                    color={clientNameError ? theme.colors.error : (clientNameFocused ? theme.colors.accent : theme.colors.textMuted)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: theme.colors.text }]}
                     placeholder="Ex: Garage Dupont"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={theme.colors.textMuted}
                     value={clientData.name}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, name: text });
@@ -583,33 +604,37 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={colors.error}
+                      color={theme.colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={styles.errorText}>{clientNameError}</Text>
+                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientNameError}</Text>
                   </View>
                 )}
               </View>
 
               {/* Adresse */}
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Adresse *</Text>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Adresse *</Text>
                 <View style={[
                   styles.inputWrapper,
-                  clientAddressFocused && styles.inputWrapperFocused,
-                  clientAddressError && styles.inputWrapperError,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: clientAddressError ? theme.colors.error : (clientAddressFocused ? theme.colors.accent : theme.colors.border),
+                  },
+                  clientAddressFocused && { borderColor: theme.colors.accent },
+                  clientAddressError && { borderColor: theme.colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="location.fill"
                     android_material_icon_name="location-on"
                     size={20}
-                    color={clientAddressError ? colors.error : (clientAddressFocused ? colors.primary : colors.textSecondary)}
+                    color={clientAddressError ? theme.colors.error : (clientAddressFocused ? theme.colors.accent : theme.colors.textMuted)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: theme.colors.text }]}
                     placeholder="123 Rue de la Paix, 75001 Paris"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={theme.colors.textMuted}
                     value={clientData.address}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, address: text });
@@ -626,33 +651,37 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={colors.error}
+                      color={theme.colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={styles.errorText}>{clientAddressError}</Text>
+                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientAddressError}</Text>
                   </View>
                 )}
               </View>
 
               {/* Nom du contact */}
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Nom du contact *</Text>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Nom du contact *</Text>
                 <View style={[
                   styles.inputWrapper,
-                  clientContactFocused && styles.inputWrapperFocused,
-                  clientContactError && styles.inputWrapperError,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: clientContactError ? theme.colors.error : (clientContactFocused ? theme.colors.accent : theme.colors.border),
+                  },
+                  clientContactFocused && { borderColor: theme.colors.accent },
+                  clientContactError && { borderColor: theme.colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="person.fill"
                     android_material_icon_name="person"
                     size={20}
-                    color={clientContactError ? colors.error : (clientContactFocused ? colors.primary : colors.textSecondary)}
+                    color={clientContactError ? theme.colors.error : (clientContactFocused ? theme.colors.accent : theme.colors.textMuted)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: theme.colors.text }]}
                     placeholder="Jean Dupont"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={theme.colors.textMuted}
                     value={clientData.contact}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, contact: text });
@@ -669,33 +698,37 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={colors.error}
+                      color={theme.colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={styles.errorText}>{clientContactError}</Text>
+                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientContactError}</Text>
                   </View>
                 )}
               </View>
 
               {/* Téléphone */}
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Téléphone *</Text>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Téléphone *</Text>
                 <View style={[
                   styles.inputWrapper,
-                  clientPhoneFocused && styles.inputWrapperFocused,
-                  clientPhoneError && styles.inputWrapperError,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    borderColor: clientPhoneError ? theme.colors.error : (clientPhoneFocused ? theme.colors.accent : theme.colors.border),
+                  },
+                  clientPhoneFocused && { borderColor: theme.colors.accent },
+                  clientPhoneError && { borderColor: theme.colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="phone.fill"
                     android_material_icon_name="phone"
                     size={20}
-                    color={clientPhoneError ? colors.error : (clientPhoneFocused ? colors.primary : colors.textSecondary)}
+                    color={clientPhoneError ? theme.colors.error : (clientPhoneFocused ? theme.colors.accent : theme.colors.textMuted)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: theme.colors.text }]}
                     placeholder="0123456789"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={theme.colors.textMuted}
                     value={clientData.phone}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, phone: text });
@@ -713,10 +746,10 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={colors.error}
+                      color={theme.colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={styles.errorText}>{clientPhoneError}</Text>
+                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientPhoneError}</Text>
                   </View>
                 )}
               </View>
@@ -728,7 +761,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="Ex: Lavage Pro Paris"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={providerData.name}
                   onChangeText={(text) => setProviderData({ ...providerData, name: text })}
                 />
@@ -739,7 +772,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="Paris"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={providerData.baseCity}
                   onChangeText={(text) => setProviderData({ ...providerData, baseCity: text })}
                 />
@@ -750,7 +783,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="20"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={providerData.radiusKm}
                   onChangeText={(text) => setProviderData({ ...providerData, radiusKm: text })}
                   keyboardType="numeric"
@@ -762,7 +795,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="+33 1 23 45 67 89"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={providerData.phone}
                   onChangeText={(text) => setProviderData({ ...providerData, phone: text })}
                   keyboardType="phone-pad"
@@ -774,7 +807,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={[commonStyles.input, styles.textArea]}
                   placeholder="Décrivez vos services..."
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   value={providerData.description}
                   onChangeText={(text) => setProviderData({ ...providerData, description: text })}
                   multiline
@@ -785,81 +818,48 @@ export default function RegisterScreen() {
               <View style={styles.inputContainer}>
                 <Text style={commonStyles.inputLabel}>Services proposés *</Text>
                 <View style={styles.servicesContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.serviceChip,
-                      providerData.services.includes('exterior') && styles.serviceChipActive,
-                    ]}
-                    onPress={() => toggleService('exterior')}
-                  >
-                    <Text
-                      style={[
-                        styles.serviceChipText,
-                        providerData.services.includes('exterior') && styles.serviceChipTextActive,
-                      ]}
-                    >
-                      Extérieur
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.serviceChip,
-                      providerData.services.includes('interior') && styles.serviceChipActive,
-                    ]}
-                    onPress={() => toggleService('interior')}
-                  >
-                    <Text
-                      style={[
-                        styles.serviceChipText,
-                        providerData.services.includes('interior') && styles.serviceChipTextActive,
-                      ]}
-                    >
-                      Intérieur
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.serviceChip,
-                      providerData.services.includes('complete') && styles.serviceChipActive,
-                    ]}
-                    onPress={() => toggleService('complete')}
-                  >
-                    <Text
-                      style={[
-                        styles.serviceChipText,
-                        providerData.services.includes('complete') && styles.serviceChipTextActive,
-                      ]}
-                    >
-                      Complet
-                    </Text>
-                  </TouchableOpacity>
+                  {(['exterior', 'interior', 'complete'] as string[]).map((service) => {
+                    const isActive = providerData.services.includes(service);
+                    return (
+                      <TouchableOpacity
+                        key={service}
+                        style={[
+                          styles.serviceChip,
+                          {
+                            borderColor: isActive ? theme.colors.accent : theme.colors.border,
+                            backgroundColor: isActive ? theme.colors.accent : theme.colors.background,
+                          },
+                        ]}
+                        onPress={() => toggleService(service)}
+                      >
+                        <Text
+                          style={[
+                            styles.serviceChipText,
+                            {
+                              color: isActive ? '#FFFFFF' : theme.colors.text,
+                            },
+                          ]}
+                        >
+                          {service === 'exterior' ? 'Extérieur' : service === 'interior' ? 'Intérieur' : 'Complet'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             </React.Fragment>
           )}
 
-          <TouchableOpacity
-            style={[buttonStyles.primary, styles.registerButton, isLoading && styles.buttonDisabled]}
-            onPress={() => {
-              console.log('🟢 Bouton "S\'inscrire" cliqué !');
-              console.log('isLoading:', isLoading);
-              console.log('step:', step);
-              console.log('role:', role);
-              if (isLoading) {
-                console.log('⚠️ Le bouton est désactivé car isLoading est true');
-                return;
-              }
-              handleRegister();
-            }}
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={handleRegister}
             disabled={isLoading}
-            activeOpacity={0.7}
+            loading={isLoading}
+            style={styles.registerButton}
           >
-            <Text style={commonStyles.buttonText}>
-              {isLoading ? 'Inscription en cours...' : "S'inscrire"}
-            </Text>
-          </TouchableOpacity>
+            S&apos;inscrire
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -869,7 +869,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -892,36 +891,34 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
-    color: colors.textSecondary,
   },
   roleContainer: {
     gap: 16,
   },
   roleCard: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
   roleTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   roleDescription: {
     fontSize: 14,
-    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -936,27 +933,15 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
     borderWidth: 1.5,
-    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     minHeight: 52,
-  },
-  inputWrapperFocused: {
-    borderColor: colors.primary,
-    boxShadow: `0px 0px 0px 3px ${colors.primary}20`,
-    elevation: 2,
-  },
-  inputWrapperError: {
-    borderColor: colors.error,
-    boxShadow: `0px 0px 0px 3px ${colors.error}20`,
   },
   inputIcon: {
     marginRight: 12,
@@ -964,7 +949,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
     paddingVertical: 0,
   },
   eyeIcon: {
@@ -981,7 +965,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 13,
-    color: colors.error,
     fontWeight: '500',
   },
   textArea: {
@@ -999,28 +982,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  serviceChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   serviceChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
-  },
-  serviceChipTextActive: {
-    color: '#FFFFFF',
   },
   nextButton: {
     marginTop: 8,
   },
   registerButton: {
     marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });

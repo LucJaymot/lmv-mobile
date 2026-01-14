@@ -13,7 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
 import { WashRequest } from '@/types';
 import { washRequestService } from '@/services/databaseService';
 import { useAuth } from '@/contexts/AuthContextSupabase';
@@ -21,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContextSupabase';
 export default function ProviderRequestsScreen() {
   const router = useRouter();
   const { provider } = useAuth();
+  const { theme } = useTheme();
   const [pendingRequests, setPendingRequests] = useState<WashRequest[]>([]);
   const [cancelledRequestIds, setCancelledRequestIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -31,9 +34,13 @@ export default function ProviderRequestsScreen() {
     console.log('📥 Chargement des demandes en attente...');
     try {
       const result = await washRequestService.getPendingRequests(provider?.id);
-      setPendingRequests(result.requests);
+      // Filtrer uniquement les demandes avec le statut "pending" et qui ne sont pas annulées
+      const filteredRequests = result.requests.filter(
+        request => request.status === 'pending' && !result.cancelledIds.includes(request.id)
+      );
+      setPendingRequests(filteredRequests);
       setCancelledRequestIds(new Set(result.cancelledIds));
-      console.log('📥 Demandes chargées:', result.requests.length);
+      console.log('📥 Demandes chargées:', filteredRequests.length);
     } catch (error: any) {
       console.error('❌ Erreur lors du chargement des demandes en attente:', error);
       Alert.alert('Erreur', 'Impossible de charger les demandes');
@@ -104,6 +111,13 @@ export default function ProviderRequestsScreen() {
     }).format(date);
   };
 
+  const getStatusColor = (isCancelled: boolean) => {
+    if (isCancelled) {
+      return theme.colors.error; // Rouge pour l'annulation
+    }
+    return theme.colors.warning; // Orange/Jaune pour l'attente (nouveau)
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -117,7 +131,7 @@ export default function ProviderRequestsScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={theme.colors.accent} />
             <Text style={styles.loadingText}>Chargement...</Text>
           </View>
         ) : pendingRequests.length > 0 ? (
@@ -128,7 +142,7 @@ export default function ProviderRequestsScreen() {
                 <View key={request.id} style={commonStyles.card}>
                 <View style={styles.requestHeader}>
                   <Text style={styles.clientName}>{request.clientCompany?.name || 'Client inconnu'}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: isCancelled ? colors.error : colors.warning }]}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(isCancelled) }]}>
                     <Text style={styles.statusText}>{isCancelled ? 'Annulé' : 'Nouveau'}</Text>
                   </View>
                 </View>
@@ -168,27 +182,24 @@ export default function ProviderRequestsScreen() {
                 )}
                 {!isCancelled && (
                   <View style={styles.requestActions}>
-                    <TouchableOpacity
-                      style={[buttonStyles.outline, styles.detailsButton]}
+                    <Button
+                      variant="ghost"
+                      size="md"
                       onPress={() => router.push(`/(provider)/requests/detail?id=${request.id}`)}
+                      style={styles.detailsButton}
                     >
-                      <Text style={commonStyles.buttonTextOutline}>Voir détails</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        buttonStyles.accent,
-                        styles.acceptButton,
-                        acceptingRequestId === request.id && styles.buttonDisabled
-                      ]}
+                      Voir détails
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="md"
                       onPress={() => handleAcceptRequest(request.id)}
                       disabled={acceptingRequestId === request.id}
+                      loading={acceptingRequestId === request.id}
+                      style={styles.acceptButton}
                     >
-                      {acceptingRequestId === request.id ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text style={commonStyles.buttonText}>Accepter</Text>
-                      )}
-                    </TouchableOpacity>
+                      Accepter
+                    </Button>
                   </View>
                 )}
                 </View>

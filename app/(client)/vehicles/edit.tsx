@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import Constants from 'expo-constants';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/databaseService';
@@ -25,9 +26,11 @@ export default function EditVehicleScreen() {
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
   const [type, setType] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [isFetchingImage, setIsFetchingImage] = useState(false);
 
   const formatLicensePlate = (text: string): string => {
     // Supprimer tous les caractères non alphanumériques et les tirets
@@ -75,6 +78,7 @@ export default function EditVehicleScreen() {
         setBrand(vehicle.brand);
         setModel(vehicle.model);
         setType(vehicle.type);
+        setImageUrl(vehicle.imageUrl);
         // Afficher les champs manuels car on est en mode édition
         setShowManualEntry(true);
       } catch (error: any) {
@@ -94,6 +98,59 @@ export default function EditVehicleScreen() {
     setLicensePlate(formatted);
   };
 
+  const fetchBrandLogo = async (brandName: string): Promise<string | undefined> => {
+    if (!brandName || brandName.trim() === '') {
+      return undefined;
+    }
+
+    try {
+      // Récupérer le CLIENT_ID Brandfetch depuis les variables d'environnement
+      const brandfetchClientId = Constants.expoConfig?.extra?.brandfetchClientId || 
+                                process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID;
+      
+      if (!brandfetchClientId) {
+        console.warn('⚠️ BRANDFETCH_CLIENT_ID non configurée');
+        return undefined;
+      }
+
+      // Normaliser le nom de la marque (minuscules, sans espaces)
+      const normalizedBrand = brandName.toLowerCase().replace(/\s+/g, '');
+      
+      // Construire l'URL Brandfetch selon la documentation
+      const brandfetchUrl = `https://cdn.brandfetch.io/${normalizedBrand}.com/w/400/h/400/type/icon/fallback/transparent?c=${brandfetchClientId}`;
+      
+      console.log('🖼️ Récupération du logo Brandfetch pour:', brandName);
+      console.log('🌐 URL:', brandfetchUrl.replace(brandfetchClientId, '[CLIENT_ID_MASQUÉ]'));
+      
+      // Retourner l'URL directement - React Native Image gérera les erreurs avec onError
+      console.log('✅ URL du logo Brandfetch générée');
+      return brandfetchUrl;
+    } catch (error: any) {
+      console.warn('⚠️ Erreur lors de la génération de l\'URL Brandfetch:', error.message);
+      return undefined;
+    }
+  };
+
+  const handleBrandChange = async (text: string) => {
+    setBrand(text);
+    
+    // Récupérer l'image de la marque si elle a changé
+    if (text && text.trim() !== '') {
+      setIsFetchingImage(true);
+      try {
+        const brandLogoUrl = await fetchBrandLogo(text);
+        if (brandLogoUrl) {
+          setImageUrl(brandLogoUrl);
+          console.log('✅ Logo de la marque mis à jour');
+        }
+      } catch (error: any) {
+        console.warn('⚠️ Erreur lors de la récupération du logo:', error);
+      } finally {
+        setIsFetchingImage(false);
+      }
+    }
+  };
+
   const handleSave = async () => {
     // Nettoyer la plaque d'immatriculation (enlever les tirets pour la validation)
     const cleanedPlate = licensePlate.replace(/-/g, '');
@@ -110,13 +167,20 @@ export default function EditVehicleScreen() {
 
     setIsSaving(true);
     try {
+      // Récupérer le logo de la marque via Brandfetch API si l'image n'a pas été mise à jour
+      let finalImageUrl = imageUrl;
+      if (brand && brand.trim() !== '' && !imageUrl) {
+        finalImageUrl = await fetchBrandLogo(brand);
+      }
+      
       // Sauvegarder la plaque avec les tirets
-      console.log('Mise à jour du véhicule:', id, { licensePlate, brand, model, type });
+      console.log('Mise à jour du véhicule:', id, { licensePlate, brand, model, type, imageUrl: finalImageUrl });
       await vehicleService.update(id, {
         licensePlate: licensePlate, // Sauvegarder avec les tirets
         brand,
         model,
         type,
+        imageUrl: finalImageUrl,
       });
       console.log('✅ Véhicule mis à jour avec succès');
       Alert.alert('Succès', 'Véhicule modifié avec succès');
@@ -180,14 +244,23 @@ export default function EditVehicleScreen() {
           <>
         <View style={styles.inputContainer}>
           <Text style={commonStyles.inputLabel}>Marque *</Text>
+          <View style={styles.inputWithLoader}>
           <TextInput
             style={commonStyles.input}
             placeholder="Renault"
             placeholderTextColor={colors.textSecondary}
             value={brand}
-            onChangeText={setBrand}
+              onChangeText={handleBrandChange}
             editable={!isSaving}
           />
+            {isFetchingImage && (
+              <ActivityIndicator
+                size="small"
+                color={colors.primary}
+                style={styles.loaderIcon}
+              />
+            )}
+          </View>
         </View>
 
         <View style={styles.inputContainer}>
@@ -267,5 +340,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: colors.textSecondary,
+  },
+  inputWithLoader: {
+    position: 'relative',
+  },
+  loaderIcon: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
   },
 });

@@ -13,19 +13,24 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
 import { washRequestService } from '@/services/databaseService';
 import { useAuth } from '@/contexts/AuthContextSupabase';
+import { pickInvoice, uploadInvoice, deleteAllInvoicesForRequest } from '@/services/storageService';
 import { WashRequest } from '@/types';
 
 export default function ProviderRequestDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { provider } = useAuth();
+  const { theme } = useTheme();
   const [washRequest, setWashRequest] = useState<WashRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isUploadingInvoice, setIsUploadingInvoice] = useState(false);
 
   useEffect(() => {
     const loadWashRequest = async () => {
@@ -62,17 +67,17 @@ export default function ProviderRequestDetailScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return colors.warning;
+        return theme.colors.warning; // Orange/Jaune pour l'attente
       case 'accepted':
-        return colors.info;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour l'acceptation
       case 'in_progress':
-        return colors.primary;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour le progrès
       case 'completed':
-        return colors.accent;
+        return theme.colors.success; // Vert pour la réussite
       case 'cancelled':
-        return colors.error;
+        return theme.colors.error; // Rouge pour l'annulation
       default:
-        return colors.textSecondary;
+        return theme.colors.textMuted;
     }
   };
 
@@ -273,11 +278,81 @@ export default function ProviderRequestDetailScreen() {
     }
   };
 
+  const handleUploadInvoice = async () => {
+    if (!washRequest || !washRequest.id || !provider) {
+      return;
+    }
+
+    setIsUploadingInvoice(true);
+    try {
+      // Sélectionner le fichier PDF
+      const result = await pickInvoice();
+      
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        setIsUploadingInvoice(false);
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset.uri) {
+        setIsUploadingInvoice(false);
+        return;
+      }
+
+      // Vérifier que c'est bien un PDF
+      if (asset.mimeType !== 'application/pdf' && !asset.name?.endsWith('.pdf')) {
+        Alert.alert('Erreur', 'Veuillez sélectionner un fichier PDF');
+        setIsUploadingInvoice(false);
+        return;
+      }
+
+      // Supprimer toutes les factures existantes pour cette demande avant d'uploader la nouvelle
+      if (washRequest.invoiceUrl) {
+        try {
+          await deleteAllInvoicesForRequest(washRequest.id);
+        } catch (error) {
+          console.warn('⚠️ Erreur lors de la suppression des factures existantes (on continue quand même):', error);
+          // On continue quand même l'upload même si la suppression échoue
+        }
+      }
+
+      // Uploader le PDF
+      const invoiceUrl = await uploadInvoice(asset.uri, washRequest.id);
+      
+      // Mettre à jour la demande avec l'URL de la facture
+      const updated = await washRequestService.update(washRequest.id, { invoiceUrl });
+      setWashRequest(updated);
+      
+      Alert.alert('Succès', 'Facture uploadée avec succès');
+    } catch (error: any) {
+      console.error('❌ Erreur lors de l\'upload de la facture:', error);
+      Alert.alert('Erreur', error.message || 'Impossible d\'uploader la facture');
+    } finally {
+      setIsUploadingInvoice(false);
+    }
+  };
+
+  const handleViewInvoice = () => {
+    if (!washRequest?.invoiceUrl) {
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      // Sur web, ouvrir dans un nouvel onglet
+      if (typeof window !== 'undefined' && window.open) {
+        window.open(washRequest.invoiceUrl, '_blank', 'noopener,noreferrer');
+      }
+    } else {
+      // Sur mobile, ouvrir avec Linking
+      Linking.openURL(washRequest.invoiceUrl);
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text style={styles.loadingText}>Chargement...</Text>
         </View>
       </View>
@@ -373,11 +448,11 @@ export default function ProviderRequestDetailScreen() {
                 ios_icon_name="location.fill"
                 android_material_icon_name="location-on"
                 size={20}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Lieu</Text>
-                <Text style={[styles.detailValue, styles.clickableAddress]}>{washRequest.address}</Text>
+                <Text style={[styles.detailValue, styles.clickableAddress, { color: theme.colors.accent }]}>{washRequest.address}</Text>
               </View>
             </TouchableOpacity>
             {washRequest.notes && (
@@ -411,7 +486,7 @@ export default function ProviderRequestDetailScreen() {
                       </Text>
                     </>
                   )}
-                  <Text style={styles.serviceType}>
+                  <Text style={[styles.serviceType, { color: theme.colors.accent }]}>
                     Service: {getServiceTypeLabel(vehicleRequest.serviceType)}
                   </Text>
                 </View>
@@ -422,39 +497,88 @@ export default function ProviderRequestDetailScreen() {
 
         {washRequest.status === 'pending' && (
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[buttonStyles.outline, styles.declineButton]}
+          <Button
+            variant="ghost"
+            size="md"
             onPress={handleDecline}
+            style={{
+              ...styles.declineButton,
+              borderColor: theme.colors.error,
+            }}
+            textStyle={{ color: theme.colors.error }}
           >
-            <Text style={commonStyles.buttonTextOutline}>Refuser</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-              style={[buttonStyles.accent, styles.acceptButton, isAccepting && styles.buttonDisabled]}
+            Refuser
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
             onPress={handleAccept}
-              disabled={isAccepting}
+            disabled={isAccepting}
+            loading={isAccepting}
+            style={styles.acceptButton}
           >
-              {isAccepting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-            <Text style={commonStyles.buttonText}>Accepter</Text>
-              )}
-          </TouchableOpacity>
+            Accepter
+          </Button>
         </View>
         )}
 
         {washRequest.status === 'accepted' && (
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={[buttonStyles.outline, styles.cancelButton, isCancelling && styles.buttonDisabled]}
+            <Button
+              variant="ghost"
+              size="md"
               onPress={handleCancel}
               disabled={isCancelling}
+              loading={isCancelling}
+              style={{
+                ...styles.cancelButton,
+                borderColor: theme.colors.error,
+              }}
+              textStyle={{ color: theme.colors.error }}
             >
-              {isCancelling ? (
-                <ActivityIndicator size="small" color={colors.error} />
+              Annuler
+            </Button>
+          </View>
+        )}
+
+        {washRequest.status === 'completed' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Facture</Text>
+            <View style={commonStyles.card}>
+              {washRequest.invoiceUrl ? (
+                <View style={styles.invoiceActions}>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onPress={handleViewInvoice}
+                    style={styles.invoiceButton}
+                  >
+                    Voir la facture
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onPress={handleUploadInvoice}
+                    disabled={isUploadingInvoice}
+                    loading={isUploadingInvoice}
+                    style={styles.replaceInvoiceButton}
+                  >
+                    Remplacer
+                  </Button>
+                </View>
               ) : (
-                <Text style={[commonStyles.buttonTextOutline, { color: colors.error }]}>Annuler</Text>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onPress={handleUploadInvoice}
+                  disabled={isUploadingInvoice}
+                  loading={isUploadingInvoice}
+                  style={styles.invoiceButton}
+                >
+                  Déposer une facture (PDF)
+                </Button>
               )}
-            </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -555,7 +679,6 @@ const styles = StyleSheet.create({
   },
   serviceType: {
     fontSize: 14,
-    color: colors.primary,
     fontWeight: '500',
   },
   actionButtons: {
@@ -571,7 +694,6 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    borderColor: colors.error,
   },
   loadingContainer: {
     flex: 1,
@@ -585,11 +707,21 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   clickableAddress: {
-    color: colors.primary,
     textDecorationLine: 'underline',
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  invoiceButton: {
+    flex: 1,
+  },
+  invoiceActions: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  replaceInvoiceButton: {
+    minWidth: 100,
   },
 });
 

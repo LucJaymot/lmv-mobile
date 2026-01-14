@@ -12,15 +12,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Button } from '@/components/ui/Button';
 import { WashRequest } from '@/types';
 import { washRequestService } from '@/services/databaseService';
 
 export default function ProviderJobsScreen() {
   const router = useRouter();
   const { provider } = useAuth();
-  const [selectedStatus, setSelectedStatus] = useState<'accepted' | 'in_progress' | 'completed'>('accepted');
+  const { theme } = useTheme();
+  const [selectedStatus, setSelectedStatus] = useState<'accepted' | 'in_progress' | 'completed' | 'cancelled'>('accepted');
   const [jobs, setJobs] = useState<WashRequest[]>([]);
+  const [cancelledRequestIds, setCancelledRequestIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
   const loadJobs = async () => {
@@ -36,6 +40,9 @@ export default function ProviderJobsScreen() {
       // Charger les jobs du provider
       const requests = await washRequestService.getByProviderId(provider.id);
       setJobs(requests);
+      // Charger les IDs des demandes annulées par ce provider
+      const cancelledIds = await washRequestService.getCancelledRequestIds(provider.id);
+      setCancelledRequestIds(new Set(cancelledIds));
     } catch (error: any) {
       console.error('❌ Erreur lors du chargement des jobs:', error);
     } finally {
@@ -53,18 +60,28 @@ export default function ProviderJobsScreen() {
     }, [provider])
   );
 
-  const filteredJobs = jobs.filter(j => j.status === selectedStatus);
+  const filteredJobs = jobs.filter(j => {
+    if (selectedStatus === 'cancelled') {
+      // Pour le statut "annulé", vérifier si le job est dans la liste des demandes annulées
+      return cancelledRequestIds.has(j.id);
+    } else {
+      // Pour les autres statuts, filtrer par statut et exclure les jobs annulés
+      return j.status === selectedStatus && !cancelledRequestIds.has(j.id);
+    }
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'accepted':
-        return colors.info;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour l'acceptation
       case 'in_progress':
-        return colors.primary;
+        return theme.colors.accent; // Couleur de marque (#002B39) pour le progrès
       case 'completed':
-        return colors.accent;
+        return theme.colors.success; // Vert pour la réussite
+      case 'cancelled':
+        return theme.colors.error; // Rouge pour l'annulation
       default:
-        return colors.textSecondary;
+        return theme.colors.textMuted;
     }
   };
 
@@ -76,6 +93,8 @@ export default function ProviderJobsScreen() {
         return 'En cours';
       case 'completed':
         return 'Terminé';
+      case 'cancelled':
+        return 'Annulé';
       default:
         return status;
     }
@@ -90,10 +109,11 @@ export default function ProviderJobsScreen() {
     }).format(date);
   };
 
-  const statusFilters: { value: 'accepted' | 'in_progress' | 'completed'; label: string }[] = [
+  const statusFilters: { value: 'accepted' | 'in_progress' | 'completed' | 'cancelled'; label: string }[] = [
     { value: 'accepted', label: 'Accepté' },
     { value: 'in_progress', label: 'En cours' },
     { value: 'completed', label: 'Terminé' },
+    { value: 'cancelled', label: 'Annulé' },
   ];
 
   return (
@@ -113,7 +133,10 @@ export default function ProviderJobsScreen() {
               key={index}
               style={[
                 styles.filterChip,
-                selectedStatus === filter.value && styles.filterChipActive,
+                selectedStatus === filter.value && {
+                  backgroundColor: theme.colors.accent,
+                  borderColor: theme.colors.accent,
+                },
               ]}
               onPress={() => setSelectedStatus(filter.value)}
             >
@@ -136,7 +159,7 @@ export default function ProviderJobsScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={theme.colors.accent} />
           </View>
         ) : filteredJobs.length > 0 ? (
           <React.Fragment>
@@ -163,9 +186,14 @@ export default function ProviderJobsScreen() {
                   <Text style={styles.jobAddress}>{job.address}</Text>
                 </View>
                 {job.status === 'in_progress' && (
-                  <TouchableOpacity style={styles.completeButton}>
-                    <Text style={styles.completeButtonText}>Marquer comme terminé</Text>
-                  </TouchableOpacity>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onPress={() => router.push(`/(provider)/requests/detail?id=${job.id}`)}
+                    style={styles.completeButton}
+                  >
+                    Marquer comme terminé
+                  </Button>
                 )}
               </TouchableOpacity>
             ))}
@@ -218,10 +246,6 @@ const styles = StyleSheet.create({
     width: 110,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   filterChipText: {
     fontSize: 14,
@@ -284,16 +308,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   completeButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
     marginTop: 12,
-  },
-  completeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
   loadingContainer: {
     alignItems: 'center',

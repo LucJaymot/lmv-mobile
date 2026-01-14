@@ -211,7 +211,7 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               }
               onSubmitEditing={handleLogin}
-            />
+                  />
 
             {/* Mot de passe oublié */}
             <Button
@@ -246,14 +246,15 @@ export default function LoginScreen() {
             {/* Lien d'inscription */}
             <View style={styles.registerContainer}>
               <Text style={[textStyles.bodySmall, { color: theme.colors.textMuted }]}>Pas encore de compte ? </Text>
-              <Button
-                variant="text"
-                size="sm"
+              <TouchableOpacity
                 onPress={() => router.push('/auth/register')}
                 disabled={isLoading}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
-                S&apos;inscrire
-              </Button>
+                <Text style={[textStyles.bodySmall, { color: theme.colors.accent, fontWeight: '600' }]}>
+                  S&apos;inscrire
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>

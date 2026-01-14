@@ -147,26 +147,26 @@ export default function RequestsScreen() {
           {statusFilters.map((filter, index) => {
             const isActive = selectedStatus === filter.value;
             return (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.filterChip,
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.filterChip,
                   isActive && {
                     backgroundColor: theme.colors.accent,
                     borderColor: theme.colors.accent,
                   },
-                ]}
-                onPress={() => setSelectedStatus(filter.value)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
+              ]}
+              onPress={() => setSelectedStatus(filter.value)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
                     isActive && { color: '#FFFFFF' },
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
             );
           })}
         </ScrollView>

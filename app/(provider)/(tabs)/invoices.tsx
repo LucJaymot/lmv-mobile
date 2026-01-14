@@ -12,11 +12,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { washRequestService } from '@/services/databaseService';
 import { WashRequest } from '@/types';
+import { useTheme } from '@/theme/hooks';
+import { pickInvoice, uploadInvoice, deleteAllInvoicesForRequest } from '@/services/storageService';
+import { Button } from '@/components/ui/Button';
 
 interface GroupedInvoices {
   [key: string]: WashRequest[];
@@ -25,8 +28,10 @@ interface GroupedInvoices {
 export default function ProviderInvoicesScreen() {
   const router = useRouter();
   const { provider } = useAuth();
+  const { theme } = useTheme();
   const [invoices, setInvoices] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadingInvoiceId, setUploadingInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadInvoices = async () => {
@@ -105,12 +110,68 @@ export default function ProviderInvoicesScreen() {
     }
   };
 
+  const handleReplaceInvoice = async (invoice: WashRequest) => {
+    if (!invoice.id || !provider) {
+      return;
+    }
+
+    setUploadingInvoiceId(invoice.id);
+    try {
+      // Sélectionner le fichier PDF
+      const result = await pickInvoice();
+      
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        setUploadingInvoiceId(null);
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset.uri) {
+        setUploadingInvoiceId(null);
+        return;
+      }
+
+      // Vérifier que c'est bien un PDF
+      if (asset.mimeType !== 'application/pdf' && !asset.name?.endsWith('.pdf')) {
+        Alert.alert('Erreur', 'Veuillez sélectionner un fichier PDF');
+        setUploadingInvoiceId(null);
+        return;
+      }
+
+      // Supprimer toutes les factures existantes pour cette demande avant d'uploader la nouvelle
+      if (invoice.invoiceUrl) {
+        try {
+          await deleteAllInvoicesForRequest(invoice.id);
+        } catch (error) {
+          console.warn('⚠️ Erreur lors de la suppression des factures existantes (on continue quand même):', error);
+          // On continue quand même l'upload même si la suppression échoue
+        }
+      }
+
+      // Uploader le PDF
+      const invoiceUrl = await uploadInvoice(asset.uri, invoice.id);
+      
+      // Mettre à jour la demande avec l'URL de la facture
+      const updated = await washRequestService.update(invoice.id, { invoiceUrl });
+      
+      // Mettre à jour la liste des factures
+      setInvoices((prev) => prev.map((inv) => (inv.id === invoice.id ? updated : inv)));
+      
+      Alert.alert('Succès', 'Facture remplacée avec succès');
+    } catch (error: any) {
+      console.error('❌ Erreur lors du remplacement de la facture:', error);
+      Alert.alert('Erreur', error.message || 'Impossible de remplacer la facture');
+    } finally {
+      setUploadingInvoiceId(null);
+    }
+  };
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Chargement des factures...</Text>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement des factures...</Text>
         </View>
       </SafeAreaView>
     );
@@ -118,19 +179,19 @@ export default function ProviderInvoicesScreen() {
 
   if (invoices.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Factures</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+        <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Factures</Text>
         </View>
         <View style={styles.emptyContainer}>
           <IconSymbol
             ios_icon_name="doc.text.fill"
             android_material_icon_name="description"
             size={64}
-            color={colors.textSecondary}
+            color={theme.colors.textMuted}
           />
-          <Text style={styles.emptyText}>Aucune facture disponible</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.colors.text }]}>Aucune facture disponible</Text>
+          <Text style={[styles.emptySubtext, { color: theme.colors.textMuted }]}>
             Les factures des demandes terminées apparaîtront ici
           </Text>
         </View>
@@ -139,9 +200,9 @@ export default function ProviderInvoicesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Factures</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Factures</Text>
       </View>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -154,16 +215,18 @@ export default function ProviderInvoicesScreen() {
                 ios_icon_name="calendar"
                 android_material_icon_name="event"
                 size={20}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
-              <Text style={styles.dateLabel}>{formatDateLabel(dateKey)}</Text>
+              <Text style={[styles.dateLabel, { color: theme.colors.text }]}>{formatDateLabel(dateKey)}</Text>
             </View>
             {dateInvoices.map((invoice) => (
-              <TouchableOpacity
+              <View
                 key={invoice.id}
-                style={styles.invoiceCard}
-                onPress={() => invoice.invoiceUrl && handleViewInvoice(invoice.invoiceUrl)}
-                disabled={!invoice.invoiceUrl}
+                style={[styles.invoiceCard, {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  ...theme.shadows.sm,
+                }]}
               >
                 <View style={styles.invoiceContent}>
                   <View style={styles.invoiceInfo}>
@@ -172,29 +235,44 @@ export default function ProviderInvoicesScreen() {
                         ios_icon_name="doc.fill"
                         android_material_icon_name="description"
                         size={24}
-                        color={colors.primary}
+                        color={theme.colors.accent}
                       />
                       <View style={styles.invoiceDetails}>
-                        <Text style={styles.invoiceTime}>{formatTime(invoice.dateTime)}</Text>
-                        <Text style={styles.invoiceAddress} numberOfLines={1}>
+                        <Text style={[styles.invoiceTime, { color: theme.colors.text }]}>{formatTime(invoice.dateTime)}</Text>
+                        <Text style={[styles.invoiceAddress, { color: theme.colors.textMuted }]} numberOfLines={1}>
                           {invoice.address}
                         </Text>
                         {invoice.clientCompany && (
-                          <Text style={styles.invoiceClient}>{invoice.clientCompany.name}</Text>
+                          <Text style={[styles.invoiceClient, { color: theme.colors.accent }]}>{invoice.clientCompany.name}</Text>
                         )}
                       </View>
                     </View>
                   </View>
-                  {invoice.invoiceUrl && (
-                    <IconSymbol
-                      ios_icon_name="chevron.right"
-                      android_material_icon_name="chevron-right"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  )}
                 </View>
-              </TouchableOpacity>
+                {invoice.invoiceUrl && (
+                  <View style={[styles.invoiceActions, { borderTopColor: theme.colors.border }]}>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onPress={() => invoice.invoiceUrl && handleViewInvoice(invoice.invoiceUrl)}
+                      style={styles.viewInvoiceButton}
+                    >
+                      Voir la facture
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onPress={() => handleReplaceInvoice(invoice)}
+                      disabled={uploadingInvoiceId === invoice.id}
+                      loading={uploadingInvoiceId === invoice.id}
+                      style={styles.replaceInvoiceButton}
+                      textStyle={{ color: theme.colors.accent }}
+                    >
+                      Remplacer
+                    </Button>
+                  </View>
+                )}
+              </View>
             ))}
           </View>
         ))}
@@ -206,18 +284,15 @@ export default function ProviderInvoicesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     padding: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
   },
   scrollContent: {
     padding: 20,
@@ -231,7 +306,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
   emptyContainer: {
     flex: 1,
@@ -242,12 +316,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -263,19 +335,13 @@ const styles = StyleSheet.create({
   dateLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
     textTransform: 'capitalize',
   },
   invoiceCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
   },
   invoiceContent: {
     flexDirection: 'row',
@@ -296,18 +362,28 @@ const styles = StyleSheet.create({
   invoiceTime: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 4,
   },
   invoiceAddress: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 4,
   },
   invoiceClient: {
     fontSize: 13,
-    color: colors.primary,
     fontWeight: '500',
+  },
+  invoiceActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  viewInvoiceButton: {
+    flex: 1,
+  },
+  replaceInvoiceButton: {
+    minWidth: 100,
   },
 });
 

@@ -59,17 +59,17 @@ export default function RootLayout() {
       <StatusBar style="light" animated />
       <ThemeProvider initialMode="light">
         <NavigationThemeWrapper>
-          <AuthProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="auth" />
-                <Stack.Screen name="(client)" />
-                <Stack.Screen name="(provider)" />
-                <Stack.Screen name="(admin)" />
-              </Stack>
-              <SystemBars style={"auto"} />
-            </GestureHandlerRootView>
-          </AuthProvider>
+        <AuthProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="auth" />
+              <Stack.Screen name="(client)" />
+              <Stack.Screen name="(provider)" />
+              <Stack.Screen name="(admin)" />
+            </Stack>
+            <SystemBars style={"auto"} />
+          </GestureHandlerRootView>
+        </AuthProvider>
         </NavigationThemeWrapper>
       </ThemeProvider>
     </>

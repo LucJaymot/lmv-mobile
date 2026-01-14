@@ -414,12 +414,14 @@ export default function CreateRequestScreen() {
             <Text style={styles.emptySubtext}>
               Vous devez d&apos;abord ajouter des véhicules pour créer une demande
             </Text>
-            <TouchableOpacity
-              style={[buttonStyles.primary, styles.addVehicleButton]}
+            <Button
+              variant="primary"
+              size="md"
               onPress={() => router.push('/(client)/vehicles/add')}
+              style={styles.addVehicleButton}
             >
-              <Text style={commonStyles.buttonText}>Ajouter un véhicule</Text>
-            </TouchableOpacity>
+              Ajouter un véhicule
+            </Button>
           </View>
         ) : (
           <>

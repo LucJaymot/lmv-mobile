@@ -172,8 +172,8 @@ export default function ClientDashboardScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>Bonjour,</Text>
-            <Text style={styles.companyName}>{clientCompany?.name}</Text>
+          <Text style={styles.greeting}>Bonjour,</Text>
+          <Text style={styles.companyName}>{clientCompany?.name}</Text>
           </View>
           <Logo size="sm" />
         </View>

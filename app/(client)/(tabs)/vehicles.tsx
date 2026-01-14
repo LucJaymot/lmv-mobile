@@ -125,12 +125,21 @@ export default function VehiclesScreen() {
           variant="ghost"
           size="md"
           onPress={() => router.push('/(client)/vehicles/add')}
-          style={styles.addButton}
+          style={{
+            ...styles.addButton,
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
         >
           <IconSymbol
             ios_icon_name="plus"
             android_material_icon_name="add"
-            size={20}
+            size={22}
             color={theme.colors.accent}
           />
         </Button>
@@ -250,13 +259,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    minWidth: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    minWidth: 48,
+    borderRadius: 24,
     padding: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,

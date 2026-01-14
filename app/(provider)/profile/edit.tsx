@@ -14,13 +14,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { ServiceType } from '@/types';
+import { useTheme } from '@/theme/hooks';
 
 export default function EditProviderProfileScreen() {
   const router = useRouter();
   const { provider, updateProfile } = useAuth();
+  const { theme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: provider?.name || '',
@@ -103,10 +105,10 @@ export default function EditProviderProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -118,7 +120,7 @@ export default function EditProviderProfileScreen() {
               <TextInput
                 style={commonStyles.input}
                 placeholder="Nom du prestataire"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={formData.name}
                 onChangeText={(text) => setFormData({ ...formData, name: text })}
               />
@@ -129,7 +131,7 @@ export default function EditProviderProfileScreen() {
               <TextInput
                 style={commonStyles.input}
                 placeholder="Numéro de téléphone"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({ ...formData, phone: text })}
                 keyboardType="phone-pad"
@@ -141,7 +143,7 @@ export default function EditProviderProfileScreen() {
               <TextInput
                 style={commonStyles.input}
                 placeholder="Ville principale"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={formData.baseCity}
                 onChangeText={(text) => setFormData({ ...formData, baseCity: text })}
               />
@@ -152,7 +154,7 @@ export default function EditProviderProfileScreen() {
               <TextInput
                 style={commonStyles.input}
                 placeholder="Rayon en kilomètres"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={formData.radiusKm}
                 onChangeText={(text) => setFormData({ ...formData, radiusKm: text })}
                 keyboardType="numeric"
@@ -164,7 +166,7 @@ export default function EditProviderProfileScreen() {
               <TextInput
                 style={[commonStyles.input, styles.textArea]}
                 placeholder="Description de vos services"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={formData.description}
                 onChangeText={(text) => setFormData({ ...formData, description: text })}
                 multiline
@@ -175,25 +177,33 @@ export default function EditProviderProfileScreen() {
             <View style={styles.inputContainer}>
               <Text style={commonStyles.inputLabel}>Services proposés *</Text>
               <View style={styles.servicesContainer}>
-                {(['exterior', 'interior', 'complete'] as ServiceType[]).map((service) => (
-                  <TouchableOpacity
-                    key={service}
-                    style={[
-                      styles.serviceChip,
-                      formData.services.includes(service) && styles.serviceChipActive,
-                    ]}
-                    onPress={() => toggleService(service)}
-                  >
-                    <Text
+                {(['exterior', 'interior', 'complete'] as ServiceType[]).map((service) => {
+                  const isActive = formData.services.includes(service);
+                  return (
+                    <TouchableOpacity
+                      key={service}
                       style={[
-                        styles.serviceChipText,
-                        formData.services.includes(service) && styles.serviceChipTextActive,
+                        styles.serviceChip,
+                        {
+                          borderColor: isActive ? theme.colors.accent : theme.colors.border,
+                          backgroundColor: isActive ? theme.colors.accent : theme.colors.background,
+                        },
                       ]}
+                      onPress={() => toggleService(service)}
                     >
-                      {getServiceLabel(service)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.serviceChipText,
+                          {
+                            color: isActive ? '#FFFFFF' : theme.colors.text,
+                          },
+                        ]}
+                      >
+                        {getServiceLabel(service)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -228,14 +238,13 @@ export default function EditProviderProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 100,
   },
   formContainer: {
-    backgroundColor: colors.card,
+    backgroundColor: commonStyles.card.backgroundColor,
     borderRadius: 12,
     padding: 20,
   },
@@ -257,20 +266,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  serviceChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   serviceChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
-  },
-  serviceChipTextActive: {
-    color: '#FFFFFF',
   },
   buttonsContainer: {
     flexDirection: 'row',
@@ -282,9 +281,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 12,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });
 

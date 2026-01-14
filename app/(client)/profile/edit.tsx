@@ -155,8 +155,8 @@ export default function EditProfileScreen() {
           <View style={styles.formContainer}>
             <Input
               label="Nom de l'entreprise *"
-              placeholder="Nom de l'entreprise"
-              value={formData.name}
+                placeholder="Nom de l'entreprise"
+                value={formData.name}
               onChangeText={(text) => {
                 setFormData({ ...formData, name: text });
                 if (errors.name) {
@@ -169,8 +169,8 @@ export default function EditProfileScreen() {
 
             <Input
               label="Contact *"
-              placeholder="Nom du contact"
-              value={formData.contact}
+                placeholder="Nom du contact"
+                value={formData.contact}
               onChangeText={(text) => {
                 setFormData({ ...formData, contact: text });
                 if (errors.contact) {
@@ -183,8 +183,8 @@ export default function EditProfileScreen() {
 
             <Input
               label="Téléphone *"
-              placeholder="Numéro de téléphone"
-              value={formData.phone}
+                placeholder="Numéro de téléphone"
+                value={formData.phone}
               onChangeText={(text) => {
                 setFormData({ ...formData, phone: text });
                 if (errors.phone) {
@@ -192,14 +192,14 @@ export default function EditProfileScreen() {
                 }
               }}
               error={errors.phone}
-              keyboardType="phone-pad"
+                keyboardType="phone-pad"
               containerStyle={styles.inputContainer}
             />
 
             <Input
               label="Email *"
-              placeholder="Email"
-              value={formData.email}
+                placeholder="Email"
+                value={formData.email}
               onChangeText={(text) => {
                 setFormData({ ...formData, email: text });
                 if (errors.email) {
@@ -207,15 +207,15 @@ export default function EditProfileScreen() {
                 }
               }}
               error={errors.email}
-              keyboardType="email-address"
-              autoCapitalize="none"
+                keyboardType="email-address"
+                autoCapitalize="none"
               containerStyle={styles.inputContainer}
             />
 
             <Input
               label="Adresse *"
-              placeholder="Adresse complète"
-              value={formData.address}
+                placeholder="Adresse complète"
+                value={formData.address}
               onChangeText={(text) => {
                 setFormData({ ...formData, address: text });
                 if (errors.address) {
@@ -223,11 +223,11 @@ export default function EditProfileScreen() {
                 }
               }}
               error={errors.address}
-              multiline
-              numberOfLines={3}
+                multiline
+                numberOfLines={3}
               inputStyle={styles.textArea}
               containerStyle={styles.inputContainer}
-            />
+              />
 
             <View style={styles.buttonsContainer}>
               <Button

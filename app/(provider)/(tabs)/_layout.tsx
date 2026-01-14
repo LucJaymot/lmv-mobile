@@ -43,6 +43,7 @@ export default function ProviderTabLayout() {
         <Stack.Screen name="requests" />
         <Stack.Screen name="jobs" />
         <Stack.Screen name="profile" />
+        <Stack.Screen name="invoices" />
       </Stack>
       <FloatingTabBar tabs={tabs} />
     </React.Fragment>

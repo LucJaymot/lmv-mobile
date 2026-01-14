@@ -13,12 +13,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useTheme } from '@/theme/hooks';
+import { createTextStyles } from '@/theme/styles';
+import { Button } from '@/components/ui/Button';
 
 export default function ProviderProfileScreen() {
   const router = useRouter();
   const { user, provider, logout } = useAuth();
+  const { theme } = useTheme();
+  const textStyles = createTextStyles(theme);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -92,22 +97,22 @@ export default function ProviderProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
+          <View style={[styles.avatarContainer, { backgroundColor: theme.colors.surface }]}>
             <IconSymbol
               ios_icon_name="sparkles"
               android_material_icon_name="local-car-wash"
               size={48}
-              color={colors.primary}
+              color={theme.colors.accent}
             />
           </View>
-          <Text style={styles.providerName}>{provider?.name}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={[styles.providerName, { color: theme.colors.text }]}>{provider?.name}</Text>
+          <Text style={[styles.email, { color: theme.colors.textMuted }]}>{user?.email}</Text>
           {/* TEMPORAIREMENT CACHÉ - À réactiver plus tard */}
           {false && (
             <View style={styles.ratingContainer}>
@@ -115,9 +120,9 @@ export default function ProviderProfileScreen() {
                 ios_icon_name="star.fill"
                 android_material_icon_name="star"
                 size={20}
-                color={colors.highlight}
+                color={theme.colors.warning}
               />
-              <Text style={styles.ratingText}>
+              <Text style={[styles.ratingText, { color: theme.colors.text }]}>
                 {provider?.averageRating?.toFixed(1) || '0.0'} ({provider?.totalRatings || 0} avis)
               </Text>
             </View>
@@ -125,54 +130,54 @@ export default function ProviderProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informations</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Informations</Text>
           <View style={commonStyles.card}>
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="phone.fill"
                 android_material_icon_name="phone"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Téléphone</Text>
-                <Text style={styles.infoValue}>{provider?.phone}</Text>
+                <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>Téléphone</Text>
+                <Text style={[styles.infoValue, { color: theme.colors.text }]}>{provider?.phone}</Text>
               </View>
             </View>
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="location.fill"
                 android_material_icon_name="location-on"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Zone d&apos;intervention</Text>
-                <Text style={styles.infoValue}>
+                <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>Zone d&apos;intervention</Text>
+                <Text style={[styles.infoValue, { color: theme.colors.text }]}>
                   {provider?.baseCity} ({provider?.radiusKm} km)
                 </Text>
               </View>
             </View>
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="text.alignleft"
                 android_material_icon_name="description"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
               <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Description</Text>
-                <Text style={styles.infoValue}>{provider?.description || 'Aucune description'}</Text>
+                <Text style={[styles.infoLabel, { color: theme.colors.textMuted }]}>Description</Text>
+                <Text style={[styles.infoValue, { color: theme.colors.text }]}>{provider?.description || 'Aucune description'}</Text>
               </View>
             </View>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Services proposés</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Services proposés</Text>
           <View style={styles.servicesContainer}>
             {provider?.services.map((service, index) => (
-              <View key={index} style={styles.serviceChip}>
+              <View key={index} style={[styles.serviceChip, { backgroundColor: theme.colors.accent }]}>
                 <Text style={styles.serviceChipText}>{getServiceLabel(service)}</Text>
               </View>
             ))}
@@ -180,74 +185,73 @@ export default function ProviderProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Actions</Text>
           <TouchableOpacity 
-            style={styles.actionItem}
+            style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}
             onPress={() => router.push('/(provider)/profile/edit')}
           >
             <IconSymbol
               ios_icon_name="pencil"
               android_material_icon_name="edit"
               size={20}
-              color={colors.text}
+              color={theme.colors.accent}
             />
-            <Text style={styles.actionText}>Modifier le profil</Text>
+            <Text style={[styles.actionText, { color: theme.colors.text }]}>Modifier le profil</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
               android_material_icon_name="chevron-right"
               size={20}
-              color={colors.textSecondary}
+              color={theme.colors.textMuted}
             />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.actionItem}
+            style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}
             onPress={() => router.push('/(provider)/profile/notifications')}
           >
             <IconSymbol
               ios_icon_name="bell.fill"
               android_material_icon_name="notifications"
               size={20}
-              color={colors.text}
+              color={theme.colors.accent}
             />
-            <Text style={styles.actionText}>Notifications</Text>
+            <Text style={[styles.actionText, { color: theme.colors.text }]}>Notifications</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
               android_material_icon_name="chevron-right"
               size={20}
-              color={colors.textSecondary}
+              color={theme.colors.textMuted}
             />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.actionItem}
+            style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}
             onPress={() => router.push('/(provider)/(tabs)/invoices')}
           >
             <IconSymbol
               ios_icon_name="doc.text.fill"
               android_material_icon_name="description"
               size={20}
-              color={colors.text}
+              color={theme.colors.accent}
             />
-            <Text style={styles.actionText}>Factures</Text>
+            <Text style={[styles.actionText, { color: theme.colors.text }]}>Factures</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
               android_material_icon_name="chevron-right"
               size={20}
-              color={colors.textSecondary}
+              color={theme.colors.textMuted}
             />
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[buttonStyles.outline, styles.logoutButton, isLoggingOut && styles.buttonDisabled]}
+        <Button
+          variant="ghost"
           onPress={handleLogout}
           disabled={isLoggingOut}
+          loading={isLoggingOut}
+          style={{ marginTop: 16, borderColor: theme.colors.error }}
+          textStyle={{ color: theme.colors.error }}
         >
-          {isLoggingOut ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Text style={commonStyles.buttonTextOutline}>Déconnexion</Text>
-          )}
-        </TouchableOpacity>
+          Déconnexion
+        </Button>
       </ScrollView>
     </SafeAreaView>
   );
@@ -256,7 +260,6 @@ export default function ProviderProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingTop: 20,
@@ -271,22 +274,22 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
   providerName: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: 4,
   },
   email: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginBottom: 8,
   },
   ratingContainer: {
@@ -297,7 +300,6 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
   },
   section: {
     marginBottom: 24,
@@ -305,7 +307,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
   infoRow: {
@@ -313,7 +314,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   infoContent: {
     flex: 1,
@@ -321,12 +321,10 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginBottom: 2,
   },
   infoValue: {
     fontSize: 16,
-    color: colors.text,
   },
   servicesContainer: {
     flexDirection: 'row',
@@ -337,7 +335,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.primary,
   },
   serviceChipText: {
     fontSize: 14,
@@ -347,25 +344,23 @@ const styles = StyleSheet.create({
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 12,
     marginBottom: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
   actionText: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    color: colors.text,
     marginLeft: 12,
   },
   logoutButton: {
     marginTop: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });

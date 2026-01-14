@@ -177,6 +177,18 @@ export async function uploadInvoice(
   try {
     console.log('📤 Upload facture pour wash request ID:', washRequestId);
 
+    // Vérifier que la session est bien chargée avant d'uploader
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      console.error('❌ Erreur lors de la récupération de la session:', sessionError);
+      throw new Error('Session non disponible. Veuillez vous reconnecter.');
+    }
+    if (!session) {
+      console.error('❌ Aucune session active');
+      throw new Error('Session non disponible. Veuillez vous reconnecter.');
+    }
+    console.log('✅ Session active pour user:', session.user.id);
+
     // Générer un nom de fichier unique si non fourni
     const fileExtension = 'pdf';
     const timestamp = Date.now();
@@ -253,6 +265,55 @@ export async function deleteInvoice(filePath: string): Promise<void> {
     }
   } catch (error: any) {
     console.error('❌ Erreur dans deleteInvoice:', error);
+    throw error;
+  }
+}
+
+/**
+ * Supprime toutes les factures d'une demande de lavage
+ * @param washRequestId ID de la demande de lavage
+ */
+export async function deleteAllInvoicesForRequest(washRequestId: string): Promise<void> {
+  try {
+    console.log('🗑️ Suppression des factures existantes pour la demande:', washRequestId);
+    
+    // Lister tous les fichiers dans le dossier de la demande
+    const { data: files, error: listError } = await supabase.storage
+      .from(INVOICE_BUCKET)
+      .list(washRequestId);
+
+    if (listError) {
+      console.error('❌ Erreur lors de la liste des fichiers:', listError);
+      // Si le dossier n'existe pas, ce n'est pas une erreur
+      if (listError.message?.includes('not found')) {
+        return;
+      }
+      throw listError;
+    }
+
+    if (!files || files.length === 0) {
+      console.log('✅ Aucune facture existante à supprimer');
+      return;
+    }
+
+    // Construire les chemins complets des fichiers à supprimer
+    const filePaths = files.map(file => `${washRequestId}/${file.name}`);
+    
+    console.log('🗑️ Suppression de', filePaths.length, 'fichier(s)');
+
+    // Supprimer tous les fichiers
+    const { error: deleteError } = await supabase.storage
+      .from(INVOICE_BUCKET)
+      .remove(filePaths);
+
+    if (deleteError) {
+      console.error('❌ Erreur lors de la suppression des fichiers:', deleteError);
+      throw deleteError;
+    }
+
+    console.log('✅ Toutes les factures existantes ont été supprimées');
+  } catch (error: any) {
+    console.error('❌ Erreur dans deleteAllInvoicesForRequest:', error);
     throw error;
   }
 }
