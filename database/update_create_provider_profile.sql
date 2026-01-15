@@ -1,37 +1,18 @@
 -- ============================================
--- FONCTION POUR CRÉER LES PROFILS (CONTOURNE RLS)
+-- MISE À JOUR DE LA FONCTION create_provider_profile
 -- ============================================
--- Cette fonction permet de créer les profils client/provider
--- même sans session active, en contournant RLS
+-- Ce script met à jour la fonction pour supprimer le paramètre p_email
+-- qui n'existe pas dans la table providers
 -- À exécuter dans l'éditeur SQL de Supabase
 
--- Supprimer toutes les versions existantes des fonctions
+-- Supprimer toutes les versions de l'ancienne fonction (avec ou sans p_email)
+-- Utiliser CASCADE pour supprimer les dépendances
 DO $$ 
 DECLARE
     r RECORD;
     func_count INTEGER := 0;
 BEGIN
-    -- Supprimer toutes les fonctions create_client_company_profile
-    FOR r IN (
-        SELECT 
-            p.oid::regprocedure as func_signature,
-            p.proname as func_name
-        FROM pg_proc p
-        JOIN pg_namespace n ON p.pronamespace = n.oid
-        WHERE n.nspname = 'public'
-        AND p.proname = 'create_client_company_profile'
-    ) 
-    LOOP
-        BEGIN
-            EXECUTE 'DROP FUNCTION IF EXISTS ' || r.func_signature || ' CASCADE';
-            RAISE NOTICE 'Suppression de la fonction: %', r.func_signature;
-            func_count := func_count + 1;
-        EXCEPTION WHEN OTHERS THEN
-            RAISE NOTICE 'Erreur lors de la suppression de %: %', r.func_signature, SQLERRM;
-        END;
-    END LOOP;
-    
-    -- Supprimer toutes les fonctions create_provider_profile
+    -- Supprimer toutes les fonctions avec ce nom, peu importe leur signature
     FOR r IN (
         SELECT 
             p.oid::regprocedure as func_signature,
@@ -52,7 +33,7 @@ BEGIN
     END LOOP;
     
     IF func_count = 0 THEN
-        RAISE NOTICE 'Aucune fonction trouvée à supprimer';
+        RAISE NOTICE 'Aucune fonction create_provider_profile trouvée à supprimer';
     ELSE
         RAISE NOTICE 'Total de % fonction(s) supprimée(s)', func_count;
     END IF;
@@ -61,57 +42,7 @@ BEGIN
     PERFORM pg_sleep(0.1);
 END $$;
 
--- Fonction pour créer un profil client
-CREATE OR REPLACE FUNCTION create_client_company_profile(
-  p_user_id UUID,
-  p_name TEXT,
-  p_address TEXT,
-  p_contact TEXT,
-  p_phone TEXT,
-  p_email TEXT
-)
-RETURNS TABLE (
-  id UUID,
-  user_id UUID,
-  name TEXT,
-  address TEXT,
-  contact TEXT,
-  phone TEXT,
-  email TEXT,
-  created_at TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE
-)
-LANGUAGE plpgsql
-SECURITY DEFINER -- Permet de contourner RLS
-AS $$
-DECLARE
-  v_company client_companies%ROWTYPE;
-BEGIN
-  -- Vérifier que l'utilisateur existe dans auth.users
-  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_user_id) THEN
-    RAISE EXCEPTION 'User does not exist in auth.users';
-  END IF;
-
-  -- Insérer dans client_companies
-  INSERT INTO client_companies (user_id, name, address, contact, phone, email)
-  VALUES (p_user_id, p_name, p_address, p_contact, p_phone, p_email)
-  RETURNING * INTO v_company;
-
-  -- Retourner les données complètes
-  RETURN QUERY SELECT 
-    v_company.id,
-    v_company.user_id,
-    v_company.name,
-    v_company.address,
-    v_company.contact,
-    v_company.phone,
-    v_company.email,
-    v_company.created_at,
-    v_company.updated_at;
-END;
-$$;
-
--- Fonction pour créer un profil provider
+-- Créer la nouvelle fonction sans p_email
 CREATE OR REPLACE FUNCTION create_provider_profile(
   p_user_id UUID,
   p_name TEXT,
@@ -208,8 +139,15 @@ END;
 $$;
 
 -- Donner les permissions nécessaires
-GRANT EXECUTE ON FUNCTION create_client_company_profile TO authenticated;
 GRANT EXECUTE ON FUNCTION create_provider_profile TO authenticated;
-GRANT EXECUTE ON FUNCTION create_client_company_profile TO anon;
 GRANT EXECUTE ON FUNCTION create_provider_profile TO anon;
+
+-- Vérifier que la fonction a été créée correctement
+SELECT 
+  routine_name,
+  routine_type,
+  data_type as return_type
+FROM information_schema.routines
+WHERE routine_schema = 'public'
+AND routine_name = 'create_provider_profile';
 

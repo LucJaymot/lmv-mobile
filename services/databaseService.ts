@@ -4,6 +4,7 @@
  * Ce service centralise toutes les opérations de base de données
  */
 
+import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { User, ClientCompany, Provider, WashRequest, WashRequestStatus, Vehicle, Rating } from '@/types';
 
@@ -35,6 +36,19 @@ export const authService = {
     const normalizedEmail = email.toLowerCase().trim();
     console.log('Email normalisé:', normalizedEmail);
     
+    // Déterminer l'URL de redirection après confirmation d'email
+    let emailRedirectTo: string | undefined;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      // Sur web, utiliser l'URL actuelle
+      emailRedirectTo = `${window.location.origin}/auth/login`;
+    } else {
+      // Sur mobile, utiliser le deep link
+      emailRedirectTo = 'lmv://auth/login';
+    }
+
+    console.log('📧 Configuration email:');
+    console.log('emailRedirectTo:', emailRedirectTo);
+
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
@@ -42,14 +56,26 @@ export const authService = {
         data: {
           role,
         },
-        emailRedirectTo: undefined, // Pas de redirection email
+        emailRedirectTo, // URL de redirection après confirmation d'email
+        // Forcer l'envoi de l'email même si auto-confirm est activé
+        // En ajoutant cette option, Supabase enverra toujours un email de confirmation
       },
     });
 
-    console.log('Réponse Supabase Auth:');
+    console.log('📧 Réponse Supabase Auth:');
     console.log('Data:', data ? 'présente' : 'absente');
     console.log('User:', data?.user ? data.user.email : 'aucun');
+    console.log('User confirmed:', data?.user?.email_confirmed_at ? 'OUI' : 'NON');
     console.log('Session:', data?.session ? 'présente' : 'absente');
+    console.log('User ID:', data?.user?.id);
+    
+    // Vérifier si l'email a été envoyé
+    if (data?.user && !data?.user.email_confirmed_at) {
+      console.log('✅ Email de confirmation devrait être envoyé (utilisateur non confirmé)');
+    } else if (data?.user?.email_confirmed_at) {
+      console.log('⚠️ Utilisateur déjà confirmé - l\'email de confirmation n\'a peut-être pas été envoyé');
+      console.log('💡 Vérifiez les paramètres Supabase: Authentication > Settings > Enable email confirmations');
+    }
     
     if (error) {
       console.error('❌ Erreur Supabase Auth signUp:', error);
@@ -58,6 +84,9 @@ export const authService = {
       console.error('Full error:', JSON.stringify(error, null, 2));
       
       // Messages d'erreur plus clairs pour l'utilisateur
+      if (error.message?.includes('Signups not allowed') || error.code === 'signup_disabled') {
+        throw new Error('Les inscriptions sont désactivées dans Supabase. Veuillez activer les inscriptions dans Authentication > Settings > Enable sign ups.');
+      }
       if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
         throw new Error('Un compte avec cet email existe déjà');
       }
@@ -89,12 +118,28 @@ export const authService = {
    * Connexion d'un utilisateur
    */
   async signIn(email: string, password: string) {
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('🔐 Tentative de connexion pour:', normalizedEmail);
+    
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Erreur de connexion:', error);
+      console.error('Code:', error.code);
+      console.error('Message:', error.message);
+      console.error('Status:', error.status);
+      throw error;
+    }
+    
+    console.log('✅ Connexion réussie');
+    console.log('User ID:', data.user?.id);
+    console.log('Email confirmé:', data.user?.email_confirmed_at ? 'OUI' : 'NON');
+    console.log('Email confirmé à:', data.user?.email_confirmed_at);
+    
     return data;
   },
 
@@ -158,6 +203,46 @@ export const authService = {
     });
 
     if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Renvoie un email de confirmation
+   */
+  async resendConfirmationEmail(email: string, redirectTo?: string) {
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('📧 Renvoi de l\'email de confirmation pour:', normalizedEmail);
+    
+    let emailRedirectTo: string | undefined = redirectTo;
+    if (!emailRedirectTo) {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        emailRedirectTo = `${window.location.origin}/auth/login`;
+      } else {
+        emailRedirectTo = 'lmv://auth/login';
+      }
+    }
+    
+    console.log('📧 emailRedirectTo:', emailRedirectTo);
+    
+    // Utiliser resend avec type 'signup' pour renvoyer l'email de confirmation
+    // Cette méthode fonctionne même si l'utilisateur existe déjà mais n'a pas confirmé son email
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email: normalizedEmail,
+      options: {
+        emailRedirectTo,
+      },
+    });
+
+    if (error) {
+      console.error('❌ Erreur lors du renvoi de l\'email de confirmation:', error);
+      console.error('Code:', error.code);
+      console.error('Message:', error.message);
+      throw error;
+    }
+    
+    console.log('✅ Email de confirmation renvoyé');
     return data;
   },
 };
@@ -403,18 +488,39 @@ export const providerService = {
       p_base_city: data.baseCity,
       p_radius_km: data.radiusKm,
       p_phone: data.phone,
-      p_email: data.email || '',
       p_description: data.description || null,
       p_services: data.services || [],
     });
 
     if (error) {
       console.error('❌ Erreur lors de la création via fonction SQL:', error);
+      console.error('Code:', error.code);
+      console.error('Message:', error.message);
+      console.error('Details:', error.details);
+      console.error('Hint:', error.hint);
+      
+      // Vérifier si l'erreur contient du HTML (template d'email)
+      if (typeof error.message === 'string' && error.message.includes('<!DOCTYPE html>')) {
+        console.error('⚠️ Erreur contient du HTML (template d\'email) - probablement une erreur de configuration Supabase');
+        throw new Error('Erreur de configuration Supabase. La fonction create_provider_profile n\'est peut-être pas correctement configurée. Vérifiez les logs Supabase.');
+      }
+      
+      // Vérifier si c'est une erreur de fonction non trouvée ou signature incorrecte
+      if (error.code === 'PGRST202' || (error.message && error.message.includes('Could not find the function'))) {
+        console.error('⚠️ La fonction create_provider_profile n\'existe pas ou a une signature incorrecte dans Supabase');
+        console.error('💡 ACTION REQUISE:');
+        console.error('   1. Allez dans Supabase Dashboard > SQL Editor');
+        console.error('   2. Exécutez le script SQL: database/create_profile_function.sql');
+        console.error('   3. Assurez-vous que la fonction create_provider_profile est bien créée SANS le paramètre p_email');
+        console.error('   4. La signature correcte est: create_provider_profile(p_user_id, p_name, p_base_city, p_radius_km, p_phone, p_description, p_services)');
+        throw new Error('La fonction create_provider_profile n\'existe pas ou a une signature incorrecte dans Supabase. Veuillez exécuter le script SQL mis à jour: database/create_profile_function.sql');
+      }
+      
       throw error;
     }
 
     if (!result || result.length === 0) {
-      throw new Error('Aucune donnée retournée par la fonction SQL');
+      throw new Error('Aucune donnée retournée par la fonction SQL create_provider_profile. Vérifiez que la fonction existe et est correctement configurée.');
     }
 
     const providerData = result[0];
@@ -671,12 +777,35 @@ export const washRequestService = {
 
     // Envoyer une notification aux prestataires pour la nouvelle demande
     if (data.status === 'pending') {
+      // Notification push
       try {
         const { notifyProvidersOfNewRequest } = await import('./notificationService');
         await notifyProvidersOfNewRequest(result.id, result.address);
       } catch (notificationError) {
         // Ne pas faire échouer la création si la notification échoue
-        console.error('❌ Erreur lors de l\'envoi des notifications (non bloquant):', notificationError);
+        console.error('❌ Erreur lors de l\'envoi des notifications push (non bloquant):', notificationError);
+      }
+
+      // Envoi d'email aux prestataires
+      try {
+        // Récupérer le nom du client pour l'email
+        const { data: clientData } = await supabase
+          .from('client_companies')
+          .select('name')
+          .eq('id', data.clientCompanyId)
+          .single();
+
+        const { sendNewRequestEmailToProviders } = await import('./emailService');
+        await sendNewRequestEmailToProviders({
+          id: result.id,
+          address: result.address,
+          dateTime: parseDate(result.date_time),
+          clientCompanyName: clientData?.name,
+          notes: result.notes || undefined,
+        });
+      } catch (emailError) {
+        // Ne pas faire échouer la création si l'email échoue
+        console.error('❌ Erreur lors de l\'envoi des emails aux prestataires (non bloquant):', emailError);
       }
     }
 
@@ -1031,11 +1160,130 @@ export const washRequestService = {
 
   /**
    * Supprime une demande de lavage
+   * Envoie un email au prestataire si un prestataire est assigné
    */
   async delete(id: string): Promise<void> {
     console.log('🔧 washRequestService.delete appelé');
     console.log('ID de la demande à supprimer:', id);
     
+    // Récupérer les informations de la demande avant suppression pour envoyer l'email
+    const { data: requestData, error: fetchError } = await supabase
+      .from('wash_requests')
+      .select('id, address, date_time, provider_id, client_company_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Erreur lors de la récupération de la demande:', fetchError);
+      throw fetchError;
+    }
+
+    // Si un prestataire est assigné, envoyer un email d'annulation
+    if (requestData?.provider_id) {
+      console.log('📧 Prestataire assigné détecté, envoi d\'email d\'annulation...');
+      console.log('   Provider ID:', requestData.provider_id);
+      
+      try {
+        // Récupérer les informations du prestataire
+        const { data: providerData, error: providerError } = await supabase
+          .from('providers')
+          .select('name, user_id')
+          .eq('id', requestData.provider_id)
+          .single();
+
+        if (providerError) {
+          console.error('❌ Erreur lors de la récupération du prestataire:', providerError);
+        } else if (providerData) {
+          console.log('   Prestataire trouvé:', providerData.name);
+          console.log('   User ID:', providerData.user_id);
+          
+          // Essayer d'abord avec la fonction SQL pour récupérer l'email depuis auth.users
+          let providerEmail: string | null = null;
+          try {
+            const { data: emailsData, error: rpcError } = await supabase.rpc('get_provider_emails', {
+              provider_user_ids: [providerData.user_id],
+            });
+            
+            if (!rpcError && emailsData && emailsData.length > 0) {
+              providerEmail = emailsData[0].email;
+              console.log('   Email récupéré via fonction SQL:', providerEmail);
+            } else {
+              console.warn('   Fonction get_provider_emails non disponible ou aucun résultat, tentative depuis users...');
+              // Fallback: récupérer depuis la table users
+              const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('email')
+                .eq('id', providerData.user_id)
+                .single();
+              
+              if (userError) {
+                console.error('   Erreur lors de la récupération depuis users:', userError);
+              } else if (userData?.email) {
+                providerEmail = userData.email;
+                console.log('   Email récupéré depuis users:', providerEmail);
+              }
+            }
+          } catch (emailFetchError: any) {
+            console.error('   Erreur lors de la récupération de l\'email:', emailFetchError);
+          }
+
+          // Récupérer le nom du client
+          let clientCompanyName: string | undefined;
+          if (requestData.client_company_id) {
+            const { data: clientData } = await supabase
+              .from('client_companies')
+              .select('name')
+              .eq('id', requestData.client_company_id)
+              .single();
+            clientCompanyName = clientData?.name;
+            console.log('   Client:', clientCompanyName);
+          }
+
+          if (providerEmail) {
+            console.log('📧 Envoi de l\'email d\'annulation à:', providerEmail);
+            // Importer et appeler le service d'email de manière asynchrone (ne pas bloquer)
+            // Utiliser un setTimeout pour ne pas bloquer la suppression
+            setTimeout(async () => {
+              try {
+                console.log('   Import du service d\'email...');
+                const { sendJobCancellationEmail } = await import('@/services/emailService');
+                console.log('   Service d\'email importé, appel de sendJobCancellationEmail...');
+                await sendJobCancellationEmail(
+                  providerEmail!,
+                  providerData.name,
+                  {
+                    id: requestData.id,
+                    address: requestData.address,
+                    dateTime: parseDate(requestData.date_time),
+                    clientCompanyName,
+                  }
+                );
+                console.log('✅ Email d\'annulation envoyé avec succès');
+              } catch (emailError: any) {
+                console.error('❌ Erreur lors de l\'envoi de l\'email d\'annulation (non bloquant):', emailError);
+                console.error('   Type:', emailError.constructor?.name || 'Unknown');
+                console.error('   Message:', emailError.message || 'N/A');
+                console.error('   Stack:', emailError.stack || 'N/A');
+              }
+            }, 0);
+          } else {
+            console.warn('⚠️ Email du prestataire non trouvé, impossible d\'envoyer la notification d\'annulation');
+            console.warn('   Provider ID:', requestData.provider_id);
+            console.warn('   User ID:', providerData.user_id);
+          }
+        } else {
+          console.warn('⚠️ Prestataire non trouvé pour l\'ID:', requestData.provider_id);
+        }
+      } catch (emailSetupError: any) {
+        console.error('❌ Erreur lors de la préparation de l\'email d\'annulation (non bloquant):', emailSetupError);
+        console.error('   Stack:', emailSetupError.stack);
+        // Ne pas bloquer la suppression si l'email échoue
+      }
+    } else {
+      console.log('ℹ️ Aucun prestataire assigné à cette demande, pas d\'email à envoyer');
+    }
+
+    // Supprimer la demande
     const { error } = await supabase
       .from('wash_requests')
       .delete()
@@ -1063,6 +1311,13 @@ export const washRequestService = {
     if (updates.notes !== undefined) updateData.notes = updates.notes;
     if (updates.invoiceUrl !== undefined) updateData.invoice_url = updates.invoiceUrl || null;
 
+    // Récupérer la demande actuelle pour vérifier si un prestataire est assigné
+    const { data: currentRequest } = await supabase
+      .from('wash_requests')
+      .select('provider_id, status, address, date_time, client_company_id')
+      .eq('id', id)
+      .single();
+
     const { data, error } = await supabase
       .from('wash_requests')
       .update(updateData)
@@ -1071,6 +1326,97 @@ export const washRequestService = {
       .single();
 
     if (error) throw error;
+
+    // Si un prestataire vient d'être assigné et que le statut est 'accepted', envoyer des emails
+    const providerJustAssigned = 
+      updates.providerId !== undefined && 
+      updates.providerId !== null && 
+      (!currentRequest?.provider_id || currentRequest.provider_id !== updates.providerId) &&
+      (updates.status === 'accepted' || (!updates.status && currentRequest?.status === 'accepted'));
+
+    if (providerJustAssigned && updates.providerId) {
+      console.log('📧 Nouveau job assigné, envoi d\'emails au prestataire et au client...');
+      
+      // Récupérer les informations du prestataire
+      const { data: providerData } = await supabase
+        .from('providers')
+        .select('name, user_id, phone')
+        .eq('id', updates.providerId)
+        .single();
+
+      if (providerData) {
+        // Récupérer l'email du prestataire depuis users
+        const { data: userData } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', providerData.user_id)
+          .single();
+
+        // Récupérer les informations du client
+        let clientCompanyName: string | undefined;
+        let clientEmail: string | undefined;
+        if (data.client_company_id) {
+          const { data: clientData } = await supabase
+            .from('client_companies')
+            .select('name, email')
+            .eq('id', data.client_company_id)
+            .single();
+          clientCompanyName = clientData?.name;
+          clientEmail = clientData?.email;
+        }
+
+        // Envoyer l'email au prestataire
+        if (userData?.email) {
+          // Importer et appeler le service d'email de manière asynchrone (ne pas bloquer)
+          import('@/services/emailService').then(({ sendJobAssignmentEmail }) => {
+            sendJobAssignmentEmail(
+              userData.email,
+              providerData.name,
+              {
+                id: data.id,
+                address: data.address,
+                dateTime: parseDate(data.date_time),
+                clientCompanyName,
+              }
+            ).catch((emailError) => {
+              console.error('❌ Erreur lors de l\'envoi de l\'email au prestataire (non bloquant):', emailError);
+            });
+          });
+        } else {
+          console.warn('⚠️ Email du prestataire non trouvé, impossible d\'envoyer la notification');
+        }
+
+        // Envoyer l'email au client
+        if (clientEmail && clientCompanyName) {
+          console.log('📧 Envoi d\'email de notification d\'acceptation au client:', clientEmail);
+          // Importer et appeler le service d'email de manière asynchrone (ne pas bloquer)
+          setTimeout(async () => {
+            try {
+              const { sendJobAcceptedEmailToClient } = await import('@/services/emailService');
+              await sendJobAcceptedEmailToClient(
+                clientEmail!,
+                clientCompanyName!,
+                {
+                  id: data.id,
+                  address: data.address,
+                  dateTime: parseDate(data.date_time),
+                  providerName: providerData.name,
+                  providerPhone: providerData.phone,
+                }
+              );
+              console.log('✅ Email d\'acceptation envoyé au client avec succès');
+            } catch (emailError: any) {
+              console.error('❌ Erreur lors de l\'envoi de l\'email au client (non bloquant):', emailError);
+            }
+          }, 0);
+        } else {
+          console.warn('⚠️ Email du client non trouvé, impossible d\'envoyer la notification d\'acceptation');
+          console.warn('   Client Company ID:', data.client_company_id);
+          console.warn('   Client Email:', clientEmail);
+          console.warn('   Client Name:', clientCompanyName);
+        }
+      }
+    }
 
     return {
       id: data.id,

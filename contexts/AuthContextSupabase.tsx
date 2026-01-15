@@ -17,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, role: UserRole, profileData: any) => Promise<void>;
+  register: (email: string, password: string, role: UserRole, profileData: any) => Promise<any>;
   logout: () => Promise<void>;
   updateProfile: (data: any) => Promise<void>;
 }
@@ -240,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('Login successful for:', authUser.email);
+      console.log('User email_confirmed_at:', authUser.email_confirmed_at);
       
       // Charger le profil utilisateur
       await loadUserProfile(authUser.id);
@@ -247,9 +248,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Login completed successfully');
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error status:', error.status);
       
       // Gérer spécifiquement l'erreur de confirmation d'email
-      if (error.message?.includes('Email not confirmed') || error.message?.includes('email not confirmed')) {
+      // Supabase retourne cette erreur si l'email n'est pas confirmé
+      if (error.message?.includes('Email not confirmed') || 
+          error.message?.includes('email not confirmed') ||
+          error.code === 'email_not_confirmed' ||
+          error.status === 400) {
+        // Vérifier le statut réel de l'utilisateur en cas de doute
+        // Parfois l'utilisateur a confirmé mais Supabase n'a pas encore synchronisé
+        try {
+          const { data: { user: currentUser }, error: getUserError } = await supabase.auth.getUser();
+          if (!getUserError && currentUser && currentUser.email_confirmed_at) {
+            console.log('✅ Email confirmé détecté après vérification, nouvelle tentative de connexion...');
+            // L'email est confirmé, réessayer la connexion
+            const { user: retryAuthUser } = await authService.signIn(email, password);
+            if (retryAuthUser) {
+              await loadUserProfile(retryAuthUser.id);
+              console.log('Login réussi après vérification du statut');
+              return;
+            }
+          }
+        } catch (verifyError) {
+          console.log('⚠️ Impossible de vérifier le statut de confirmation:', verifyError);
+        }
+        
         throw new Error('Votre email n\'a pas été confirmé. Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation avant de vous connecter.');
       }
       
@@ -337,7 +363,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProvider(newProvider);
         } catch (providerError: any) {
           console.error('❌ Erreur lors de la création du prestataire:', providerError);
-          throw new Error(`Erreur lors de la création du profil: ${providerError.message}`);
+          console.error('Type:', providerError?.constructor?.name);
+          console.error('Code:', providerError?.code);
+          console.error('Message:', providerError?.message);
+          console.error('Details:', providerError?.details);
+          
+          // Vérifier si l'erreur contient du HTML (template d'email)
+          const errorMessage = providerError?.message || '';
+          if (typeof errorMessage === 'string' && errorMessage.includes('<!DOCTYPE html>')) {
+            console.error('⚠️ Erreur contient du HTML (template d\'email)');
+            throw new Error('Erreur de configuration Supabase. La fonction create_provider_profile retourne un template d\'email au lieu d\'un résultat. Vérifiez la configuration de la fonction SQL dans Supabase.');
+          }
+          
+          // Message d'erreur plus clair
+          let userFriendlyMessage = 'Erreur lors de la création du profil prestataire.';
+          if (providerError?.message?.includes('function') || providerError?.message?.includes('does not exist')) {
+            userFriendlyMessage = 'La fonction create_provider_profile n\'existe pas dans Supabase. Veuillez exécuter le script SQL de création de fonction.';
+          } else if (providerError?.message?.includes('permission') || providerError?.code === '42501') {
+            userFriendlyMessage = 'Erreur de permissions. Vérifiez les politiques RLS dans Supabase.';
+          } else if (providerError?.message) {
+            userFriendlyMessage = `Erreur: ${providerError.message}`;
+          }
+          
+          throw new Error(userFriendlyMessage);
         }
       }
 
@@ -361,6 +409,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('⚠️ Erreur lors de la déconnexion (non bloquant):', signOutError);
         // Ne pas bloquer l'inscription si la déconnexion échoue
       }
+      
+      // Retourner les données de l'utilisateur pour vérifier le statut de confirmation
+      return authData;
     } catch (error: any) {
       console.error('=== ERREUR D\'INSCRIPTION ===');
       console.error('Type:', error.constructor.name);

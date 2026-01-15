@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -84,6 +84,25 @@ export default function RegisterScreen() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [userConfirmed, setUserConfirmed] = useState<boolean>(false);
+  const isRegisteringRef = useRef(false);
+
+  // Empêcher la redirection automatique pendant l'inscription
+  useEffect(() => {
+    if (user && !isRegisteringRef.current && !emailSent) {
+      // Si l'utilisateur est connecté mais qu'on n'est pas en train de s'inscrire,
+      // rediriger vers le dashboard (cas normal de connexion)
+      console.log('User connected, redirecting to dashboard...');
+      if (user.role === 'client') {
+        router.replace('/(client)/(tabs)/dashboard');
+      } else if (user.role === 'provider') {
+        router.replace('/(provider)/(tabs)/dashboard');
+      } else if (user.role === 'admin') {
+        router.replace('/(admin)/dashboard');
+      }
+    }
+  }, [user, emailSent]);
 
   // Note: On ne redirige plus automatiquement vers le dashboard après inscription
   // L'utilisateur sera redirigé vers la page de connexion pour se connecter
@@ -231,14 +250,21 @@ export default function RegisterScreen() {
 
     console.log('Démarrage de l\'inscription...');
     setIsLoading(true);
+    isRegisteringRef.current = true; // Marquer qu'on est en train de s'inscrire
     try {
       console.log('Appel de register()...');
-      await register(email, password, role, profileData);
-      console.log('✅ Registration successful, redirecting to login...');
+      const result = await register(email, password, role, profileData);
+      console.log('✅ Registration successful...');
       
-      // Redirection immédiate vers la page de connexion
-      console.log('Redirection immédiate vers /auth/login...');
-      router.replace('/auth/login');
+      // Vérifier si l'utilisateur est déjà confirmé (auto-confirm activé)
+      // Si oui, aucun email n'est envoyé
+      const isConfirmed = result?.user?.email_confirmed_at !== null && result?.user?.email_confirmed_at !== undefined;
+      setUserConfirmed(isConfirmed);
+      
+      console.log('User confirmed:', isConfirmed ? 'OUI (auto-confirm activé)' : 'NON (email envoyé)');
+      
+      // Afficher le message de confirmation d'email
+      setEmailSent(true);
       
     } catch (error: any) {
       console.error('❌ Registration error:', error);
@@ -252,6 +278,10 @@ export default function RegisterScreen() {
       Alert.alert('Erreur', errorMessage);
     } finally {
       setIsLoading(false);
+      // Attendre un peu avant de permettre la redirection
+      setTimeout(() => {
+        isRegisteringRef.current = false;
+      }, 1000);
       console.log('handleRegister terminé');
     }
   };
@@ -264,6 +294,66 @@ export default function RegisterScreen() {
         : [...prev.services, service],
     }));
   };
+
+  // Afficher l'écran de confirmation après l'inscription réussie
+  if (emailSent) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.successContainer}>
+              <View style={styles.successIconContainer}>
+                <IconSymbol
+                  ios_icon_name="checkmark.circle.fill"
+                  android_material_icon_name="check-circle"
+                  size={64}
+                  color={theme.colors.success}
+                />
+              </View>
+              <Text style={[styles.successTitle, { color: theme.colors.text }]}>Inscription réussie !</Text>
+              <Text style={[styles.successText, { color: theme.colors.textMuted }]}>
+                {userConfirmed ? (
+                  <>
+                    Votre compte a été créé avec succès !{'\n\n'}
+                    <Text style={[styles.emailText, { color: theme.colors.text }]}>{email}</Text>
+                    {'\n\n'}
+                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>
+                      ⚠️ Aucun email de confirmation n'a été envoyé car la confirmation automatique est activée dans Supabase.
+                    </Text>
+                    {'\n\n'}
+                    Vous pouvez vous connecter immédiatement avec vos identifiants.
+                    {'\n\n'}
+                    <Text style={{ fontSize: 12, fontStyle: 'italic' }}>
+                      Pour recevoir des emails de confirmation, activez &quot;Enable email confirmations&quot; dans Supabase {'>'} Authentication {'>'} Settings.
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    Un email de confirmation a été envoyé à{'\n'}
+                    <Text style={[styles.emailText, { color: theme.colors.text }]}>{email}</Text>
+                    {'\n\n'}
+                    Veuillez vérifier votre boîte de réception (et votre dossier spam) et cliquer sur le lien de confirmation pour activer votre compte.
+                    {'\n\n'}
+                    <Text style={{ fontSize: 12, fontStyle: 'italic' }}>
+                      Si vous ne recevez pas l'email dans quelques minutes, vérifiez vos paramètres Supabase ou contactez le support.
+                    </Text>
+                  </>
+                )}
+              </Text>
+              <Button
+                variant="primary"
+                size="lg"
+                onPress={() => router.replace('/auth/login')}
+                style={styles.button}
+              >
+                Retour à la connexion
+              </Button>
+            </View>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (step === 'role') {
     return (
@@ -992,5 +1082,30 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: 8,
+  },
+  successContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  successIconContainer: {
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  successText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  emailText: {
+    fontWeight: '600',
+  },
+  button: {
+    minWidth: 200,
   },
 });

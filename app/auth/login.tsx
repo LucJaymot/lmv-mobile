@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/Logo';
 import { IconSymbol } from '@/components/IconSymbol';
+import { authService } from '@/services/databaseService';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -39,6 +40,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -96,25 +98,28 @@ export default function LoginScreen() {
       // Analyser le message d'erreur pour afficher un message spécifique
       const errorMessage = error.message || '';
       
-      // Supabase ne distingue pas entre "email n'existe pas" et "mot de passe incorrect" pour des raisons de sécurité
-      // Mais on peut quand même améliorer les messages
-      if (errorMessage.includes('Invalid login credentials') || 
-          errorMessage.includes('email not confirmed') ||
+      // Email non confirmé
+      if (errorMessage.includes('email n\'a pas été confirmé') || 
+          errorMessage.includes('email not confirmed') || 
           errorMessage.includes('Email not confirmed')) {
-        // Erreur générique d'authentification (email ou mot de passe incorrect)
-        Alert.alert(
-          'Erreur de connexion',
-          'L\'email ou le mot de passe est incorrect. Veuillez vérifier vos identifiants.',
-          [{ text: 'OK' }]
-        );
-      } else if (errorMessage.includes('email not confirmed') || errorMessage.includes('Email not confirmed')) {
-        Alert.alert(
-          'Email non confirmé',
-          'Votre email n\'a pas été confirmé. Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation.',
-          [{ text: 'OK' }]
-        );
+        setEmailError('Votre email n\'a pas été confirmé. Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation. Si vous avez déjà cliqué sur le lien, attendez quelques instants et réessayez.');
+      } else if (errorMessage.includes('Invalid login credentials')) {
+        // Supabase renvoie ce message pour email OU mot de passe incorrect.
+        // On tente d'améliorer l'UX en vérifiant si l'email existe.
+        try {
+          const normalizedEmail = email.trim().toLowerCase();
+          const exists = await authService.checkEmailExists(normalizedEmail);
+          if (exists) {
+            setPasswordError('Mot de passe incorrect. Veuillez réessayer.');
+          } else {
+            setEmailError('Cet email n\'existe pas. Veuillez vérifier ou créer un compte.');
+          }
+        } catch {
+          // Fallback si la vérif échoue
+          setPasswordError('L\'email ou le mot de passe est incorrect. Veuillez vérifier vos identifiants.');
+        }
       } else {
-        Alert.alert('Erreur', errorMessage || 'Une erreur est survenue lors de la connexion');
+        setPasswordError(errorMessage || 'Une erreur est survenue lors de la connexion');
       }
     } finally {
       setIsLoading(false);
@@ -177,6 +182,46 @@ export default function LoginScreen() {
                 />
               }
             />
+            
+            {/* Bouton pour renvoyer l'email de confirmation si l'erreur est liée à la confirmation */}
+            {emailError && (emailError.includes('n\'a pas été confirmé') || emailError.includes('not confirmed')) && (
+              <View style={styles.resendContainer}>
+                <Text style={[textStyles.bodySmall, { color: theme.colors.textMuted, marginBottom: theme.spacing[2] }]}>
+                  Vous n'avez pas reçu l'email ou le lien a expiré ?
+                </Text>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={async () => {
+                    if (!email.trim()) {
+                      Alert.alert('Erreur', 'Veuillez entrer votre email');
+                      return;
+                    }
+                    setIsResendingConfirmation(true);
+                    try {
+                      await authService.resendConfirmationEmail(email.trim());
+                      Alert.alert(
+                        'Email envoyé',
+                        'Un nouvel email de confirmation a été envoyé. Vérifiez votre boîte de réception (et votre dossier spam).'
+                      );
+                    } catch (error: any) {
+                      console.error('Erreur lors du renvoi de l\'email:', error);
+                      Alert.alert(
+                        'Erreur',
+                        error.message || 'Impossible d\'envoyer l\'email de confirmation. Veuillez réessayer plus tard.'
+                      );
+                    } finally {
+                      setIsResendingConfirmation(false);
+                    }
+                  }}
+                  disabled={isResendingConfirmation || isLoading}
+                  loading={isResendingConfirmation}
+                  style={styles.resendButton}
+                >
+                  Renvoyer l'email de confirmation
+                </Button>
+              </View>
+            )}
 
             {/* Password Input */}
             <Input
@@ -318,6 +363,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexWrap: 'wrap',
+  },
+  resendContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  resendButton: {
+    alignSelf: 'flex-start',
   },
 });
 
