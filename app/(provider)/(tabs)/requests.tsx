@@ -93,7 +93,9 @@ export default function ProviderRequestsScreen() {
       });
 
       console.log('✅ Demande acceptée avec succès');
-      await loadPendingRequests(); // Recharger les demandes
+      
+      // Rediriger vers la page précédente
+      router.back();
     } catch (error: any) {
       console.error('❌ Erreur lors de l\'acceptation de la demande:', error);
       Alert.alert('Erreur', error.message || 'Impossible d\'accepter la demande');

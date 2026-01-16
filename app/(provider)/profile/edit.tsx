@@ -50,9 +50,11 @@ export default function EditProviderProfileScreen() {
   const toggleService = (service: ServiceType) => {
     setFormData((prev) => ({
       ...prev,
+      // Si le service est déjà sélectionné, on le désélectionne
+      // Sinon, on remplace la sélection précédente par le nouveau service
       services: prev.services.includes(service)
-        ? prev.services.filter((s) => s !== service)
-        : [...prev.services, service],
+        ? []
+        : [service],
     }));
   };
 
@@ -82,7 +84,7 @@ export default function EditProviderProfileScreen() {
     }
 
     if (formData.services.length === 0) {
-      Alert.alert('Erreur', 'Veuillez sélectionner au moins un service');
+      Alert.alert('Erreur', 'Veuillez sélectionner un service');
       return;
     }
 

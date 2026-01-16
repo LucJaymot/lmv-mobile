@@ -7,17 +7,87 @@
 import { supabase } from '@/lib/supabase';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const NOTIFICATION_STORAGE_KEY = '@lmv_notification_settings';
+
+/**
+ * Vérifie si les notifications email sont activées pour l'utilisateur actuel
+ * @param userId ID de l'utilisateur (optionnel, si non fourni, récupère depuis la session)
+ * @returns true si les emails sont activés, false sinon (par défaut true si non trouvé)
+ */
+async function isEmailNotificationEnabled(userId?: string): Promise<boolean> {
+  try {
+    // Si userId n'est pas fourni, récupérer depuis la session
+    let targetUserId = userId;
+    if (!targetUserId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        console.log('⚠️ Aucune session active, on considère que les emails sont activés par défaut');
+        return true; // Par défaut, on envoie les emails si on ne peut pas vérifier
+      }
+      targetUserId = session.user.id;
+    }
+
+    // Récupérer les préférences depuis AsyncStorage
+    const stored = await AsyncStorage.getItem(NOTIFICATION_STORAGE_KEY);
+    if (!stored) {
+      console.log('📧 Aucune préférence trouvée, emails activés par défaut');
+      return true; // Par défaut, on envoie les emails
+    }
+
+    const settings = JSON.parse(stored);
+    const emailEnabled = settings.emailEnabled !== false; // true par défaut si non défini
+    
+    console.log(`📧 Préférences email pour l'utilisateur: ${emailEnabled ? 'activées' : 'désactivées'}`);
+    return emailEnabled;
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification des préférences email:', error);
+    // En cas d'erreur, on considère que les emails sont activés par défaut
+    return true;
+  }
+}
 
 /**
  * Helper pour appeler l'Edge Function send-email avec fetch
  * Cela permet de mieux contrôler les headers d'authentification
+ * Vérifie automatiquement si l'email est destiné à l'utilisateur actuel et respecte ses préférences
  */
 async function invokeSendEmailFunction(payload: {
   to: string;
   subject: string;
   html?: string;
   text?: string;
-}): Promise<{ data?: any; error?: any }> {
+}, checkPreferences: boolean = true): Promise<{ data?: any; error?: any }> {
+  // Vérifier les préférences si demandé
+  if (checkPreferences) {
+    try {
+      // Vérifier si l'email est destiné à l'utilisateur actuel
+      const { data: { session } } = await supabase.auth.getSession();
+      const isCurrentUser = session?.user?.email === payload.to;
+      
+      if (isCurrentUser) {
+        // Si c'est pour l'utilisateur actuel, vérifier ses préférences
+        const emailEnabled = await isEmailNotificationEnabled();
+        if (!emailEnabled) {
+          console.log('📧 Emails désactivés par l\'utilisateur, envoi annulé');
+          return {
+            error: {
+              code: 'EMAIL_DISABLED',
+              message: 'Les notifications email sont désactivées par l\'utilisateur',
+            },
+          };
+        }
+      } else {
+        // Si c'est pour un autre utilisateur, on ne peut pas vérifier ses préférences locales
+        // On envoie toujours l'email car c'est une notification importante
+        console.log('📧 Email destiné à un autre utilisateur, envoi autorisé (préférences non vérifiables)');
+      }
+    } catch (prefError) {
+      console.warn('⚠️ Erreur lors de la vérification des préférences, on envoie l\'email quand même:', prefError);
+      // En cas d'erreur, on envoie l'email pour ne pas bloquer les notifications importantes
+    }
+  }
   try {
     // Récupérer l'URL et la clé Supabase
     const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || 
@@ -80,6 +150,10 @@ async function invokeSendEmailFunction(payload: {
 
 /**
  * Envoie un email au prestataire lorsqu'un nouveau job lui est assigné
+ * @param providerEmail Email du prestataire
+ * @param providerName Nom du prestataire
+ * @param jobDetails Détails du job
+ * @param checkPreferences Si true, vérifie les préférences de l'utilisateur actuel (défaut: false car c'est pour un autre utilisateur)
  */
 export async function sendJobAssignmentEmail(
   providerEmail: string,
@@ -89,7 +163,8 @@ export async function sendJobAssignmentEmail(
     address: string;
     dateTime: Date;
     clientCompanyName?: string;
-  }
+  },
+  checkPreferences: boolean = false
 ): Promise<void> {
   try {
     console.log('📧 Envoi d\'email de notification de job au prestataire:', providerEmail);
@@ -142,7 +217,13 @@ L'équipe Lave ma voiture
         subject: emailSubject,
         html: emailBody.replace(/\n/g, '<br>'),
         text: emailBody,
-      });
+      }, checkPreferences);
+      
+      // Si l'email est désactivé, ne pas considérer cela comme une erreur
+      if (error?.code === 'EMAIL_DISABLED') {
+        console.log('📧 Email non envoyé car les notifications email sont désactivées');
+        return;
+      }
 
       if (error) {
         console.warn('⚠️ Erreur lors de l\'appel de l\'Edge Function:', error);
@@ -175,6 +256,10 @@ L'équipe Lave ma voiture
 
 /**
  * Envoie un email au prestataire lorsqu'une prestation est annulée par le client
+ * @param providerEmail Email du prestataire
+ * @param providerName Nom du prestataire
+ * @param jobDetails Détails du job
+ * @param checkPreferences Si true, vérifie les préférences de l'utilisateur actuel (défaut: false car c'est pour un autre utilisateur)
  */
 export async function sendJobCancellationEmail(
   providerEmail: string,
@@ -184,7 +269,8 @@ export async function sendJobCancellationEmail(
     address: string;
     dateTime: Date;
     clientCompanyName?: string;
-  }
+  },
+  checkPreferences: boolean = false
 ): Promise<void> {
   try {
     console.log('📧 Envoi d\'email de notification d\'annulation au prestataire:', providerEmail);
@@ -228,7 +314,7 @@ L'équipe Lave ma voiture
         subject: emailSubject,
         html: emailBody.replace(/\n/g, '<br>'),
         text: emailBody,
-      });
+      }, checkPreferences);
 
       if (error) {
         console.warn('⚠️ Erreur lors de l\'appel de l\'Edge Function:', error);
@@ -257,6 +343,10 @@ L'équipe Lave ma voiture
 
 /**
  * Envoie un email au client lorsqu'un prestataire accepte sa demande
+ * @param clientEmail Email du client
+ * @param clientCompanyName Nom de l'entreprise cliente
+ * @param jobDetails Détails du job
+ * @param checkPreferences Si true, vérifie les préférences de l'utilisateur actuel (défaut: false car c'est pour un autre utilisateur)
  */
 export async function sendJobAcceptedEmailToClient(
   clientEmail: string,
@@ -267,7 +357,8 @@ export async function sendJobAcceptedEmailToClient(
     dateTime: Date;
     providerName: string;
     providerPhone?: string;
-  }
+  },
+  checkPreferences: boolean = false
 ): Promise<void> {
   try {
     console.log('📧 Envoi d\'email de notification d\'acceptation au client:', clientEmail);
@@ -307,12 +398,18 @@ L'équipe Lave ma voiture
 
     // Utiliser l'Edge Function Supabase pour envoyer l'email
     try {
-      const { data, error } = await invokeSendEmailFunction({
-        to: clientEmail,
-        subject: emailSubject,
-        html: emailBody.replace(/\n/g, '<br>'),
-        text: emailBody,
-      });
+        const { data, error } = await invokeSendEmailFunction({
+          to: clientEmail,
+          subject: emailSubject,
+          html: emailBody.replace(/\n/g, '<br>'),
+          text: emailBody,
+        }, checkPreferences);
+        
+        // Si l'email est désactivé, ne pas considérer cela comme une erreur
+        if (error?.code === 'EMAIL_DISABLED') {
+          console.log('📧 Email d\'acceptation non envoyé car les notifications email sont désactivées par le client');
+          return;
+        }
 
       if (error) {
         console.warn('⚠️ Erreur lors de l\'appel de l\'Edge Function:', error);
@@ -542,13 +639,21 @@ L'équipe Lave ma voiture
       console.log(`📧 Envoi d'email à ${providerEmail} (${provider.name})`);
 
       // Utiliser l'Edge Function Supabase pour envoyer l'email
+      // Ne pas vérifier les préférences car on envoie à plusieurs prestataires différents
+      // (on ne peut pas vérifier les préférences locales des autres utilisateurs)
       try {
         const { data, error } = await invokeSendEmailFunction({
           to: providerEmail,
           subject: emailSubject,
           html: emailBody.replace(/\n/g, '<br>'),
           text: emailBody,
-        });
+        }, false); // Ne pas vérifier les préférences pour les emails aux prestataires
+
+        // Si l'email est désactivé, ne pas considérer cela comme une erreur
+        if (error?.code === 'EMAIL_DISABLED') {
+          console.log(`📧 Email non envoyé à ${providerEmail} car les notifications email sont désactivées`);
+          return;
+        }
 
         if (error) {
           throw error;
@@ -649,7 +754,14 @@ L'équipe Lave ma voiture
       subject: emailSubject,
       html: emailBody.replace(/\n/g, '<br>'),
       text: emailBody,
-    });
+    }, true); // Vérifier les préférences pour les tests
+    
+    // Si l'email est désactivé, informer l'utilisateur
+    if (error?.code === 'EMAIL_DISABLED') {
+      console.error('❌ Email non envoyé car les notifications email sont désactivées');
+      console.error('💡 Activez les notifications email dans les paramètres pour recevoir des emails');
+      throw error;
+    }
 
     if (error) {
       console.error('❌ Erreur lors de l\'appel de l\'Edge Function:');

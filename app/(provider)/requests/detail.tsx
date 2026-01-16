@@ -207,22 +207,53 @@ export default function ProviderRequestDetailScreen() {
     }
   };
 
-  const handleDecline = () => {
-    Alert.alert(
-      'Refuser la demande',
-      'Êtes-vous sûr de vouloir refuser cette demande ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Refuser',
-          style: 'destructive',
-          onPress: () => {
-            console.log('Request declined');
-            router.back();
+  const handleDecline = async () => {
+    if (!provider || !washRequest) {
+      Alert.alert('Erreur', 'Prestataire ou demande non trouvé');
+      return;
+    }
+
+    // Confirmation
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm('Êtes-vous sûr de vouloir refuser cette demande ? Cette demande ne vous sera plus visible.');
+      if (!confirmed) {
+        return;
+      }
+    } else {
+      Alert.alert(
+        'Refuser la demande',
+        'Êtes-vous sûr de vouloir refuser cette demande ? Cette demande ne vous sera plus visible.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Refuser',
+            style: 'destructive',
+            onPress: async () => {
+              await declineRequest();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+      return;
+    }
+
+    await declineRequest();
+  };
+
+  const declineRequest = async () => {
+    if (!washRequest || !provider) return;
+
+    try {
+      // Enregistrer le refus pour que cette demande ne soit plus visible par ce provider
+      await washRequestService.recordProviderCancellation(provider.id, washRequest.id);
+      console.log('✅ Demande refusée avec succès');
+      
+      // Rediriger vers la page précédente
+      router.back();
+    } catch (error: any) {
+      console.error('❌ Erreur lors du refus de la demande:', error);
+      Alert.alert('Erreur', error.message || 'Impossible de refuser la demande');
+    }
   };
 
   const handleCancel = async () => {

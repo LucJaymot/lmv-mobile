@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { Logo } from '@/components/Logo';
 import { WashRequest } from '@/types';
 import { washRequestService } from '@/services/databaseService';
 
@@ -84,8 +85,11 @@ export default function ProviderDashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>Bonjour,</Text>
-          <Text style={styles.providerName}>{provider?.name}</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting}>Bonjour,</Text>
+            <Text style={styles.providerName}>{provider?.name}</Text>
+          </View>
+          <Logo size="sm" />
         </View>
 
         {/* TEMPORAIREMENT CACHÉ - À réactiver plus tard */}
@@ -177,7 +181,13 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
   },
   greeting: {
     fontSize: 16,
