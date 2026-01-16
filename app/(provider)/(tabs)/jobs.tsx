@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
@@ -117,9 +117,9 @@ export default function ProviderJobsScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mes jobs</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Mes jobs</Text>
       </View>
 
       <View style={styles.filtersWrapper}>
@@ -133,9 +133,9 @@ export default function ProviderJobsScreen() {
               key={index}
               style={[
                 styles.filterChip,
-                selectedStatus === filter.value && {
-                  backgroundColor: theme.colors.accent,
-                  borderColor: theme.colors.accent,
+                {
+                  borderColor: selectedStatus === filter.value ? theme.colors.accent : theme.colors.border,
+                  backgroundColor: selectedStatus === filter.value ? theme.colors.accent : theme.colors.surface,
                 },
               ]}
               onPress={() => setSelectedStatus(filter.value)}
@@ -143,7 +143,9 @@ export default function ProviderJobsScreen() {
               <Text
                 style={[
                   styles.filterChipText,
-                  selectedStatus === filter.value && styles.filterChipTextActive,
+                  {
+                    color: selectedStatus === filter.value ? '#FFFFFF' : theme.colors.text,
+                  },
                 ]}
               >
                 {filter.label}
@@ -166,24 +168,24 @@ export default function ProviderJobsScreen() {
             {filteredJobs.map((job, index) => (
               <TouchableOpacity
                 key={job.id || index}
-                style={commonStyles.card}
+                style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}
                 onPress={() => router.push(`/(provider)/requests/detail?id=${job.id}`)}
               >
                 <View style={styles.jobHeader}>
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(job.status) }]}>
                     <Text style={styles.statusText}>{getStatusLabel(job.status)}</Text>
                   </View>
-                  <Text style={styles.jobDate}>{formatDate(job.dateTime)}</Text>
+                  <Text style={[styles.jobDate, { color: theme.colors.textMuted }]}>{formatDate(job.dateTime)}</Text>
                 </View>
-                <Text style={styles.clientName}>{job.clientCompany?.name || 'Client inconnu'}</Text>
+                <Text style={[styles.clientName, { color: theme.colors.text }]}>{job.clientCompany?.name || 'Client inconnu'}</Text>
                 <View style={styles.jobInfo}>
                   <IconSymbol
                     ios_icon_name="location.fill"
                     android_material_icon_name="location-on"
                     size={16}
-                    color={colors.textSecondary}
+                    color={theme.colors.textMuted}
                   />
-                  <Text style={styles.jobAddress}>{job.address}</Text>
+                  <Text style={[styles.jobAddress, { color: theme.colors.textMuted }]}>{job.address}</Text>
                 </View>
                 {job.status === 'in_progress' && (
                   <Button
@@ -204,9 +206,9 @@ export default function ProviderJobsScreen() {
               ios_icon_name="briefcase"
               android_material_icon_name="work"
               size={64}
-              color={colors.textSecondary}
+              color={theme.colors.textMuted}
             />
-            <Text style={styles.emptyText}>Aucun job {getStatusLabel(selectedStatus).toLowerCase()}</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>Aucun job {getStatusLabel(selectedStatus).toLowerCase()}</Text>
           </View>
         )}
       </ScrollView>
@@ -217,7 +219,6 @@ export default function ProviderJobsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 20,
@@ -227,7 +228,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
   },
   filtersWrapper: {
     paddingBottom: 16,
@@ -241,8 +241,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
     width: 110,
     alignItems: 'center',
     justifyContent: 'center',
@@ -250,10 +248,6 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -277,12 +271,10 @@ const styles = StyleSheet.create({
   },
   jobDate: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   clientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   jobInfo: {
@@ -292,11 +284,9 @@ const styles = StyleSheet.create({
   },
   jobAddress: {
     fontSize: 14,
-    color: colors.textSecondary,
     flex: 1,
   },
   startButton: {
-    backgroundColor: colors.primary,
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
@@ -321,7 +311,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
   },
 });

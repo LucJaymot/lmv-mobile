@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
 import { useTheme } from '@/theme/hooks';
@@ -118,9 +118,9 @@ export default function VehiclesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mes véhicules</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Mes véhicules</Text>
         <Button
           variant="ghost"
           size="md"
@@ -151,18 +151,18 @@ export default function VehiclesScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Chargement des véhicules...</Text>
+            <ActivityIndicator size="large" color={theme.colors.accent} />
+            <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement des véhicules...</Text>
           </View>
         ) : vehicles.length > 0 ? (
           <React.Fragment>
             {vehicles.map((vehicle) => (
-              <View key={vehicle.id} style={commonStyles.card}>
+              <View key={vehicle.id} style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
                 <View style={styles.vehicleHeader}>
                   {vehicle.imageUrl && !imageErrors.has(vehicle.id) ? (
                     <Image
                       source={{ uri: vehicle.imageUrl }}
-                      style={styles.vehicleImage}
+                      style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
                       resizeMode="contain"
                       onError={() => {
                         console.warn('⚠️ Erreur lors du chargement de l\'image pour le véhicule:', vehicle.id);
@@ -170,24 +170,24 @@ export default function VehiclesScreen() {
                       }}
                     />
                   ) : (
-                  <View style={styles.vehicleIcon}>
+                  <View style={[styles.vehicleIcon, { backgroundColor: theme.colors.elevated }]}>
                     <IconSymbol
                       ios_icon_name="car.fill"
                       android_material_icon_name="directions-car"
                       size={32}
-                      color={colors.primary}
+                      color={theme.colors.accent}
                     />
                   </View>
                   )}
                   <View style={styles.vehicleInfo}>
-                    <Text style={styles.vehiclePlate}>{vehicle.licensePlate}</Text>
-                    <Text style={styles.vehicleName}>
+                    <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>{vehicle.licensePlate}</Text>
+                    <Text style={[styles.vehicleName, { color: theme.colors.text }]}>
                       {vehicle.brand} {vehicle.model}
                     </Text>
-                    <Text style={styles.vehicleType}>{vehicle.type}</Text>
+                    <Text style={[styles.vehicleType, { color: theme.colors.textMuted }]}>{vehicle.type}</Text>
                   </View>
                 </View>
-                <View style={styles.vehicleActions}>
+                <View style={[styles.vehicleActions, { borderTopColor: theme.colors.border }]}>
                   <TouchableOpacity
                     style={styles.actionButton}
                     onPress={() => router.push(`/(client)/vehicles/edit?id=${vehicle.id}`)}
@@ -211,9 +211,9 @@ export default function VehiclesScreen() {
                       ios_icon_name="trash"
                       android_material_icon_name="delete"
                       size={20}
-                      color={colors.error}
+                      color={theme.colors.error}
                     />
-                    <Text style={[styles.actionButtonText, { color: colors.error }]}>
+                    <Text style={[styles.actionButtonText, { color: theme.colors.error }]}>
                       Supprimer
                     </Text>
                   </TouchableOpacity>
@@ -227,10 +227,10 @@ export default function VehiclesScreen() {
               ios_icon_name="car"
               android_material_icon_name="directions-car"
               size={64}
-              color={colors.textSecondary}
+              color={theme.colors.textMuted}
             />
-            <Text style={styles.emptyText}>Aucun véhicule enregistré</Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>Aucun véhicule enregistré</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textMuted }]}>
               Ajoutez vos véhicules pour créer des demandes de lavage
             </Text>
           </View>
@@ -243,7 +243,6 @@ export default function VehiclesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -256,7 +255,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
   },
   addButton: {
     width: 48,
@@ -280,7 +278,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -290,7 +287,6 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     marginRight: 16,
-    backgroundColor: colors.background,
     padding: 8,
   },
   vehicleInfo: {
@@ -300,25 +296,21 @@ const styles = StyleSheet.create({
   vehiclePlate: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: 4,
   },
   vehicleName: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.text,
     marginBottom: 2,
   },
   vehicleType: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   vehicleActions: {
     flexDirection: 'row',
     gap: 12,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   actionButton: {
     flex: 1,
@@ -339,13 +331,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 40,
   },
@@ -356,6 +346,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
 });

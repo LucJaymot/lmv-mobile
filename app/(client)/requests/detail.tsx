@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
 import { useTheme } from '@/theme/hooks';
@@ -273,10 +273,10 @@ export default function RequestDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Chargement de la demande...</Text>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement de la demande...</Text>
         </View>
       </View>
     );
@@ -284,9 +284,9 @@ export default function RequestDetailScreen() {
 
   if (!washRequest) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Demande introuvable</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Demande introuvable</Text>
         </View>
       </View>
     );
@@ -294,7 +294,7 @@ export default function RequestDetailScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -306,23 +306,23 @@ export default function RequestDetailScreen() {
           <Text style={styles.statusText}>{getStatusLabel(washRequest.status)}</Text>
         </View>
 
-        <Text style={styles.title}>Demande de lavage</Text>
-        <Text style={styles.subtitle}>Créée le {formatDate(washRequest.createdAt)}</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Demande de lavage</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Créée le {formatDate(washRequest.createdAt)}</Text>
 
         {washRequest.provider && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Prestataire</Text>
-            <View style={commonStyles.card}>
-              <Text style={styles.providerName}>{washRequest.provider.name}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Prestataire</Text>
+            <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.providerName, { color: theme.colors.text }]}>{washRequest.provider.name}</Text>
               {washRequest.provider.phone && (
                 <View style={styles.infoRow}>
                   <IconSymbol
                     ios_icon_name="phone.fill"
                     android_material_icon_name="phone"
                     size={16}
-                    color={colors.textSecondary}
+                    color={theme.colors.textMuted}
                   />
-                  <Text style={styles.infoText}>{washRequest.provider.phone}</Text>
+                  <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>{washRequest.provider.phone}</Text>
                 </View>
               )}
               {washRequest.provider.averageRating !== undefined && washRequest.provider.averageRating > 0 && (
@@ -331,38 +331,38 @@ export default function RequestDetailScreen() {
                     ios_icon_name="star.fill"
                     android_material_icon_name="star"
                     size={16}
-                    color={colors.highlight}
+                    color={theme.colors.accent}
                   />
-                  <Text style={styles.ratingText}>
+                  <Text style={[styles.ratingText, { color: theme.colors.text }]}>
                     {washRequest.provider.averageRating.toFixed(1)} 
                     {washRequest.provider.totalRatings ? ` (${washRequest.provider.totalRatings} avis)` : ''}
                   </Text>
                 </View>
               )}
               {washRequest.provider.description && (
-                <Text style={styles.description}>{washRequest.provider.description}</Text>
+                <Text style={[styles.description, { color: theme.colors.textMuted }]}>{washRequest.provider.description}</Text>
               )}
             </View>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Détails</Text>
-          <View style={commonStyles.card}>
-            <View style={styles.detailRow}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Détails</Text>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="calendar"
                 android_material_icon_name="event"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Date et heure</Text>
-                <Text style={styles.detailValue}>{formatDate(washRequest.dateTime)}</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Date et heure</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{formatDate(washRequest.dateTime)}</Text>
               </View>
             </View>
             <TouchableOpacity
-              style={styles.detailRow}
+              style={[styles.detailRow, { borderBottomColor: theme.colors.border }]}
               onPress={() => openAddressInMaps(washRequest.address)}
               activeOpacity={0.7}
             >
@@ -373,25 +373,29 @@ export default function RequestDetailScreen() {
                 color={theme.colors.accent}
               />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Lieu</Text>
-                <Text style={[styles.detailValue, styles.clickableAddress]}>{washRequest.address}</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Lieu</Text>
+                <Text style={[styles.detailValue, styles.clickableAddress, { color: theme.colors.accent }]}>{washRequest.address}</Text>
               </View>
             </TouchableOpacity>
-            <View style={styles.detailRow}>
+            <View style={[styles.detailRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="note.text"
                 android_material_icon_name="note"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Notes</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Notes</Text>
                 <TextInput
-                  style={[styles.detailValue, styles.noteInput]}
+                  style={[styles.detailValue, styles.noteInput, { 
+                    backgroundColor: theme.colors.elevated,
+                    borderColor: theme.colors.border,
+                    color: theme.colors.text,
+                  }]}
                   value={notes}
                   onChangeText={setNotes}
                   placeholder="Ajoutez des notes..."
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.colors.textMuted}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -400,8 +404,8 @@ export default function RequestDetailScreen() {
                 />
                 {isSavingNotes && (
                   <View style={styles.savingIndicator}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={styles.savingText}>Sauvegarde...</Text>
+                    <ActivityIndicator size="small" color={theme.colors.accent} />
+                    <Text style={[styles.savingText, { color: theme.colors.textMuted }]}>Sauvegarde...</Text>
                   </View>
                 )}
               </View>
@@ -410,16 +414,16 @@ export default function RequestDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Véhicules</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Véhicules</Text>
           {washRequest.vehicles && washRequest.vehicles.length > 0 ? (
-            <View style={commonStyles.card}>
+            <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
               {washRequest.vehicles.map((vehicle) => (
                 <View key={vehicle.id} style={styles.vehicleItem}>
-                  <Text style={styles.vehiclePlate}>
+                  <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>
                     {vehicle.vehicle?.licensePlate || 'Véhicule'}
                   </Text>
                   {vehicle.vehicle && (
-                    <Text style={styles.vehicleName}>
+                    <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>
                       {vehicle.vehicle.brand} {vehicle.vehicle.model}
                     </Text>
                   )}
@@ -430,16 +434,16 @@ export default function RequestDetailScreen() {
               ))}
             </View>
           ) : (
-            <View style={commonStyles.card}>
-              <Text style={styles.emptyText}>Aucun véhicule associé</Text>
+            <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>Aucun véhicule associé</Text>
             </View>
           )}
         </View>
 
         {washRequest.status === 'completed' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Facture</Text>
-            <View style={commonStyles.card}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Facture</Text>
+            <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
               {washRequest.invoiceUrl ? (
                 <Button
                   variant="primary"
@@ -505,7 +509,6 @@ export default function RequestDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
@@ -526,12 +529,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 24,
   },
   section: {
@@ -540,13 +541,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
   providerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   infoRow: {
@@ -557,7 +556,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -567,14 +565,12 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   detailContent: {
     flex: 1,
@@ -582,20 +578,16 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginBottom: 2,
   },
   detailValue: {
     fontSize: 16,
-    color: colors.text,
   },
   noteInput: {
     minHeight: 80,
     padding: 8,
-    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
     marginTop: 4,
   },
   savingIndicator: {
@@ -606,11 +598,9 @@ const styles = StyleSheet.create({
   },
   savingText: {
     fontSize: 12,
-    color: colors.textSecondary,
     fontStyle: 'italic',
   },
   clickableAddress: {
-    color: colors.primary,
     textDecorationLine: 'underline',
   },
   vehicleItem: {
@@ -619,12 +609,10 @@ const styles = StyleSheet.create({
   vehiclePlate: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 2,
   },
   vehicleName: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 2,
   },
   serviceType: {
@@ -642,17 +630,14 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
   description: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginTop: 8,
     fontStyle: 'italic',
   },
   emptyText: {
     fontSize: 14,
-    color: colors.textSecondary,
     textAlign: 'center',
     paddingVertical: 16,
   },

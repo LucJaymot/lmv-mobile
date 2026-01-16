@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
@@ -121,10 +121,10 @@ export default function ProviderRequestsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Nouvelles demandes</Text>
-        <Text style={styles.subtitle}>Dans votre zone d&apos;intervention</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Nouvelles demandes</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Dans votre zone d&apos;intervention</Text>
       </View>
 
       <ScrollView
@@ -134,29 +134,29 @@ export default function ProviderRequestsScreen() {
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.accent} />
-            <Text style={styles.loadingText}>Chargement...</Text>
+            <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement...</Text>
           </View>
         ) : pendingRequests.length > 0 ? (
           <React.Fragment>
             {pendingRequests.map((request) => {
               const isCancelled = cancelledRequestIds.has(request.id);
               return (
-                <View key={request.id} style={commonStyles.card}>
+                <View key={request.id} style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
                 <View style={styles.requestHeader}>
-                  <Text style={styles.clientName}>{request.clientCompany?.name || 'Client inconnu'}</Text>
+                  <Text style={[styles.clientName, { color: theme.colors.text }]}>{request.clientCompany?.name || 'Client inconnu'}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(isCancelled) }]}>
                     <Text style={styles.statusText}>{isCancelled ? 'Annulé' : 'Nouveau'}</Text>
                   </View>
                 </View>
-                <Text style={styles.requestDate}>{formatDate(request.dateTime)}</Text>
+                <Text style={[styles.requestDate, { color: theme.colors.text }]}>{formatDate(request.dateTime)}</Text>
                 <View style={styles.requestInfo}>
                   <IconSymbol
                     ios_icon_name="location.fill"
                     android_material_icon_name="location-on"
                     size={16}
-                    color={colors.textSecondary}
+                    color={theme.colors.textMuted}
                   />
-                  <Text style={styles.requestAddress}>{request.address}</Text>
+                  <Text style={[styles.requestAddress, { color: theme.colors.textMuted }]}>{request.address}</Text>
                 </View>
                 {request.clientCompany?.phone && (
                   <View style={styles.requestInfo}>
@@ -164,9 +164,9 @@ export default function ProviderRequestsScreen() {
                       ios_icon_name="phone.fill"
                       android_material_icon_name="phone"
                       size={16}
-                      color={colors.textSecondary}
+                      color={theme.colors.textMuted}
                     />
-                    <Text style={styles.requestPhone}>{request.clientCompany.phone}</Text>
+                    <Text style={[styles.requestPhone, { color: theme.colors.textMuted }]}>{request.clientCompany.phone}</Text>
                   </View>
                 )}
                 {request.vehicles && request.vehicles.length > 0 && (
@@ -175,20 +175,21 @@ export default function ProviderRequestsScreen() {
                       ios_icon_name="car.fill"
                       android_material_icon_name="directions-car"
                       size={16}
-                      color={colors.textSecondary}
+                      color={theme.colors.textMuted}
                     />
-                    <Text style={styles.requestPhone}>
+                    <Text style={[styles.requestPhone, { color: theme.colors.textMuted }]}>
                       {request.vehicles.length} véhicule{request.vehicles.length > 1 ? 's' : ''}
                     </Text>
                   </View>
                 )}
                 {!isCancelled && (
-                  <View style={styles.requestActions}>
+                  <View style={[styles.requestActions, { borderTopColor: theme.colors.border }]}>
                     <Button
                       variant="ghost"
                       size="md"
                       onPress={() => router.push(`/(provider)/requests/detail?id=${request.id}`)}
                       style={styles.detailsButton}
+                      textStyle={{ color: theme.colors.text }}
                     >
                       Voir détails
                     </Button>
@@ -214,10 +215,10 @@ export default function ProviderRequestsScreen() {
               ios_icon_name="tray"
               android_material_icon_name="inbox"
               size={64}
-              color={colors.textSecondary}
+              color={theme.colors.textMuted}
             />
-            <Text style={styles.emptyText}>Aucune nouvelle demande</Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>Aucune nouvelle demande</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textMuted }]}>
               Les demandes dans votre zone apparaîtront ici
             </Text>
           </View>
@@ -230,7 +231,6 @@ export default function ProviderRequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 20,
@@ -240,12 +240,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -260,7 +258,6 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     flex: 1,
   },
   statusBadge: {
@@ -276,7 +273,6 @@ const styles = StyleSheet.create({
   requestDate: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
     marginBottom: 8,
   },
   requestInfo: {
@@ -287,12 +283,10 @@ const styles = StyleSheet.create({
   },
   requestAddress: {
     fontSize: 14,
-    color: colors.textSecondary,
     flex: 1,
   },
   requestPhone: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   requestActions: {
     flexDirection: 'row',
@@ -300,7 +294,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   detailsButton: {
     flex: 1,
@@ -317,7 +310,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginTop: 12,
   },
   emptyState: {
@@ -327,13 +319,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 40,
   },

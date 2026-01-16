@@ -200,17 +200,17 @@ export const lightColors = {
 export const darkColors = {
   // Backgrounds
   background: colorPalette.charcoalBlue[500], // #040F16
-  surface: colorPalette.midnightBlue[500], // #000022
-  elevated: colorPalette.midnightBlue[600], // Légèrement plus clair
+  surface: colorPalette.charcoalBlue[600], // Nuance plus claire de charcoalBlue
+  elevated: colorPalette.charcoalBlue[700], // Légèrement plus clair
   overlay: 'rgba(0, 0, 0, 0.7)',
 
   // Primary & Secondary - Couleurs de marque EXACTES
   primary: petrolBlue, // #002B39
   primaryLight: colorPalette.petrolBlue[400],
   primaryDark: colorPalette.petrolBlue[600],
-  secondary: midnightBlue, // #000022
-  secondaryLight: colorPalette.midnightBlue[400],
-  secondaryDark: colorPalette.midnightBlue[600],
+  secondary: colorPalette.charcoalBlue[500], // #040F16 au lieu de #000022
+  secondaryLight: colorPalette.charcoalBlue[400],
+  secondaryDark: colorPalette.charcoalBlue[700],
 
   // Accent (pour CTA, toggles, liens) - Utilise #002B39 directement
   accent: petrolBlue, // #002B39 (couleur de marque exacte)
@@ -220,11 +220,11 @@ export const darkColors = {
   // Text
   text: colorPalette.offWhite, // #F5F5F7
   textMuted: colorPalette.blueGray, // #6B7A8A
-  textSecondary: colorPalette.midnightBlue[300],
+  textSecondary: colorPalette.charcoalBlue[300], // Nuance de charcoalBlue
 
   // Borders & Dividers
   border: colorPalette.petrolBlue[700], // Très subtil
-  divider: colorPalette.midnightBlue[700],
+  divider: colorPalette.charcoalBlue[700], // Nuance de charcoalBlue
   borderLight: colorPalette.petrolBlue[600],
 
   // Sémantiques
@@ -240,7 +240,7 @@ export const darkColors = {
 
   // États
   pressed: 'rgba(0, 168, 181, 0.1)',
-  disabled: colorPalette.midnightBlue[800],
+  disabled: colorPalette.charcoalBlue[800], // Nuance de charcoalBlue
   disabledText: colorPalette.blueGray,
 };
 

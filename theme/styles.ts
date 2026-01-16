@@ -286,9 +286,9 @@ export const createInputStyles = (theme: Theme) => {
       marginBottom: spacing[2],
     } as TextStyle,
 
-    // Input - Fond blanc avec bordure claire
+    // Input - Fond adaptatif avec bordure claire
     input: {
-      backgroundColor: '#FFFFFF', // Blanc pur pour inputs
+      backgroundColor: colors.elevated, // Fond adaptatif selon le thème
       borderWidth: 1, // Ligne fine
       borderColor: colors.border, // #E5E7EB
       borderRadius: input.borderRadius,

@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,9 +23,15 @@ import { Button } from '@/components/ui/Button';
 export default function ProviderProfileScreen() {
   const router = useRouter();
   const { user, provider, logout } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode, setMode } = useTheme();
   const textStyles = createTextStyles(theme);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  // Basculer entre light et dark mode
+  const isDarkMode = mode === 'dark' || mode === 'trueBlack';
+  const handleThemeToggle = (value: boolean) => {
+    setMode(value ? 'dark' : 'light');
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return; // Empêcher les clics multiples
@@ -131,7 +138,7 @@ export default function ProviderProfileScreen() {
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Informations</Text>
-          <View style={commonStyles.card}>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
             <View style={[styles.infoRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="phone.fill"
@@ -240,6 +247,24 @@ export default function ProviderProfileScreen() {
               color={theme.colors.textMuted}
             />
           </TouchableOpacity>
+          <View style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}>
+            <IconSymbol
+              ios_icon_name={isDarkMode ? "moon.fill" : "sun.max.fill"}
+              android_material_icon_name={isDarkMode ? "dark-mode" : "light-mode"}
+              size={20}
+              color={theme.colors.accent}
+            />
+            <Text style={[styles.actionText, { color: theme.colors.text }]}>
+              {isDarkMode ? 'Dark mode' : 'Light mode'}
+            </Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={handleThemeToggle}
+              trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+              thumbColor={isDarkMode ? '#FFFFFF' : '#F4F3F4'}
+              ios_backgroundColor={theme.colors.border}
+            />
+          </View>
         </View>
 
         <Button

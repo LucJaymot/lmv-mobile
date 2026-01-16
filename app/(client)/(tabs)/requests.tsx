@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useTheme } from '@/theme/hooks';
 import { WashRequest, WashRequestStatus } from '@/types';
@@ -133,9 +133,9 @@ export default function RequestsScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mes demandes</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Mes demandes</Text>
       </View>
 
       <View style={styles.filtersWrapper}>
@@ -151,17 +151,19 @@ export default function RequestsScreen() {
               key={index}
               style={[
                 styles.filterChip,
-                  isActive && {
-                    backgroundColor: theme.colors.accent,
-                    borderColor: theme.colors.accent,
-                  },
+                {
+                  borderColor: isActive ? theme.colors.accent : theme.colors.border,
+                  backgroundColor: isActive ? theme.colors.accent : theme.colors.surface,
+                },
               ]}
               onPress={() => setSelectedStatus(filter.value)}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                    isActive && { color: '#FFFFFF' },
+                  {
+                    color: isActive ? '#FFFFFF' : theme.colors.text,
+                  },
                 ]}
               >
                 {filter.label}
@@ -174,8 +176,8 @@ export default function RequestsScreen() {
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Chargement des demandes...</Text>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement des demandes...</Text>
         </View>
       ) : (
         <ScrollView
@@ -187,26 +189,26 @@ export default function RequestsScreen() {
               {filteredRequests.map((request) => (
                 <TouchableOpacity
                   key={request.id}
-                  style={commonStyles.card}
+                  style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}
                   onPress={() => router.push(`/(client)/requests/detail?id=${request.id}`)}
                 >
                   <View style={styles.requestHeader}>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) }]}>
                       <Text style={styles.statusText}>{getStatusLabel(request.status)}</Text>
                     </View>
-                    <Text style={styles.requestDate}>{formatDate(request.dateTime)}</Text>
+                    <Text style={[styles.requestDate, { color: theme.colors.textMuted }]}>{formatDate(request.dateTime)}</Text>
                   </View>
                   {request.provider && (
-                    <Text style={styles.providerName}>{request.provider.name}</Text>
+                    <Text style={[styles.providerName, { color: theme.colors.text }]}>{request.provider.name}</Text>
                   )}
                   <View style={styles.requestInfo}>
                     <IconSymbol
                       ios_icon_name="location.fill"
                       android_material_icon_name="location-on"
                       size={16}
-                      color={colors.textSecondary}
+                      color={theme.colors.textMuted}
                     />
-                    <Text style={styles.requestAddress}>{request.address}</Text>
+                    <Text style={[styles.requestAddress, { color: theme.colors.textMuted }]}>{request.address}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -217,9 +219,9 @@ export default function RequestsScreen() {
                 ios_icon_name="doc.text"
                 android_material_icon_name="description"
                 size={64}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
-              <Text style={styles.emptyText}>Aucune demande</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.text }]}>Aucune demande</Text>
             </View>
           )}
         </ScrollView>
@@ -231,7 +233,6 @@ export default function RequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 20,
@@ -241,7 +242,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
   },
   filtersWrapper: {
     paddingBottom: 16,
@@ -255,8 +255,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
     width: 110,
     alignItems: 'center',
     justifyContent: 'center',
@@ -264,7 +262,6 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -288,12 +285,10 @@ const styles = StyleSheet.create({
   },
   requestDate: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   providerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   requestInfo: {
@@ -303,7 +298,6 @@ const styles = StyleSheet.create({
   },
   requestAddress: {
     fontSize: 14,
-    color: colors.textSecondary,
     flex: 1,
   },
   emptyState: {
@@ -313,7 +307,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
   },
   loadingContainer: {
@@ -325,6 +318,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
 });

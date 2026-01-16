@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 
@@ -83,24 +83,24 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Chargement...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {Platform.OS !== 'web' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notifications Push</Text>
-            <View style={commonStyles.card}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notifications Push</Text>
+            <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
               <View style={styles.settingRow}>
                 <View style={styles.settingContent}>
                   <IconSymbol
@@ -109,36 +109,36 @@ export default function NotificationsScreen() {
                     size={24}
                     color={theme.colors.accent}
                   />
-                  <View style={styles.settingText}>
-                    <Text style={styles.settingTitle}>Activer les notifications push</Text>
-                    <Text style={styles.settingDescription}>
-                      Recevoir des notifications sur votre appareil
-                    </Text>
-                  </View>
+                <View style={styles.settingText}>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Activer les notifications push</Text>
+                  <Text style={[styles.settingDescription, { color: theme.colors.textMuted }]}>
+                    Recevoir des notifications sur votre appareil
+                  </Text>
+                </View>
                 </View>
                 <Switch
                   value={settings.pushEnabled}
                   onValueChange={(value) => updateSetting('pushEnabled', value)}
                   trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                  thumbColor={settings.pushEnabled ? theme.colors.accent : '#F4F3F4'}
+                  thumbColor={settings.pushEnabled ? '#FFFFFF' : theme.colors.elevated}
                   ios_backgroundColor={theme.colors.border}
                 />
               </View>
 
               {settings.pushEnabled && (
                 <>
-                  <View style={styles.divider} />
+                  <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
                   <View style={styles.settingRow}>
                     <View style={styles.settingContent}>
                       <IconSymbol
                         ios_icon_name="checkmark.circle.fill"
                         android_material_icon_name="check-circle"
                         size={20}
-                        color={colors.textSecondary}
+                        color={theme.colors.textMuted}
                       />
                       <View style={styles.settingText}>
-                        <Text style={styles.settingTitle}>Confirmations</Text>
-                        <Text style={styles.settingDescription}>
+                        <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Confirmations</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.textMuted }]}>
                           Notifier lors de la confirmation d'une demande
                         </Text>
                       </View>
@@ -147,23 +147,23 @@ export default function NotificationsScreen() {
                       value={settings.confirmations}
                       onValueChange={(value) => updateSetting('confirmations', value)}
                       trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                      thumbColor={settings.confirmations ? theme.colors.accent : '#F4F3F4'}
+                      thumbColor={settings.confirmations ? '#FFFFFF' : theme.colors.elevated}
                       ios_backgroundColor={theme.colors.border}
                     />
                   </View>
 
-                  <View style={styles.divider} />
+                  <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
                   <View style={styles.settingRow}>
                     <View style={styles.settingContent}>
                       <IconSymbol
                         ios_icon_name="clock.fill"
                         android_material_icon_name="schedule"
                         size={20}
-                        color={colors.textSecondary}
+                        color={theme.colors.textMuted}
                       />
                       <View style={styles.settingText}>
-                        <Text style={styles.settingTitle}>Rappels</Text>
-                        <Text style={styles.settingDescription}>
+                        <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Rappels</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.textMuted }]}>
                           Recevoir des rappels avant un lavage programmé
                         </Text>
                       </View>
@@ -172,23 +172,23 @@ export default function NotificationsScreen() {
                       value={settings.reminders}
                       onValueChange={(value) => updateSetting('reminders', value)}
                       trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                      thumbColor={settings.reminders ? theme.colors.accent : '#F4F3F4'}
+                      thumbColor={settings.reminders ? '#FFFFFF' : theme.colors.elevated}
                       ios_backgroundColor={theme.colors.border}
                     />
                   </View>
 
-                  <View style={styles.divider} />
+                  <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
                   <View style={styles.settingRow}>
                     <View style={styles.settingContent}>
                       <IconSymbol
                         ios_icon_name="arrow.triangle.2.circlepath"
                         android_material_icon_name="sync"
                         size={20}
-                        color={colors.textSecondary}
+                        color={theme.colors.textMuted}
                       />
                       <View style={styles.settingText}>
-                        <Text style={styles.settingTitle}>Mises à jour de statut</Text>
-                        <Text style={styles.settingDescription}>
+                        <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Mises à jour de statut</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.textMuted }]}>
                           Notifier lors des changements de statut des demandes
                         </Text>
                       </View>
@@ -197,7 +197,7 @@ export default function NotificationsScreen() {
                       value={settings.statusUpdates}
                       onValueChange={(value) => updateSetting('statusUpdates', value)}
                       trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                      thumbColor={settings.statusUpdates ? theme.colors.accent : '#F4F3F4'}
+                      thumbColor={settings.statusUpdates ? '#FFFFFF' : theme.colors.elevated}
                       ios_backgroundColor={theme.colors.border}
                     />
                   </View>
@@ -208,8 +208,8 @@ export default function NotificationsScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications Email</Text>
-          <View style={commonStyles.card}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notifications Email</Text>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.settingRow}>
               <View style={styles.settingContent}>
                 <IconSymbol
@@ -219,8 +219,8 @@ export default function NotificationsScreen() {
                   color={theme.colors.accent}
                 />
                 <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Activer les notifications email</Text>
-                  <Text style={styles.settingDescription}>
+                  <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Activer les notifications email</Text>
+                  <Text style={[styles.settingDescription, { color: theme.colors.textMuted }]}>
                     Recevoir des notifications par email
                   </Text>
                 </View>
@@ -229,7 +229,7 @@ export default function NotificationsScreen() {
                 value={settings.emailEnabled}
                 onValueChange={(value) => updateSetting('emailEnabled', value)}
                 trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                thumbColor={settings.emailEnabled ? theme.colors.accent : '#F4F3F4'}
+                thumbColor={settings.emailEnabled ? '#FFFFFF' : theme.colors.elevated}
                 ios_backgroundColor={theme.colors.border}
               />
             </View>
@@ -243,7 +243,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
@@ -256,7 +255,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: colors.textSecondary,
   },
   section: {
     marginBottom: 24,
@@ -264,7 +262,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
   settingRow: {
@@ -286,17 +283,14 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.text,
     marginBottom: 4,
   },
   settingDescription: {
     fontSize: 14,
-    color: colors.textSecondary,
     lineHeight: 20,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
     marginVertical: 8,
   },
 });

@@ -6,9 +6,11 @@ import {
   ViewStyle,
   TextStyle,
   TextInputProps,
+  StyleSheet,
 } from 'react-native';
 import { useTheme } from '@/theme/hooks';
 import { createInputStyles, createTextStyles } from '@/theme/styles';
+import { colors } from '@/styles/commonStyles';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   /** Label au-dessus de l'input */
@@ -29,6 +31,8 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   size?: 'sm' | 'md' | 'lg';
   /** État désactivé */
   disabled?: boolean;
+  /** Forcer l'utilisation de couleurs statiques (pour pages d'authentification) */
+  forceStaticColors?: boolean;
 }
 
 /**
@@ -53,6 +57,7 @@ export const Input: React.FC<InputProps> = ({
   inputStyle,
   size = 'md',
   disabled = false,
+  forceStaticColors = false,
   ...textInputProps
 }) => {
   const { theme } = useTheme();
@@ -65,6 +70,17 @@ export const Input: React.FC<InputProps> = ({
 
   // Hauteur selon la taille
   const getHeight = (): number => {
+    if (forceStaticColors) {
+      // Hauteurs statiques pour les pages d'authentification
+      switch (size) {
+        case 'sm':
+          return 40;
+        case 'lg':
+          return 56;
+        default:
+          return 48;
+      }
+    }
     switch (size) {
       case 'sm':
         return theme.componentTokens.input.height.sm;
@@ -75,10 +91,46 @@ export const Input: React.FC<InputProps> = ({
     }
   };
 
+  // Styles statiques pour les pages d'authentification (calculés dynamiquement)
+  const getStaticInputStyle = (): TextStyle => {
+    if (!forceStaticColors) return {};
+    return {
+      backgroundColor: colors.card,
+      borderColor: hasError ? colors.error : (isFocused ? colors.primary : colors.border),
+      borderWidth: 1.5,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      color: colors.text,
+      fontSize: 16,
+    };
+  };
+
+  const staticLabelStyle = forceStaticColors ? {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '600' as const,
+    marginBottom: 8,
+  } : {};
+
+  const staticErrorStyle = forceStaticColors ? {
+    color: colors.error,
+    fontSize: 13,
+    fontWeight: '500' as const,
+    marginTop: 6,
+  } : {};
+
+  const staticHelperStyle = forceStaticColors ? {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 6,
+  } : {};
+
   return (
-    <View style={[inputStyles.container, containerStyle]}>
+    <View style={[inputStyles.container, { width: '100%' }, containerStyle]}>
       {label && (
-        <Text style={[inputStyles.label, textStyles.label]}>
+        <Text style={[
+          forceStaticColors ? staticLabelStyle : [inputStyles.label, textStyles.label],
+        ]}>
           {label}
         </Text>
       )}
@@ -87,28 +139,39 @@ export const Input: React.FC<InputProps> = ({
         style={{
           flexDirection: 'row',
           alignItems: 'center',
+          width: '100%',
         }}
       >
-        {leftIcon && (
-          <View style={{ marginRight: theme.spacing[2], justifyContent: 'center' }}>
+        {leftIcon ? (
+          <View style={{ 
+            width: 20,
+            marginRight: forceStaticColors ? 12 : theme.spacing[2], 
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
             {leftIcon}
           </View>
+        ) : (
+          <View style={{ width: 0 }} />
         )}
 
         <TextInput
           {...textInputProps}
           style={[
-            inputStyles.input,
+            forceStaticColors ? getStaticInputStyle() : inputStyles.input,
             {
               height: getHeight(),
               flex: 1,
+              minWidth: 0,
             },
-            isFocused && !hasError && inputStyles.inputFocused,
-            hasError && inputStyles.inputError,
-            disabled && inputStyles.inputDisabled,
+            !forceStaticColors && isFocused && !hasError ? inputStyles.inputFocused : null,
+            !forceStaticColors && hasError ? inputStyles.inputError : null,
+            !forceStaticColors && disabled ? inputStyles.inputDisabled : null,
             inputStyle,
-          ]}
-          placeholderTextColor={theme.colors.textMuted}
+            // Réappliquer les styles statiques après inputStyle pour garantir qu'ils ne sont pas écrasés
+            forceStaticColors ? getStaticInputStyle() : null,
+          ] as any}
+          placeholderTextColor={forceStaticColors ? colors.textSecondary : theme.colors.textMuted}
           editable={!disabled}
           onFocus={(e) => {
             setIsFocused(true);
@@ -122,18 +185,27 @@ export const Input: React.FC<InputProps> = ({
           accessibilityState={{ disabled }}
         />
 
-        {rightIcon && (
-          <View style={{ marginLeft: theme.spacing[2], justifyContent: 'center' }}>
+        {rightIcon ? (
+          <View style={{ 
+            width: 20,
+            marginLeft: forceStaticColors ? 12 : theme.spacing[2], 
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
             {rightIcon}
           </View>
+        ) : (
+          <View style={{ width: 0 }} />
         )}
       </View>
 
       {displayText && (
         <Text
           style={[
-            hasError ? inputStyles.errorText : inputStyles.helperText,
-            hasError ? textStyles.error : {},
+            forceStaticColors 
+              ? (hasError ? staticErrorStyle : staticHelperStyle)
+              : (hasError ? inputStyles.errorText : inputStyles.helperText),
+            !forceStaticColors && hasError && textStyles.error,
           ]}
         >
           {displayText}

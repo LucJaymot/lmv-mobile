@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/Logo';
@@ -155,25 +155,25 @@ export default function ClientDashboardScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Chargement...</Text>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>Bonjour,</Text>
-          <Text style={styles.companyName}>{clientCompany?.name}</Text>
+          <Text style={[styles.greeting, { color: theme.colors.textMuted }]}>Bonjour,</Text>
+          <Text style={[styles.companyName, { color: theme.colors.text }]}>{clientCompany?.name}</Text>
           </View>
           <Logo size="sm" />
         </View>
@@ -188,35 +188,35 @@ export default function ClientDashboardScreen() {
         </Button>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Prochains lavages</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Prochains lavages</Text>
           {recentWashes.length > 0 ? (
             <React.Fragment>
               {recentWashes.map((wash) => (
                 <TouchableOpacity
                   key={wash.id}
-                  style={commonStyles.card}
+                  style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}
                   onPress={() => router.push(`/(client)/requests/detail?id=${wash.id}`)}
                 >
                   <View style={styles.washHeader}>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(wash.status) }]}>
                       <Text style={styles.statusText}>{getStatusLabel(wash.status)}</Text>
                     </View>
-                    <Text style={styles.washDate}>{formatDate(wash.dateTime)}</Text>
+                    <Text style={[styles.washDate, { color: theme.colors.textMuted }]}>{formatDate(wash.dateTime)}</Text>
                   </View>
                   {wash.provider?.name && (
-                    <Text style={styles.providerName}>{wash.provider.name}</Text>
+                    <Text style={[styles.providerName, { color: theme.colors.text }]}>{wash.provider.name}</Text>
                   )}
                   <View style={styles.washInfo}>
                     <IconSymbol
                       ios_icon_name="location.fill"
                       android_material_icon_name="location-on"
                       size={16}
-                      color={colors.textSecondary}
+                      color={theme.colors.textMuted}
                     />
-                    <Text style={styles.washAddress}>{wash.address}</Text>
+                    <Text style={[styles.washAddress, { color: theme.colors.textMuted }]}>{wash.address}</Text>
                   </View>
                   {wash.vehicles && wash.vehicles.length > 0 && (
-                    <View style={styles.serviceTypeContainer}>
+                    <View style={[styles.serviceTypeContainer, { borderTopColor: theme.colors.border }]}>
                       <IconSymbol
                         ios_icon_name="car.fill"
                         android_material_icon_name="directions-car"
@@ -229,14 +229,14 @@ export default function ClientDashboardScreen() {
                     </View>
                   )}
                   {wash.status === 'completed' && (
-                    <TouchableOpacity style={styles.rateButton}>
+                    <TouchableOpacity style={[styles.rateButton, { borderTopColor: theme.colors.border }]}>
                       <IconSymbol
                         ios_icon_name="star.fill"
                         android_material_icon_name="star"
                         size={16}
-                        color={colors.highlight}
+                        color={theme.colors.warning}
                       />
-                      <Text style={styles.rateButtonText}>Noter ce service</Text>
+                      <Text style={[styles.rateButtonText, { color: theme.colors.accent }]}>Noter ce service</Text>
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>
@@ -248,9 +248,9 @@ export default function ClientDashboardScreen() {
                 ios_icon_name="clock"
                 android_material_icon_name="schedule"
                 size={48}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
-              <Text style={styles.emptyText}>Aucun lavage en attente</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>Aucun lavage en attente</Text>
             </View>
           )}
         </View>
@@ -262,7 +262,6 @@ export default function ClientDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingTop: 20,
@@ -280,13 +279,11 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginBottom: 4,
   },
   companyName: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
   },
   createButton: {
     marginBottom: 32,
@@ -297,7 +294,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
   washHeader: {
@@ -318,12 +314,10 @@ const styles = StyleSheet.create({
   },
   washDate: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   providerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   washInfo: {
@@ -333,7 +327,6 @@ const styles = StyleSheet.create({
   },
   washAddress: {
     fontSize: 14,
-    color: colors.textSecondary,
     flex: 1,
   },
   serviceTypeContainer: {
@@ -343,7 +336,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   serviceTypeText: {
     fontSize: 14,
@@ -356,12 +348,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   rateButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.primary,
   },
   emptyState: {
     alignItems: 'center',
@@ -369,7 +359,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginTop: 12,
   },
   loadingContainer: {
@@ -380,6 +369,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
 });

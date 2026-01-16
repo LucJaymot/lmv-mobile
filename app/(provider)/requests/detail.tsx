@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
@@ -381,10 +381,10 @@ export default function ProviderRequestDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
-          <Text style={styles.loadingText}>Chargement...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement...</Text>
         </View>
       </View>
     );
@@ -392,16 +392,16 @@ export default function ProviderRequestDetailScreen() {
 
   if (!washRequest) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Demande introuvable</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Demande introuvable</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -410,23 +410,23 @@ export default function ProviderRequestDetailScreen() {
           <Text style={styles.statusText}>{getStatusLabel(washRequest.status)}</Text>
         </View>
 
-        <Text style={styles.title}>Demande de lavage</Text>
-        <Text style={styles.subtitle}>Créée le {formatDate(washRequest.createdAt)}</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Demande de lavage</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Créée le {formatDate(washRequest.createdAt)}</Text>
 
         {washRequest.clientCompany && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Client</Text>
-          <View style={commonStyles.card}>
-              <Text style={styles.clientName}>{washRequest.clientCompany.name}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Client</Text>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.clientName, { color: theme.colors.text }]}>{washRequest.clientCompany.name}</Text>
               {washRequest.clientCompany.contact && (
             <View style={styles.infoRow}>
               <IconSymbol
                 ios_icon_name="person.fill"
                 android_material_icon_name="person"
                 size={16}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
-                  <Text style={styles.infoText}>{washRequest.clientCompany.contact}</Text>
+                  <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>{washRequest.clientCompany.contact}</Text>
             </View>
               )}
               {washRequest.clientCompany.phone && (
@@ -435,9 +435,9 @@ export default function ProviderRequestDetailScreen() {
                 ios_icon_name="phone.fill"
                 android_material_icon_name="phone"
                 size={16}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
-                  <Text style={styles.infoText}>{washRequest.clientCompany.phone}</Text>
+                  <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>{washRequest.clientCompany.phone}</Text>
                 </View>
               )}
               {washRequest.clientCompany.email && (
@@ -446,9 +446,9 @@ export default function ProviderRequestDetailScreen() {
                     ios_icon_name="envelope.fill"
                     android_material_icon_name="email"
                     size={16}
-                    color={colors.textSecondary}
+                    color={theme.colors.textMuted}
                   />
-                  <Text style={styles.infoText}>{washRequest.clientCompany.email}</Text>
+                  <Text style={[styles.infoText, { color: theme.colors.textMuted }]}>{washRequest.clientCompany.email}</Text>
                 </View>
               )}
             </View>
@@ -456,22 +456,22 @@ export default function ProviderRequestDetailScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Détails</Text>
-          <View style={commonStyles.card}>
-            <View style={styles.detailRow}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Détails</Text>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.detailRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="calendar"
                 android_material_icon_name="event"
                 size={20}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Date et heure</Text>
-                <Text style={styles.detailValue}>{formatDate(washRequest.dateTime)}</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Date et heure</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{formatDate(washRequest.dateTime)}</Text>
               </View>
             </View>
             <TouchableOpacity 
-              style={styles.detailRow} 
+              style={[styles.detailRow, { borderBottomColor: theme.colors.border }]} 
               onPress={() => openAddressInMaps(washRequest.address)}
               activeOpacity={0.7}
             >
@@ -482,21 +482,21 @@ export default function ProviderRequestDetailScreen() {
                 color={theme.colors.accent}
               />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Lieu</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Lieu</Text>
                 <Text style={[styles.detailValue, styles.clickableAddress, { color: theme.colors.accent }]}>{washRequest.address}</Text>
               </View>
             </TouchableOpacity>
             {washRequest.notes && (
-              <View style={styles.detailRow}>
+              <View style={[styles.detailRow, { borderBottomColor: theme.colors.border }]}>
                 <IconSymbol
                   ios_icon_name="note.text"
                   android_material_icon_name="note"
                   size={20}
-                  color={colors.textSecondary}
+                  color={theme.colors.textMuted}
                 />
                 <View style={styles.detailContent}>
-                  <Text style={styles.detailLabel}>Notes</Text>
-                  <Text style={styles.detailValue}>{washRequest.notes}</Text>
+                  <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Notes</Text>
+                  <Text style={[styles.detailValue, { color: theme.colors.text }]}>{washRequest.notes}</Text>
               </View>
             </View>
             )}
@@ -505,14 +505,14 @@ export default function ProviderRequestDetailScreen() {
 
         {washRequest.vehicles && washRequest.vehicles.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Véhicules</Text>
-          <View style={commonStyles.card}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Véhicules</Text>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
               {washRequest.vehicles.map((vehicleRequest) => (
                 <View key={vehicleRequest.id} style={styles.vehicleItem}>
                   {vehicleRequest.vehicle && (
                     <>
-                      <Text style={styles.vehiclePlate}>{vehicleRequest.vehicle.licensePlate}</Text>
-                      <Text style={styles.vehicleName}>
+                      <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>{vehicleRequest.vehicle.licensePlate}</Text>
+                      <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>
                         {vehicleRequest.vehicle.brand} {vehicleRequest.vehicle.model} - {vehicleRequest.vehicle.type}
                       </Text>
                     </>
@@ -574,8 +574,8 @@ export default function ProviderRequestDetailScreen() {
 
         {washRequest.status === 'completed' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Facture</Text>
-            <View style={commonStyles.card}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Facture</Text>
+            <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
               {washRequest.invoiceUrl ? (
                 <View style={styles.invoiceActions}>
                   <Button
@@ -620,7 +620,6 @@ export default function ProviderRequestDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
@@ -641,12 +640,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 24,
   },
   section: {
@@ -655,13 +652,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 12,
   },
   clientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   infoRow: {
@@ -672,14 +667,12 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   detailContent: {
     flex: 1,
@@ -687,12 +680,10 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginBottom: 2,
   },
   detailValue: {
     fontSize: 16,
-    color: colors.text,
   },
   vehicleItem: {
     paddingVertical: 8,
@@ -700,12 +691,10 @@ const styles = StyleSheet.create({
   vehiclePlate: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 2,
   },
   vehicleName: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 2,
   },
   serviceType: {
@@ -734,7 +723,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginTop: 12,
   },
   clickableAddress: {

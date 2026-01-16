@@ -116,11 +116,15 @@ export default function EditProviderProfileScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.formContainer}>
+          <View style={[styles.formContainer, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Nom *</Text>
+              <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Nom *</Text>
               <TextInput
-                style={commonStyles.input}
+                style={[commonStyles.input, { 
+                  backgroundColor: theme.colors.elevated,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                }]}
                 placeholder="Nom du prestataire"
                 placeholderTextColor={theme.colors.textMuted}
                 value={formData.name}
@@ -129,9 +133,13 @@ export default function EditProviderProfileScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Téléphone *</Text>
+              <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Téléphone *</Text>
               <TextInput
-                style={commonStyles.input}
+                style={[commonStyles.input, { 
+                  backgroundColor: theme.colors.elevated,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                }]}
                 placeholder="Numéro de téléphone"
                 placeholderTextColor={theme.colors.textMuted}
                 value={formData.phone}
@@ -141,9 +149,13 @@ export default function EditProviderProfileScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Ville de base *</Text>
+              <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Ville de base *</Text>
               <TextInput
-                style={commonStyles.input}
+                style={[commonStyles.input, { 
+                  backgroundColor: theme.colors.elevated,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                }]}
                 placeholder="Ville principale"
                 placeholderTextColor={theme.colors.textMuted}
                 value={formData.baseCity}
@@ -152,9 +164,13 @@ export default function EditProviderProfileScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Rayon d'intervention (km) *</Text>
+              <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Rayon d'intervention (km) *</Text>
               <TextInput
-                style={commonStyles.input}
+                style={[commonStyles.input, { 
+                  backgroundColor: theme.colors.elevated,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                }]}
                 placeholder="Rayon en kilomètres"
                 placeholderTextColor={theme.colors.textMuted}
                 value={formData.radiusKm}
@@ -164,9 +180,13 @@ export default function EditProviderProfileScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={commonStyles.inputLabel}>Description</Text>
+              <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Description</Text>
               <TextInput
-                style={[commonStyles.input, styles.textArea]}
+                style={[commonStyles.input, styles.textArea, { 
+                  backgroundColor: theme.colors.elevated,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.text,
+                }]}
                 placeholder="Description de vos services"
                 placeholderTextColor={theme.colors.textMuted}
                 value={formData.description}
@@ -215,7 +235,8 @@ export default function EditProviderProfileScreen() {
                 size="md"
                 onPress={() => router.back()}
                 disabled={isSaving}
-                style={styles.button}
+                style={{ ...styles.button, borderColor: theme.colors.border }}
+                textStyle={{ color: theme.colors.text }}
               >
                 Annuler
               </Button>
@@ -246,7 +267,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   formContainer: {
-    backgroundColor: commonStyles.card.backgroundColor,
     borderRadius: 12,
     padding: 20,
   },

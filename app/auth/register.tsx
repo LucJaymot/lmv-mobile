@@ -15,11 +15,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles, buttonStyles, colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Logo } from '@/components/Logo';
 import { UserRole } from '@/types';
-import { useTheme } from '@/theme/hooks';
 import { Button } from '@/components/ui/Button';
 
 // Validation email
@@ -44,7 +43,6 @@ const validatePhone = (phone: string): boolean => {
 export default function RegisterScreen() {
   const router = useRouter();
   const { register, user } = useAuth();
-  const { theme } = useTheme();
   const [step, setStep] = useState<'role' | 'credentials' | 'profile'>('role');
   const [role, setRole] = useState<UserRole>('client');
   const [email, setEmail] = useState('');
@@ -298,8 +296,8 @@ export default function RegisterScreen() {
   // Afficher l'écran de confirmation après l'inscription réussie
   if (emailSent) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.successContainer}>
               <View style={styles.successIconContainer}>
@@ -307,34 +305,34 @@ export default function RegisterScreen() {
                   ios_icon_name="checkmark.circle.fill"
                   android_material_icon_name="check-circle"
                   size={64}
-                  color={theme.colors.success}
+                  color={colors.success}
                 />
               </View>
-              <Text style={[styles.successTitle, { color: theme.colors.text }]}>Inscription réussie !</Text>
-              <Text style={[styles.successText, { color: theme.colors.textMuted }]}>
+              <Text style={styles.successTitle}>Inscription réussie !</Text>
+              <Text style={styles.successText}>
                 {userConfirmed ? (
                   <>
                     Votre compte a été créé avec succès !{'\n\n'}
-                    <Text style={[styles.emailText, { color: theme.colors.text }]}>{email}</Text>
+                    <Text style={styles.emailText}>{email}</Text>
                     {'\n\n'}
-                    <Text style={{ fontWeight: '600', color: theme.colors.text }}>
+                    <Text style={{ fontWeight: '600', color: colors.text }}>
                       ⚠️ Aucun email de confirmation n'a été envoyé car la confirmation automatique est activée dans Supabase.
                     </Text>
                     {'\n\n'}
                     Vous pouvez vous connecter immédiatement avec vos identifiants.
                     {'\n\n'}
-                    <Text style={{ fontSize: 12, fontStyle: 'italic' }}>
+                    <Text style={{ fontSize: 12, fontStyle: 'italic', color: colors.textSecondary }}>
                       Pour recevoir des emails de confirmation, activez &quot;Enable email confirmations&quot; dans Supabase {'>'} Authentication {'>'} Settings.
                     </Text>
                   </>
                 ) : (
                   <>
                     Un email de confirmation a été envoyé à{'\n'}
-                    <Text style={[styles.emailText, { color: theme.colors.text }]}>{email}</Text>
+                    <Text style={styles.emailText}>{email}</Text>
                     {'\n\n'}
                     Veuillez vérifier votre boîte de réception (et votre dossier spam) et cliquer sur le lien de confirmation pour activer votre compte.
                     {'\n\n'}
-                    <Text style={{ fontSize: 12, fontStyle: 'italic' }}>
+                    <Text style={{ fontSize: 12, fontStyle: 'italic', color: colors.textSecondary }}>
                       Si vous ne recevez pas l'email dans quelques minutes, vérifiez vos paramètres Supabase ou contactez le support.
                     </Text>
                   </>
@@ -357,7 +355,7 @@ export default function RegisterScreen() {
 
   if (step === 'role') {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <TouchableOpacity
             style={styles.backButton}
@@ -367,45 +365,45 @@ export default function RegisterScreen() {
               ios_icon_name="chevron.left"
               android_material_icon_name="arrow-back"
               size={24}
-              color={theme.colors.text}
+              color={colors.text}
             />
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Logo size="lg" withCircleBackground />
-            <Text style={[styles.title, { color: theme.colors.text }]}>Inscription</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Choisissez votre profil</Text>
+            <Logo size="lg" withCircleBackground forceStaticColors />
+            <Text style={styles.title}>Inscription</Text>
+            <Text style={styles.subtitle}>Choisissez votre profil</Text>
           </View>
 
           <View style={styles.roleContainer}>
             <TouchableOpacity
-              style={[styles.roleCard, { backgroundColor: theme.colors.surface }]}
+              style={[styles.roleCard, { backgroundColor: colors.card }]}
               onPress={() => handleRoleSelection('client')}
             >
               <IconSymbol
                 ios_icon_name="building.2.fill"
                 android_material_icon_name="business"
                 size={48}
-                color={theme.colors.accent}
+                color={colors.primary}
               />
-              <Text style={[styles.roleTitle, { color: theme.colors.text }]}>Client</Text>
-              <Text style={[styles.roleDescription, { color: theme.colors.textMuted }]}>
+              <Text style={styles.roleTitle}>Client</Text>
+              <Text style={styles.roleDescription}>
                 Je gère une flotte de véhicules et je recherche des prestataires de lavage
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.roleCard, { backgroundColor: theme.colors.surface }]}
+              style={[styles.roleCard, { backgroundColor: colors.card }]}
               onPress={() => handleRoleSelection('provider')}
             >
               <IconSymbol
                 ios_icon_name="sparkles"
                 android_material_icon_name="local-car-wash"
                 size={48}
-                color={theme.colors.accent}
+                color={colors.primary}
               />
-              <Text style={[styles.roleTitle, { color: theme.colors.text }]}>Prestataire</Text>
-              <Text style={[styles.roleDescription, { color: theme.colors.textMuted }]}>
+              <Text style={styles.roleTitle}>Prestataire</Text>
+              <Text style={styles.roleDescription}>
                 Je propose des services de lavage automobile sur site
               </Text>
             </TouchableOpacity>
@@ -417,7 +415,7 @@ export default function RegisterScreen() {
 
   if (step === 'credentials') {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -435,13 +433,13 @@ export default function RegisterScreen() {
               ios_icon_name="chevron.left"
               android_material_icon_name="arrow-back"
               size={24}
-              color={theme.colors.text}
+              color={colors.text}
             />
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>Vos identifiants</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
+            <Text style={styles.title}>Vos identifiants</Text>
+            <Text style={styles.subtitle}>
               {role === 'client' ? 'Compte Client' : 'Compte Prestataire'}
             </Text>
           </View>
@@ -449,27 +447,27 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Email</Text>
+              <Text style={styles.inputLabel}>Email</Text>
               <View style={[
                 styles.inputWrapper,
                 {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: emailError ? theme.colors.error : (emailFocused ? theme.colors.accent : theme.colors.border),
+                  backgroundColor: colors.card,
+                  borderColor: emailError ? colors.error : (emailFocused ? colors.primary : colors.border),
                 },
-                emailFocused && { borderColor: theme.colors.accent },
-                emailError && { borderColor: theme.colors.error },
+                emailFocused && { borderColor: colors.primary },
+                emailError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? theme.colors.error : (emailFocused ? theme.colors.accent : theme.colors.textMuted)}
+                  color={emailError ? colors.error : (emailFocused ? colors.primary : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={[styles.input, { color: theme.colors.text }]}
+                  style={styles.input}
                   placeholder="votre@email.com"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={email}
                   onChangeText={handleEmailChange}
                   keyboardType="email-address"
@@ -486,37 +484,37 @@ export default function RegisterScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={theme.colors.error}
+                    color={colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{emailError}</Text>
+                  <Text style={styles.errorText}>{emailError}</Text>
                 </View>
               )}
             </View>
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Mot de passe</Text>
+              <Text style={styles.inputLabel}>Mot de passe</Text>
               <View style={[
                 styles.inputWrapper,
                 {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: passwordError ? theme.colors.error : (passwordFocused ? theme.colors.accent : theme.colors.border),
+                  backgroundColor: colors.card,
+                  borderColor: passwordError ? colors.error : (passwordFocused ? colors.primary : colors.border),
                 },
-                passwordFocused && { borderColor: theme.colors.accent },
-                passwordError && { borderColor: theme.colors.error },
+                passwordFocused && { borderColor: colors.primary },
+                passwordError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={passwordError ? theme.colors.error : (passwordFocused ? theme.colors.accent : theme.colors.textMuted)}
+                  color={passwordError ? colors.error : (passwordFocused ? colors.primary : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={[styles.input, { color: theme.colors.text }]}
+                  style={styles.input}
                   placeholder="Minimum 6 caractères"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={password}
                   onChangeText={handlePasswordChange}
                   secureTextEntry={!showPassword}
@@ -533,7 +531,7 @@ export default function RegisterScreen() {
                     ios_icon_name={showPassword ? "eye.slash.fill" : "eye.fill"}
                     android_material_icon_name={showPassword ? "visibility-off" : "visibility"}
                     size={20}
-                    color={theme.colors.textMuted}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -543,37 +541,37 @@ export default function RegisterScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={theme.colors.error}
+                    color={colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{passwordError}</Text>
+                  <Text style={styles.errorText}>{passwordError}</Text>
                 </View>
               )}
             </View>
 
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Confirmer le mot de passe</Text>
+              <Text style={styles.inputLabel}>Confirmer le mot de passe</Text>
               <View style={[
                 styles.inputWrapper,
                 {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: confirmPasswordError ? theme.colors.error : (confirmPasswordFocused ? theme.colors.accent : theme.colors.border),
+                  backgroundColor: colors.card,
+                  borderColor: confirmPasswordError ? colors.error : (confirmPasswordFocused ? colors.primary : colors.border),
                 },
-                confirmPasswordFocused && { borderColor: theme.colors.accent },
-                confirmPasswordError && { borderColor: theme.colors.error },
+                confirmPasswordFocused && { borderColor: colors.primary },
+                confirmPasswordError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={confirmPasswordError ? theme.colors.error : (confirmPasswordFocused ? theme.colors.accent : theme.colors.textMuted)}
+                  color={confirmPasswordError ? colors.error : (confirmPasswordFocused ? colors.primary : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={[styles.input, { color: theme.colors.text }]}
+                  style={styles.input}
                   placeholder="Retapez votre mot de passe"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={confirmPassword}
                   onChangeText={handleConfirmPasswordChange}
                   secureTextEntry={!showConfirmPassword}
@@ -591,7 +589,7 @@ export default function RegisterScreen() {
                     ios_icon_name={showConfirmPassword ? "eye.slash.fill" : "eye.fill"}
                     android_material_icon_name={showConfirmPassword ? "visibility-off" : "visibility"}
                     size={20}
-                    color={theme.colors.textMuted}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -601,10 +599,10 @@ export default function RegisterScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={theme.colors.error}
+                    color={colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{confirmPasswordError}</Text>
+                  <Text style={styles.errorText}>{confirmPasswordError}</Text>
                 </View>
               )}
             </View>
@@ -626,7 +624,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -641,13 +639,13 @@ export default function RegisterScreen() {
             ios_icon_name="chevron.left"
             android_material_icon_name="arrow-back"
             size={24}
-            color={theme.colors.text}
+            color={colors.text}
           />
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Votre profil</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
+          <Text style={styles.title}>Votre profil</Text>
+          <Text style={styles.subtitle}>
             {role === 'client' ? 'Informations entreprise' : 'Informations prestataire'}
           </Text>
         </View>
@@ -657,27 +655,27 @@ export default function RegisterScreen() {
             <React.Fragment>
               {/* Nom de l'entreprise */}
               <View style={styles.inputContainer}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Nom de l&apos;entreprise *</Text>
+                <Text style={styles.inputLabel}>Nom de l&apos;entreprise *</Text>
                 <View style={[
                   styles.inputWrapper,
                   {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: clientNameError ? theme.colors.error : (clientNameFocused ? theme.colors.accent : theme.colors.border),
+                    backgroundColor: colors.card,
+                    borderColor: clientNameError ? colors.error : (clientNameFocused ? colors.primary : colors.border),
                   },
-                  clientNameFocused && { borderColor: theme.colors.accent },
-                  clientNameError && { borderColor: theme.colors.error },
+                  clientNameFocused && { borderColor: colors.primary },
+                  clientNameError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="building.2.fill"
                     android_material_icon_name="business"
                     size={20}
-                    color={clientNameError ? theme.colors.error : (clientNameFocused ? theme.colors.accent : theme.colors.textMuted)}
+                    color={clientNameError ? colors.error : (clientNameFocused ? colors.primary : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={[styles.input, { color: theme.colors.text }]}
+                    style={styles.input}
                     placeholder="Ex: Garage Dupont"
-                    placeholderTextColor={theme.colors.textMuted}
+                    placeholderTextColor={colors.textSecondary}
                     value={clientData.name}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, name: text });
@@ -694,37 +692,37 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={theme.colors.error}
+                      color={colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientNameError}</Text>
+                    <Text style={styles.errorText}>{clientNameError}</Text>
                   </View>
                 )}
               </View>
 
               {/* Adresse */}
               <View style={styles.inputContainer}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Adresse *</Text>
+                <Text style={styles.inputLabel}>Adresse *</Text>
                 <View style={[
                   styles.inputWrapper,
                   {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: clientAddressError ? theme.colors.error : (clientAddressFocused ? theme.colors.accent : theme.colors.border),
+                    backgroundColor: colors.card,
+                    borderColor: clientAddressError ? colors.error : (clientAddressFocused ? colors.primary : colors.border),
                   },
-                  clientAddressFocused && { borderColor: theme.colors.accent },
-                  clientAddressError && { borderColor: theme.colors.error },
+                  clientAddressFocused && { borderColor: colors.primary },
+                  clientAddressError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="location.fill"
                     android_material_icon_name="location-on"
                     size={20}
-                    color={clientAddressError ? theme.colors.error : (clientAddressFocused ? theme.colors.accent : theme.colors.textMuted)}
+                    color={clientAddressError ? colors.error : (clientAddressFocused ? colors.primary : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={[styles.input, { color: theme.colors.text }]}
+                    style={styles.input}
                     placeholder="123 Rue de la Paix, 75001 Paris"
-                    placeholderTextColor={theme.colors.textMuted}
+                    placeholderTextColor={colors.textSecondary}
                     value={clientData.address}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, address: text });
@@ -741,37 +739,37 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={theme.colors.error}
+                      color={colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientAddressError}</Text>
+                    <Text style={styles.errorText}>{clientAddressError}</Text>
                   </View>
                 )}
               </View>
 
               {/* Nom du contact */}
               <View style={styles.inputContainer}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Nom du contact *</Text>
+                <Text style={styles.inputLabel}>Nom du contact *</Text>
                 <View style={[
                   styles.inputWrapper,
                   {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: clientContactError ? theme.colors.error : (clientContactFocused ? theme.colors.accent : theme.colors.border),
+                    backgroundColor: colors.card,
+                    borderColor: clientContactError ? colors.error : (clientContactFocused ? colors.primary : colors.border),
                   },
-                  clientContactFocused && { borderColor: theme.colors.accent },
-                  clientContactError && { borderColor: theme.colors.error },
+                  clientContactFocused && { borderColor: colors.primary },
+                  clientContactError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="person.fill"
                     android_material_icon_name="person"
                     size={20}
-                    color={clientContactError ? theme.colors.error : (clientContactFocused ? theme.colors.accent : theme.colors.textMuted)}
+                    color={clientContactError ? colors.error : (clientContactFocused ? colors.primary : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={[styles.input, { color: theme.colors.text }]}
+                    style={styles.input}
                     placeholder="Jean Dupont"
-                    placeholderTextColor={theme.colors.textMuted}
+                    placeholderTextColor={colors.textSecondary}
                     value={clientData.contact}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, contact: text });
@@ -788,37 +786,37 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={theme.colors.error}
+                      color={colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientContactError}</Text>
+                    <Text style={styles.errorText}>{clientContactError}</Text>
                   </View>
                 )}
               </View>
 
               {/* Téléphone */}
               <View style={styles.inputContainer}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Téléphone *</Text>
+                <Text style={styles.inputLabel}>Téléphone *</Text>
                 <View style={[
                   styles.inputWrapper,
                   {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: clientPhoneError ? theme.colors.error : (clientPhoneFocused ? theme.colors.accent : theme.colors.border),
+                    backgroundColor: colors.card,
+                    borderColor: clientPhoneError ? colors.error : (clientPhoneFocused ? colors.primary : colors.border),
                   },
-                  clientPhoneFocused && { borderColor: theme.colors.accent },
-                  clientPhoneError && { borderColor: theme.colors.error },
+                  clientPhoneFocused && { borderColor: colors.primary },
+                  clientPhoneError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="phone.fill"
                     android_material_icon_name="phone"
                     size={20}
-                    color={clientPhoneError ? theme.colors.error : (clientPhoneFocused ? theme.colors.accent : theme.colors.textMuted)}
+                    color={clientPhoneError ? colors.error : (clientPhoneFocused ? colors.primary : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={[styles.input, { color: theme.colors.text }]}
+                    style={styles.input}
                     placeholder="0123456789"
-                    placeholderTextColor={theme.colors.textMuted}
+                    placeholderTextColor={colors.textSecondary}
                     value={clientData.phone}
                     onChangeText={(text) => {
                       setClientData({ ...clientData, phone: text });
@@ -836,10 +834,10 @@ export default function RegisterScreen() {
                       ios_icon_name="exclamationmark.circle.fill"
                       android_material_icon_name="error"
                       size={14}
-                      color={theme.colors.error}
+                      color={colors.error}
                       style={styles.errorIcon}
                     />
-                    <Text style={[styles.errorText, { color: theme.colors.error }]}>{clientPhoneError}</Text>
+                    <Text style={styles.errorText}>{clientPhoneError}</Text>
                   </View>
                 )}
               </View>
@@ -851,7 +849,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="Ex: Lavage Pro Paris"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={providerData.name}
                   onChangeText={(text) => setProviderData({ ...providerData, name: text })}
                 />
@@ -862,7 +860,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="Paris"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={providerData.baseCity}
                   onChangeText={(text) => setProviderData({ ...providerData, baseCity: text })}
                 />
@@ -873,7 +871,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="20"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={providerData.radiusKm}
                   onChangeText={(text) => setProviderData({ ...providerData, radiusKm: text })}
                   keyboardType="numeric"
@@ -885,7 +883,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={commonStyles.input}
                   placeholder="+33 1 23 45 67 89"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={providerData.phone}
                   onChangeText={(text) => setProviderData({ ...providerData, phone: text })}
                   keyboardType="phone-pad"
@@ -897,7 +895,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={[commonStyles.input, styles.textArea]}
                   placeholder="Décrivez vos services..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={providerData.description}
                   onChangeText={(text) => setProviderData({ ...providerData, description: text })}
                   multiline
@@ -916,8 +914,8 @@ export default function RegisterScreen() {
                         style={[
                           styles.serviceChip,
                           {
-                            borderColor: isActive ? theme.colors.accent : theme.colors.border,
-                            backgroundColor: isActive ? theme.colors.accent : theme.colors.background,
+                    borderColor: isActive ? colors.primary : colors.border,
+                    backgroundColor: isActive ? colors.primary : colors.background,
                           },
                         ]}
                         onPress={() => toggleService(service)}
@@ -926,7 +924,7 @@ export default function RegisterScreen() {
                           style={[
                             styles.serviceChipText,
                             {
-                              color: isActive ? '#FFFFFF' : theme.colors.text,
+                              color: isActive ? '#FFFFFF' : colors.text,
                             },
                           ]}
                         >
@@ -981,12 +979,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
+    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
+    color: colors.textSecondary,
   },
   roleContainer: {
     gap: 16,
@@ -1004,11 +1004,13 @@ const styles = StyleSheet.create({
   roleTitle: {
     fontSize: 20,
     fontWeight: '600',
+    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   roleDescription: {
     fontSize: 14,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -1023,6 +1025,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
+    color: colors.text,
     marginBottom: 8,
   },
   inputWrapper: {
@@ -1039,6 +1042,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
+    color: colors.text,
     paddingVertical: 0,
   },
   eyeIcon: {
@@ -1093,17 +1097,20 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 28,
     fontWeight: '700',
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   successText: {
     fontSize: 16,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
   },
   emailText: {
     fontWeight: '600',
+    color: colors.text,
   },
   button: {
     minWidth: 200,

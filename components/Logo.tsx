@@ -13,6 +13,8 @@ interface LogoProps {
   imageStyle?: ImageStyle;
   /** Afficher un fond circulaire (pour écrans blancs) */
   withCircleBackground?: boolean;
+  /** Forcer l'utilisation de couleurs statiques (pour pages d'authentification) */
+  forceStaticColors?: boolean;
 }
 
 const sizeMap: Record<LogoSize, number> = {
@@ -35,6 +37,7 @@ export const Logo: React.FC<LogoProps> = ({
   containerStyle,
   imageStyle,
   withCircleBackground = false,
+  forceStaticColors = false,
 }) => {
   const { theme } = useTheme();
   const logoSize = sizeMap[size];
@@ -56,6 +59,9 @@ export const Logo: React.FC<LogoProps> = ({
   );
 
   if (withCircleBackground) {
+    // Utiliser une couleur statique blanche si forceStaticColors est true (pour pages d'authentification)
+    const circleBackgroundColor = forceStaticColors ? '#FFFFFF' : theme.colors.surface;
+    
     return (
       <View
         style={[
@@ -64,7 +70,7 @@ export const Logo: React.FC<LogoProps> = ({
             width: logoSize + 32,
             height: logoSize + 32,
             borderRadius: (logoSize + 32) / 2,
-            backgroundColor: theme.colors.surface,
+            backgroundColor: circleBackgroundColor,
             // Ombre très subtile pour white-first
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: 2 },

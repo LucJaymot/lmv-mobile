@@ -49,7 +49,7 @@ interface FloatingTabBarProps {
 
 export default function FloatingTabBar({
   tabs,
-  containerWidth = Platform.OS === 'web' ? screenWidth / 2.5 : screenWidth - 40,
+  containerWidth = Platform.OS === 'web' ? screenWidth / 2 : screenWidth - 40,
   borderRadius = 35,
   bottomMargin
 }: FloatingTabBarProps) {

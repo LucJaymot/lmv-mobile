@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Button } from '@/components/ui/Button';
 import { useTheme } from '@/theme/hooks';
@@ -25,7 +25,7 @@ import { washRequestService } from '@/services/databaseService';
 import { Vehicle } from '@/types';
 
 // Composant pour le sélecteur de date web
-const WebDateInput = ({ value, onChange, min, style }: any) => {
+const WebDateInput = ({ value, onChange, min, style, theme }: any) => {
   if (Platform.OS !== 'web') return null;
   
   useEffect(() => {
@@ -132,7 +132,7 @@ const WebDateInput = ({ value, onChange, min, style }: any) => {
 };
 
 // Composant pour le sélecteur d'heure web
-const WebTimeInput = ({ value, onChange, style }: any) => {
+const WebTimeInput = ({ value, onChange, style, theme }: any) => {
   if (Platform.OS !== 'web') return null;
   
   const handleClick = (event: any) => {
@@ -396,7 +396,7 @@ export default function CreateRequestScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -405,13 +405,13 @@ export default function CreateRequestScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Chargement des véhicules...</Text>
+            <ActivityIndicator size="large" color={theme.colors.accent} />
+            <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement des véhicules...</Text>
           </View>
         ) : vehicles.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Aucun véhicule disponible</Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>Aucun véhicule disponible</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textMuted }]}>
               Vous devez d&apos;abord ajouter des véhicules pour créer une demande
             </Text>
             <Button
@@ -425,19 +425,20 @@ export default function CreateRequestScreen() {
           </View>
         ) : (
           <>
-            <Text style={styles.sectionTitle}>Véhicules</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Véhicules</Text>
             {vehicles.map((vehicle) => (
-          <View key={vehicle.id} style={styles.vehicleCard}>
+          <View key={vehicle.id} style={[styles.vehicleCard, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity
               style={styles.vehicleHeader}
               onPress={() => toggleVehicle(vehicle.id)}
             >
               <View style={styles.vehicleInfo}>
-                <Text style={styles.vehiclePlate}>{vehicle.licensePlate}</Text>
-                <Text style={styles.vehicleName}>{vehicle.brand} {vehicle.model}</Text>
+                <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>{vehicle.licensePlate}</Text>
+                <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>{vehicle.brand} {vehicle.model}</Text>
               </View>
               <View style={[
                 styles.checkbox,
+                { borderColor: theme.colors.border },
                 selectedVehicles.includes(vehicle.id) && {
                   backgroundColor: theme.colors.accent,
                   borderColor: theme.colors.accent,
@@ -454,12 +455,16 @@ export default function CreateRequestScreen() {
               </View>
             </TouchableOpacity>
             {selectedVehicles.includes(vehicle.id) && (
-              <View style={styles.servicesContainer}>
-                <Text style={styles.serviceLabel}>Type de service :</Text>
+              <View style={[styles.servicesContainer, { borderTopColor: theme.colors.border }]}>
+                <Text style={[styles.serviceLabel, { color: theme.colors.text }]}>Type de service :</Text>
                 <View style={styles.serviceButtons}>
                   <TouchableOpacity
                     style={[
                       styles.serviceButton,
+                      {
+                        borderColor: theme.colors.border,
+                        backgroundColor: theme.colors.elevated,
+                      },
                       selectedServices[vehicle.id] === 'exterior' && {
                         backgroundColor: theme.colors.accent,
                         borderColor: theme.colors.accent,
@@ -469,6 +474,7 @@ export default function CreateRequestScreen() {
                   >
                     <Text style={[
                       styles.serviceButtonText,
+                      { color: theme.colors.text },
                       selectedServices[vehicle.id] === 'exterior' && styles.serviceButtonTextActive,
                     ]}>
                       Extérieur
@@ -477,6 +483,10 @@ export default function CreateRequestScreen() {
                   <TouchableOpacity
                     style={[
                       styles.serviceButton,
+                      {
+                        borderColor: theme.colors.border,
+                        backgroundColor: theme.colors.elevated,
+                      },
                       selectedServices[vehicle.id] === 'interior' && {
                         backgroundColor: theme.colors.accent,
                         borderColor: theme.colors.accent,
@@ -486,6 +496,7 @@ export default function CreateRequestScreen() {
                   >
                     <Text style={[
                       styles.serviceButtonText,
+                      { color: theme.colors.text },
                       selectedServices[vehicle.id] === 'interior' && styles.serviceButtonTextActive,
                     ]}>
                       Intérieur
@@ -494,6 +505,10 @@ export default function CreateRequestScreen() {
                   <TouchableOpacity
                     style={[
                       styles.serviceButton,
+                      {
+                        borderColor: theme.colors.border,
+                        backgroundColor: theme.colors.elevated,
+                      },
                       selectedServices[vehicle.id] === 'complete' && {
                         backgroundColor: theme.colors.accent,
                         borderColor: theme.colors.accent,
@@ -503,6 +518,7 @@ export default function CreateRequestScreen() {
                   >
                     <Text style={[
                       styles.serviceButtonText,
+                      { color: theme.colors.text },
                       selectedServices[vehicle.id] === 'complete' && styles.serviceButtonTextActive,
                     ]}>
                       Complet
@@ -514,29 +530,43 @@ export default function CreateRequestScreen() {
           </View>
         ))}
 
-        <Text style={styles.sectionTitle}>Lieu</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Lieu</Text>
         <View style={styles.inputContainer}>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="Adresse"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={address}
             onChangeText={setAddress}
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Ville</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Ville</Text>
         <View style={styles.inputContainer}>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="Paris"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={city}
             onChangeText={setCity}
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Date et heure</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Date et heure</Text>
         <View style={styles.dateTimeContainer}>
           <View style={styles.dateTimeInput}>
             {Platform.OS === 'web' ? (
@@ -544,16 +574,17 @@ export default function CreateRequestScreen() {
                 value={formatDateForInput(selectedDate)}
                 onChange={onWebDateChange}
                 min={formatDateForInput(getMinimumDate())}
+                theme={theme}
                 style={{
-                  backgroundColor: colors.card,
+                  backgroundColor: theme.colors.elevated,
                   borderWidth: 1,
-                  borderColor: colors.border,
+                  borderColor: theme.colors.border,
                   borderStyle: 'solid',
                   borderRadius: 8,
                   paddingVertical: 20,
                   paddingHorizontal: 16,
                   fontSize: 16,
-                  color: colors.text,
+                  color: theme.colors.text,
                   marginBottom: 12,
                   width: '100%',
                   cursor: 'pointer',
@@ -568,11 +599,19 @@ export default function CreateRequestScreen() {
                     setShowTimePicker(false);
                     setShowDatePicker(true);
                   }}
-                  style={[commonStyles.input, styles.dateInputTouchable]}
+                  style={[
+                    commonStyles.input,
+                    styles.dateInputTouchable,
+                    {
+                      backgroundColor: theme.colors.elevated,
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
                 >
                   <Text style={[
                     styles.dateInputText,
-                    !selectedDate && styles.dateInputPlaceholder
+                    { color: theme.colors.text },
+                    !selectedDate && { color: theme.colors.textMuted },
                   ]}>
                     {selectedDate ? formatDate(selectedDate) : 'JJ/MM/AAAA'}
                   </Text>
@@ -603,7 +642,7 @@ export default function CreateRequestScreen() {
                                 setShowDatePicker(false);
                                 setShowTimePicker(false);
                               }}
-                              style={styles.iosPickerButton}
+                              style={[styles.iosPickerButton, { backgroundColor: theme.colors.accent }]}
                             >
                               <Text style={styles.iosPickerButtonText}>Valider</Text>
                             </TouchableOpacity>
@@ -621,16 +660,17 @@ export default function CreateRequestScreen() {
               <WebTimeInput
                 value={formatTimeForInput(selectedTime)}
                 onChange={onWebTimeChange}
+                theme={theme}
                 style={{
-                  backgroundColor: colors.card,
+                  backgroundColor: theme.colors.elevated,
                   borderWidth: 1,
-                  borderColor: colors.border,
+                  borderColor: theme.colors.border,
                   borderStyle: 'solid',
                   borderRadius: 8,
                   paddingVertical: 20,
                   paddingHorizontal: 16,
                   fontSize: 16,
-                  color: colors.text,
+                  color: theme.colors.text,
                   marginBottom: 12,
                   width: '100%',
                   cursor: 'pointer',
@@ -645,11 +685,19 @@ export default function CreateRequestScreen() {
                     setShowDatePicker(false);
                     setShowTimePicker(true);
                   }}
-                  style={[commonStyles.input, styles.dateInputTouchable]}
+                  style={[
+                    commonStyles.input,
+                    styles.dateInputTouchable,
+                    {
+                      backgroundColor: theme.colors.elevated,
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
                 >
                   <Text style={[
                     styles.dateInputText,
-                    !selectedTime && styles.dateInputPlaceholder
+                    { color: theme.colors.text },
+                    !selectedTime && { color: theme.colors.textMuted },
                   ]}>
                     {selectedTime ? formatTime(selectedTime) : 'HH:MM'}
                   </Text>
@@ -665,7 +713,7 @@ export default function CreateRequestScreen() {
                     }}
                   >
                     <View style={styles.pickerOverlay}>
-                      <View style={styles.pickerContainer}>
+                      <View style={[styles.pickerContainer, { backgroundColor: theme.colors.surface }]}>
                         <DateTimePicker
                           value={selectedTime || new Date()}
                           mode="time"
@@ -679,7 +727,7 @@ export default function CreateRequestScreen() {
                                 setShowTimePicker(false);
                                 setShowDatePicker(false);
                               }}
-                              style={styles.iosPickerButton}
+                              style={[styles.iosPickerButton, { backgroundColor: theme.colors.accent }]}
                             >
                               <Text style={styles.iosPickerButtonText}>Valider</Text>
                             </TouchableOpacity>
@@ -694,12 +742,20 @@ export default function CreateRequestScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Notes (optionnel)</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notes (optionnel)</Text>
         <View style={styles.inputContainer}>
           <TextInput
-            style={[commonStyles.input, styles.textArea]}
+            style={[
+              commonStyles.input,
+              styles.textArea,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="Instructions particulières..."
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={notes}
             onChangeText={setNotes}
             multiline
@@ -727,7 +783,6 @@ export default function CreateRequestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
@@ -736,12 +791,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginTop: 16,
     marginBottom: 12,
   },
   vehicleCard: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -759,19 +812,16 @@ const styles = StyleSheet.create({
   vehiclePlate: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 2,
   },
   vehicleName: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -779,12 +829,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   serviceLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
     marginBottom: 8,
   },
   serviceButtons: {
@@ -797,14 +845,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
     alignItems: 'center',
   },
   serviceButtonText: {
     fontSize: 12,
     fontWeight: '500',
-    color: colors.text,
   },
   serviceButtonTextActive: {
     color: '#FFFFFF',
@@ -826,10 +871,9 @@ const styles = StyleSheet.create({
   },
   dateInputText: {
     fontSize: 16,
-    color: colors.text,
   },
   dateInputPlaceholder: {
-    color: colors.textSecondary,
+    // Utilisé inline maintenant
   },
   dateInputWeb: {
     width: '100%',
@@ -843,7 +887,6 @@ const styles = StyleSheet.create({
   iosPickerButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: colors.primary,
     borderRadius: 8,
   },
   iosPickerButtonText: {
@@ -865,7 +908,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
   emptyState: {
     alignItems: 'center',
@@ -874,12 +916,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -893,7 +933,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerContainer: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 20,
     minWidth: 300,

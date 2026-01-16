@@ -14,10 +14,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { commonStyles } from '@/styles/commonStyles';
+import { commonStyles, colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { authService } from '@/services/databaseService';
-import { useTheme } from '@/theme/hooks';
 import { Button } from '@/components/ui/Button';
 
 // Validation email
@@ -28,7 +27,6 @@ const validateEmail = (email: string): boolean => {
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -102,8 +100,8 @@ export default function ForgotPasswordScreen() {
 
   if (emailSent) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.successContainer}>
               <View style={styles.successIconContainer}>
@@ -111,13 +109,13 @@ export default function ForgotPasswordScreen() {
                   ios_icon_name="checkmark.circle.fill"
                   android_material_icon_name="check-circle"
                   size={64}
-                  color={theme.colors.success}
+                  color={colors.success}
                 />
               </View>
-              <Text style={[styles.successTitle, { color: theme.colors.text }]}>Email envoyé !</Text>
-              <Text style={[styles.successText, { color: theme.colors.textMuted }]}>
+              <Text style={styles.successTitle}>Email envoyé !</Text>
+              <Text style={styles.successText}>
                 Un email de réinitialisation a été envoyé à{'\n'}
-                <Text style={[styles.emailText, { color: theme.colors.text }]}>{email}</Text>
+                <Text style={styles.emailText}>{email}</Text>
                 {'\n\n'}
                 Veuillez vérifier votre boîte de réception et suivre les instructions pour réinitialiser votre mot de passe.
               </Text>
@@ -137,7 +135,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -155,48 +153,48 @@ export default function ForgotPasswordScreen() {
               ios_icon_name="chevron.left"
               android_material_icon_name="arrow-back"
               size={24}
-              color={theme.colors.text}
+              color={colors.text}
             />
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <View style={[styles.iconContainer, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
               <IconSymbol
                 ios_icon_name="lock.fill"
                 android_material_icon_name="lock"
                 size={48}
-                color={theme.colors.accent}
+                color={colors.primary}
               />
             </View>
-            <Text style={[styles.title, { color: theme.colors.text }]}>Mot de passe oublié</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
+            <Text style={styles.title}>Mot de passe oublié</Text>
+            <Text style={styles.subtitle}>
               Entrez votre email pour recevoir un lien de réinitialisation
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Email</Text>
+              <Text style={styles.inputLabel}>Email</Text>
               <View style={[
                 styles.inputWrapper,
                 {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: emailError ? theme.colors.error : (emailFocused ? theme.colors.accent : theme.colors.border),
+                  backgroundColor: colors.card,
+                  borderColor: emailError ? colors.error : (emailFocused ? colors.primary : colors.border),
                 },
-                emailFocused && { borderColor: theme.colors.accent },
-                emailError && { borderColor: theme.colors.error },
+                emailFocused && { borderColor: colors.primary },
+                emailError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? theme.colors.error : (emailFocused ? theme.colors.accent : theme.colors.textMuted)}
+                  color={emailError ? colors.error : (emailFocused ? colors.primary : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={[styles.input, { color: theme.colors.text }]}
+                  style={styles.input}
                   placeholder="votre@email.com"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={email}
                   onChangeText={handleEmailChange}
                   keyboardType="email-address"
@@ -215,10 +213,10 @@ export default function ForgotPasswordScreen() {
                     ios_icon_name="exclamationmark.circle.fill"
                     android_material_icon_name="error"
                     size={14}
-                    color={theme.colors.error}
+                    color={colors.error}
                     style={styles.errorIcon}
                   />
-                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{emailError}</Text>
+                  <Text style={styles.errorText}>{emailError}</Text>
                 </View>
               )}
             </View>
@@ -280,12 +278,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
+    color: colors.text,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
     lineHeight: 22,
@@ -301,6 +301,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
+    color: colors.text,
     marginBottom: 8,
   },
   inputWrapper: {
@@ -317,6 +318,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
+    color: colors.text,
     paddingVertical: 0,
   },
   errorContainer: {
@@ -330,6 +332,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 13,
     fontWeight: '500',
+    color: colors.error,
   },
   button: {
     marginBottom: 16,
@@ -346,16 +349,19 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 28,
     fontWeight: '700',
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   successText: {
     fontSize: 16,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
   },
   emailText: {
     fontWeight: '600',
+    color: colors.text,
   },
 });

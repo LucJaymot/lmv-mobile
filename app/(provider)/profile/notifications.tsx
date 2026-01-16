@@ -121,7 +121,7 @@ export default function NotificationsScreen() {
       >
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notifications Push</Text>
-          <View style={commonStyles.card}>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.settingRow}>
               <View style={styles.settingContent}>
                 <IconSymbol
@@ -141,7 +141,7 @@ export default function NotificationsScreen() {
                 value={settings.pushEnabled}
                 onValueChange={(value) => updateSetting('pushEnabled', value)}
                 trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                thumbColor={settings.pushEnabled ? theme.colors.accent : '#F4F3F4'}
+                thumbColor={settings.pushEnabled ? '#FFFFFF' : theme.colors.elevated}
                 ios_backgroundColor={theme.colors.border}
               />
             </View>
@@ -168,7 +168,7 @@ export default function NotificationsScreen() {
                     value={settings.newRequests}
                     onValueChange={(value) => updateSetting('newRequests', value)}
                     trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                    thumbColor={settings.newRequests ? theme.colors.accent : '#F4F3F4'}
+                    thumbColor={settings.newRequests ? '#FFFFFF' : theme.colors.elevated}
                     ios_backgroundColor={theme.colors.border}
                   />
                 </View>
@@ -193,7 +193,7 @@ export default function NotificationsScreen() {
                     value={settings.reminders}
                     onValueChange={(value) => updateSetting('reminders', value)}
                     trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                    thumbColor={settings.reminders ? theme.colors.accent : '#F4F3F4'}
+                    thumbColor={settings.reminders ? '#FFFFFF' : theme.colors.elevated}
                     ios_backgroundColor={theme.colors.border}
                   />
                 </View>
@@ -218,7 +218,7 @@ export default function NotificationsScreen() {
                     value={settings.statusUpdates}
                     onValueChange={(value) => updateSetting('statusUpdates', value)}
                     trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                    thumbColor={settings.statusUpdates ? theme.colors.accent : '#F4F3F4'}
+                    thumbColor={settings.statusUpdates ? '#FFFFFF' : theme.colors.elevated}
                     ios_backgroundColor={theme.colors.border}
                   />
                 </View>
@@ -229,7 +229,7 @@ export default function NotificationsScreen() {
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notifications Email</Text>
-          <View style={commonStyles.card}>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.settingRow}>
               <View style={styles.settingContent}>
                 <IconSymbol
@@ -249,7 +249,7 @@ export default function NotificationsScreen() {
                 value={settings.emailEnabled}
                 onValueChange={(value) => updateSetting('emailEnabled', value)}
                 trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-                thumbColor={settings.emailEnabled ? theme.colors.accent : '#F4F3F4'}
+                thumbColor={settings.emailEnabled ? '#FFFFFF' : theme.colors.elevated}
                 ios_backgroundColor={theme.colors.border}
               />
             </View>

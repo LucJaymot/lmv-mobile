@@ -14,14 +14,16 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/databaseService';
 import { Vehicle } from '@/types';
+import { useTheme } from '@/theme/hooks';
 
 export default function EditVehicleScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { theme } = useTheme();
   const [licensePlate, setLicensePlate] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
@@ -197,12 +199,12 @@ export default function EditVehicleScreen() {
   if (isLoading) {
     return (
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Chargement du véhicule...</Text>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement du véhicule...</Text>
         </View>
       </KeyboardAvoidingView>
     );
@@ -210,7 +212,7 @@ export default function EditVehicleScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -218,11 +220,18 @@ export default function EditVehicleScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Plaque d&apos;immatriculation *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Plaque d&apos;immatriculation *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="XXXX-XX-XX"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={licensePlate}
             onChangeText={handleLicensePlateChange}
             autoCapitalize="characters"
@@ -233,7 +242,7 @@ export default function EditVehicleScreen() {
 
         {!showManualEntry && (
           <TouchableOpacity
-            style={styles.manualEntryButton}
+            style={[styles.manualEntryButton, { backgroundColor: theme.colors.accent }]}
             onPress={() => setShowManualEntry(true)}
           >
             <Text style={styles.manualEntryButtonText}>Saisie manuelle</Text>
@@ -243,12 +252,19 @@ export default function EditVehicleScreen() {
         {showManualEntry && (
           <>
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Marque *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Marque *</Text>
           <View style={styles.inputWithLoader}>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="Renault"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={brand}
               onChangeText={handleBrandChange}
             editable={!isSaving}
@@ -256,7 +272,7 @@ export default function EditVehicleScreen() {
             {isFetchingImage && (
               <ActivityIndicator
                 size="small"
-                color={colors.primary}
+                color={theme.colors.accent}
                 style={styles.loaderIcon}
               />
             )}
@@ -264,11 +280,18 @@ export default function EditVehicleScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Modèle *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Modèle *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="Clio"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={model}
             onChangeText={setModel}
             editable={!isSaving}
@@ -276,11 +299,18 @@ export default function EditVehicleScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Type *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Type *</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             placeholder="Berline"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={type}
             onChangeText={setType}
             editable={!isSaving}
@@ -307,7 +337,6 @@ export default function EditVehicleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
@@ -316,7 +345,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   manualEntryButton: {
-    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -339,7 +367,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
   },
   inputWithLoader: {
     position: 'relative',

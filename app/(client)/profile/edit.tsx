@@ -13,9 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useTheme } from '@/theme/hooks';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -32,6 +33,7 @@ const validatePhone = (phone: string): boolean => {
 export default function EditProfileScreen() {
   const router = useRouter();
   const { clientCompany, updateProfile } = useAuth();
+  const { theme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: clientCompany?.name || '',
@@ -143,16 +145,16 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.formContainer}>
+          <View style={[styles.formContainer, { backgroundColor: theme.colors.surface }]}>
             <Input
               label="Nom de l'entreprise *"
                 placeholder="Nom de l'entreprise"
@@ -235,7 +237,8 @@ export default function EditProfileScreen() {
                 size="md"
                 onPress={() => router.back()}
                 disabled={isSaving}
-                style={styles.button}
+                style={{ ...styles.button, borderColor: theme.colors.border }}
+                textStyle={{ color: theme.colors.text }}
               >
                 Annuler
               </Button>
@@ -260,14 +263,12 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 100,
   },
   formContainer: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 20,
   },

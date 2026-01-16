@@ -13,8 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { useTheme } from '@/theme/hooks';
-import { createTextStyles, createStyles } from '@/theme/styles';
+import { colors } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/Logo';
@@ -30,9 +29,6 @@ const validateEmail = (email: string): boolean => {
 export default function LoginScreen() {
   const router = useRouter();
   const { login, user } = useAuth();
-  const { theme } = useTheme();
-  const textStyles = createTextStyles(theme);
-  const createStylesWithTheme = createStyles(theme);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -143,7 +139,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -155,9 +151,9 @@ export default function LoginScreen() {
         >
           {/* Header avec logo et titre */}
           <View style={styles.header}>
-            <Logo size="lg" withCircleBackground />
-            <Text style={[textStyles.h1, styles.title]}>Lave ma voiture</Text>
-            <Text style={[textStyles.body, styles.subtitle]}>Bienvenue, connectez-vous à votre compte</Text>
+            <Logo size="lg" withCircleBackground forceStaticColors />
+            <Text style={styles.title}>Lave ma voiture</Text>
+            <Text style={styles.subtitle}>Bienvenue, connectez-vous à votre compte</Text>
           </View>
 
           {/* Formulaire */}
@@ -173,20 +169,21 @@ export default function LoginScreen() {
               autoCorrect={false}
               editable={!isLoading}
               error={emailError || undefined}
+              forceStaticColors
               leftIcon={
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? theme.colors.error : theme.colors.textMuted}
+                  color={emailError ? colors.error : colors.textSecondary}
                 />
               }
             />
             
             {/* Bouton pour renvoyer l'email de confirmation si l'erreur est liée à la confirmation */}
             {emailError && (emailError.includes('n\'a pas été confirmé') || emailError.includes('not confirmed')) && (
-              <View style={styles.resendContainer}>
-                <Text style={[textStyles.bodySmall, { color: theme.colors.textMuted, marginBottom: theme.spacing[2] }]}>
+              <View style={[styles.resendContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <Text style={styles.resendText}>
                   Vous n'avez pas reçu l'email ou le lien a expiré ?
                 </Text>
                 <Button
@@ -233,12 +230,13 @@ export default function LoginScreen() {
               autoCapitalize="none"
               editable={!isLoading}
               error={passwordError || undefined}
+              forceStaticColors
               leftIcon={
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={passwordError ? theme.colors.error : theme.colors.textMuted}
+                  color={passwordError ? colors.error : colors.textSecondary}
                 />
               }
               rightIcon={
@@ -251,7 +249,7 @@ export default function LoginScreen() {
                     ios_icon_name={showPassword ? "eye.slash.fill" : "eye.fill"}
                     android_material_icon_name={showPassword ? "visibility-off" : "visibility"}
                     size={20}
-                    color={theme.colors.textMuted}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               }
@@ -283,20 +281,20 @@ export default function LoginScreen() {
 
             {/* Séparateur */}
             <View style={styles.separator}>
-              <View style={[styles.separatorLine, { backgroundColor: theme.colors.divider }]} />
-              <Text style={[textStyles.bodySmall, styles.separatorText]}>ou</Text>
-              <View style={[styles.separatorLine, { backgroundColor: theme.colors.divider }]} />
+              <View style={[styles.separatorLine, { backgroundColor: colors.border }]} />
+              <Text style={styles.separatorText}>ou</Text>
+              <View style={[styles.separatorLine, { backgroundColor: colors.border }]} />
             </View>
 
             {/* Lien d'inscription */}
             <View style={styles.registerContainer}>
-              <Text style={[textStyles.bodySmall, { color: theme.colors.textMuted }]}>Pas encore de compte ? </Text>
+              <Text style={styles.registerText}>Pas encore de compte ? </Text>
               <TouchableOpacity
                 onPress={() => router.push('/auth/register')}
                 disabled={isLoading}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
-                <Text style={[textStyles.bodySmall, { color: theme.colors.accent, fontWeight: '600' }]}>
+                <Text style={styles.registerLink}>
                   S&apos;inscrire
                 </Text>
               </TouchableOpacity>
@@ -326,10 +324,16 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.text,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
   },
@@ -356,6 +360,8 @@ const styles = StyleSheet.create({
     height: 1,
   },
   separatorText: {
+    fontSize: 14,
+    color: colors.textSecondary,
     paddingHorizontal: 16,
   },
   registerContainer: {
@@ -364,12 +370,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
   },
+  registerText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  registerLink: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+  },
   resendContainer: {
     marginTop: 8,
     marginBottom: 8,
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  resendText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
   },
   resendButton: {
     alignSelf: 'flex-start',

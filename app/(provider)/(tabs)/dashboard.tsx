@@ -11,7 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { colors, commonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
+import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { Logo } from '@/components/Logo';
 import { WashRequest } from '@/types';
@@ -20,6 +21,7 @@ import { washRequestService } from '@/services/databaseService';
 export default function ProviderDashboardScreen() {
   const router = useRouter();
   const { provider } = useAuth();
+  const { theme } = useTheme();
   const [todayJobs, setTodayJobs] = useState<WashRequest[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
 
@@ -79,15 +81,15 @@ export default function ProviderDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>Bonjour,</Text>
-            <Text style={styles.providerName}>{provider?.name}</Text>
+            <Text style={[styles.greeting, { color: theme.colors.textMuted }]}>Bonjour,</Text>
+            <Text style={[styles.providerName, { color: theme.colors.text }]}>{provider?.name}</Text>
           </View>
           <Logo size="sm" />
         </View>
@@ -95,60 +97,60 @@ export default function ProviderDashboardScreen() {
         {/* TEMPORAIREMENT CACHÉ - À réactiver plus tard */}
         {false && (
           <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
+            <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
               <IconSymbol
                 ios_icon_name="star.fill"
                 android_material_icon_name="star"
                 size={32}
-                color={colors.highlight}
+                color={theme.colors.accent}
               />
-              <Text style={styles.statValue}>{provider?.averageRating?.toFixed(1) || '0.0'}</Text>
-              <Text style={styles.statLabel}>Note moyenne</Text>
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>{provider?.averageRating?.toFixed(1) || '0.0'}</Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Note moyenne</Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
               <IconSymbol
                 ios_icon_name="doc.text.fill"
                 android_material_icon_name="description"
                 size={32}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
-              <Text style={styles.statValue}>{provider?.totalRatings || 0}</Text>
-              <Text style={styles.statLabel}>Avis reçus</Text>
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>{provider?.totalRatings || 0}</Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Avis reçus</Text>
             </View>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Jobs du jour</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Jobs du jour</Text>
           {isLoadingJobs ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={theme.colors.accent} />
             </View>
           ) : todayJobs.length > 0 ? (
             <React.Fragment>
               {todayJobs.map((job) => (
                 <TouchableOpacity
                   key={job.id}
-                  style={commonStyles.card}
+                  style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}
                   onPress={() => router.push(`/(provider)/requests/detail?id=${job.id}`)}
                 >
                   <View style={styles.requestHeader}>
-                    <Text style={styles.clientName}>{job.clientCompany?.name}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: job.status === 'accepted' ? colors.info : colors.primary }]}>
+                    <Text style={[styles.clientName, { color: theme.colors.text }]}>{job.clientCompany?.name}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: job.status === 'accepted' ? theme.colors.accent : theme.colors.accent }]}>
                       <Text style={styles.statusText}>
                         {job.status === 'accepted' ? 'Accepté' : job.status === 'in_progress' ? 'En cours' : job.status}
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.requestDate}>{formatDate(job.dateTime)}</Text>
+                  <Text style={[styles.requestDate, { color: theme.colors.textMuted }]}>{formatDate(job.dateTime)}</Text>
                   <View style={styles.requestInfo}>
                     <IconSymbol
                       ios_icon_name="location.fill"
                       android_material_icon_name="location-on"
                       size={16}
-                      color={colors.textSecondary}
+                      color={theme.colors.textMuted}
                     />
-                    <Text style={styles.requestAddress}>{job.address}</Text>
+                    <Text style={[styles.requestAddress, { color: theme.colors.textMuted }]}>{job.address}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -159,9 +161,9 @@ export default function ProviderDashboardScreen() {
                 ios_icon_name="calendar"
                 android_material_icon_name="event"
                 size={48}
-                color={colors.textSecondary}
+                color={theme.colors.textMuted}
               />
-              <Text style={styles.emptyText}>Aucun job prévu</Text>
+              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>Aucun job prévu</Text>
             </View>
           )}
         </View>
@@ -173,7 +175,6 @@ export default function ProviderDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingTop: 20,
@@ -191,13 +192,11 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginBottom: 4,
   },
   providerName: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -206,7 +205,6 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -216,12 +214,10 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
     marginTop: 8,
   },
   statLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginTop: 4,
   },
   section: {
@@ -235,10 +231,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.text,
   },
   badge: {
-    backgroundColor: colors.error,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -258,7 +252,6 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
     flex: 1,
   },
   statusBadge: {
@@ -273,7 +266,6 @@ const styles = StyleSheet.create({
   },
   requestDate: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginBottom: 8,
   },
   requestInfo: {
@@ -284,7 +276,6 @@ const styles = StyleSheet.create({
   },
   requestAddress: {
     fontSize: 14,
-    color: colors.textSecondary,
     flex: 1,
   },
   requestActions: {
@@ -292,11 +283,9 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   acceptButton: {
     flex: 1,
-    backgroundColor: colors.accent,
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
@@ -308,17 +297,14 @@ const styles = StyleSheet.create({
   },
   declineButton: {
     flex: 1,
-    backgroundColor: colors.background,
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
   },
   declineButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
   },
   emptyState: {
     alignItems: 'center',
@@ -326,7 +312,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: colors.textSecondary,
     marginTop: 12,
   },
   loadingContainer: {
