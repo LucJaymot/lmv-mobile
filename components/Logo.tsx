@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, ImageStyle, StyleSheet, View, ViewStyle } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { useTheme } from '@/theme/hooks';
 
 export type LogoSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -39,12 +40,20 @@ export const Logo: React.FC<LogoProps> = ({
   withCircleBackground = false,
   forceStaticColors = false,
 }) => {
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
+  const systemColorScheme = useColorScheme();
   const logoSize = sizeMap[size];
+  const isDark =
+    !forceStaticColors &&
+    (mode === 'dark' || mode === 'trueBlack' || systemColorScheme === 'dark');
 
   const logoImage = (
     <Image
-      source={require('@/assets/images/logo_LMV.png')}
+      source={
+        isDark
+          ? require('@/assets/images/logo_LMV_blanc.png')
+          : require('@/assets/images/logo_LMV.png')
+      }
       style={[
         {
           width: logoSize,

@@ -28,13 +28,18 @@ if (!supabaseAnonKey || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
   console.error('❌ ERREUR: Supabase Anon Key non configurée. Veuillez configurer EXPO_PUBLIC_SUPABASE_ANON_KEY dans le fichier .env');
 }
 
-// Création du client Supabase
+// Création du client Supabase avec Realtime activé
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: require('@react-native-async-storage/async-storage').default,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
   },
 });
 

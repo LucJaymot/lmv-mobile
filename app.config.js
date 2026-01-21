@@ -63,11 +63,11 @@ module.exports = {
     slug: "WashFleet",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/natively-dark.png",
+    icon: "./assets/images/logo_LMV.png",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     splash: {
-      image: "./assets/images/natively-dark.png",
+      image: "./assets/images/logo_LMV.png",
       resizeMode: "contain",
       backgroundColor: "#000000"
     },
@@ -80,7 +80,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/natively-dark.png",
+        foregroundImage: "./assets/images/logo_LMV.png",
         backgroundColor: "#000000"
       },
       edgeToEdgeEnabled: true,
@@ -93,7 +93,15 @@ module.exports = {
     plugins: [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo_LMV.png",
+          "color": "#000000",
+          "sounds": []
+        }
+      ]
     ],
     scheme: "natively",
     experiments: {

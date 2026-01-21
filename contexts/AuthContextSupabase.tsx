@@ -424,15 +424,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       console.log('Logging out...');
-      await authService.signOut();
-      await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+      
+      // Nettoyer l'état local d'abord
       setUser(null);
       setClientCompany(null);
       setProvider(null);
-      console.log('Logout successful');
+      
+      // Essayer de se déconnecter de Supabase (peut échouer si pas de session, c'est OK)
+      try {
+        await authService.signOut();
+      } catch (signOutError: any) {
+        // Si l'erreur est liée à une session manquante, on l'ignore
+        if (signOutError?.message?.includes('session missing') || 
+            signOutError?.message?.includes('Auth session missing')) {
+          console.log('⚠️ Session déjà absente, nettoyage local effectué');
+        } else {
+          console.warn('⚠️ Erreur lors de la déconnexion Supabase (non bloquant):', signOutError);
+        }
+      }
+      
+      // Nettoyer le stockage local
+      try {
+        await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+      } catch (storageError) {
+        console.warn('⚠️ Erreur lors du nettoyage du stockage (non bloquant):', storageError);
+      }
+      
+      console.log('✅ Logout successful');
     } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
+      console.error('❌ Logout error:', error);
+      // Même en cas d'erreur, on nettoie l'état local
+      setUser(null);
+      setClientCompany(null);
+      setProvider(null);
+      // Ne pas throw l'erreur pour permettre la déconnexion même si Supabase échoue
     }
   };
 

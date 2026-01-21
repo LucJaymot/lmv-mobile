@@ -17,8 +17,9 @@ import Constants from 'expo-constants';
 import { commonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/databaseService';
-import { Vehicle } from '@/types';
+import { Vehicle, WashRequest } from '@/types';
 import { useTheme } from '@/theme/hooks';
+import { IconSymbol } from '@/components/IconSymbol';
 
 export default function EditVehicleScreen() {
   const router = useRouter();
@@ -33,6 +34,8 @@ export default function EditVehicleScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [isFetchingImage, setIsFetchingImage] = useState(false);
+  const [washRequests, setWashRequests] = useState<WashRequest[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
   const formatLicensePlate = (text: string): string => {
     // Supprimer tous les caractères non alphanumériques et les tirets
@@ -83,6 +86,17 @@ export default function EditVehicleScreen() {
         setImageUrl(vehicle.imageUrl);
         // Afficher les champs manuels car on est en mode édition
         setShowManualEntry(true);
+
+        // Charger les prestations associées
+        setIsLoadingRequests(true);
+        try {
+          const requests = await vehicleService.getWashRequestsByVehicleId(id);
+          setWashRequests(requests);
+        } catch (error: any) {
+          console.error('Erreur lors du chargement des prestations:', error);
+        } finally {
+          setIsLoadingRequests(false);
+        }
       } catch (error: any) {
         console.error('Erreur lors du chargement du véhicule:', error);
         Alert.alert('Erreur', error.message || 'Impossible de charger le véhicule');
@@ -151,6 +165,50 @@ export default function EditVehicleScreen() {
         setIsFetchingImage(false);
       }
     }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return theme.colors.warning;
+      case 'accepted':
+        return theme.colors.accent;
+      case 'in_progress':
+        return theme.colors.accent;
+      case 'completed':
+        return theme.colors.success;
+      case 'cancelled':
+        return theme.colors.error;
+      default:
+        return theme.colors.textMuted;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'En attente';
+      case 'accepted':
+        return 'Accepté';
+      case 'in_progress':
+        return 'En cours';
+      case 'completed':
+        return 'Terminé';
+      case 'cancelled':
+        return 'Annulé';
+      default:
+        return status;
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
   };
 
   const handleSave = async () => {
@@ -319,6 +377,57 @@ export default function EditVehicleScreen() {
           </>
         )}
 
+        {washRequests.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Prestations associées ({washRequests.length})
+            </Text>
+            {isLoadingRequests ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={theme.colors.accent} />
+                <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>
+                  Chargement des prestations...
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.requestsContainer}>
+                {washRequests.map((request) => (
+                  <TouchableOpacity
+                    key={request.id}
+                    style={[commonStyles.card, styles.requestCard, { backgroundColor: theme.colors.surface }]}
+                    onPress={() => router.push(`/(client)/requests/detail?id=${request.id}`)}
+                  >
+                    <View style={styles.requestHeader}>
+                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) }]}>
+                        <Text style={styles.statusText}>{getStatusLabel(request.status)}</Text>
+                      </View>
+                      <Text style={[styles.requestDate, { color: theme.colors.textMuted }]}>
+                        {formatDate(request.dateTime)}
+                      </Text>
+                    </View>
+                    <View style={styles.requestInfo}>
+                      <IconSymbol
+                        ios_icon_name="location.fill"
+                        android_material_icon_name="location-on"
+                        size={16}
+                        color={theme.colors.textMuted}
+                      />
+                      <Text style={[styles.requestAddress, { color: theme.colors.textMuted }]} numberOfLines={1}>
+                        {request.address}
+                      </Text>
+                    </View>
+                    {request.provider && (
+                      <Text style={[styles.providerName, { color: theme.colors.text }]}>
+                        {request.provider.name}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
         <Button
           variant="primary"
           size="lg"
@@ -375,5 +484,54 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: 12,
+  },
+  section: {
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  requestsContainer: {
+    gap: 12,
+  },
+  requestCard: {
+    padding: 12,
+  },
+  requestHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  requestDate: {
+    fontSize: 14,
+  },
+  requestInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  requestAddress: {
+    fontSize: 14,
+    flex: 1,
+  },
+  providerName: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 4,
   },
 });

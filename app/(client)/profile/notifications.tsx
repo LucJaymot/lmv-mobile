@@ -7,6 +7,7 @@ import {
   Switch,
   Alert,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -204,6 +205,37 @@ export default function NotificationsScreen() {
                 </>
               )}
             </View>
+            
+            {Platform.OS !== 'web' && (
+              <>
+                <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+                <TouchableOpacity
+                  style={styles.testButton}
+                  onPress={() => router.push('/(client)/profile/test-notifications')}
+                >
+                  <View style={styles.settingContent}>
+                    <IconSymbol
+                      ios_icon_name="flask.fill"
+                      android_material_icon_name="science"
+                      size={20}
+                      color={theme.colors.accent}
+                    />
+                    <View style={styles.settingText}>
+                      <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Tester les notifications</Text>
+                      <Text style={[styles.settingDescription, { color: theme.colors.textMuted }]}>
+                        Ouvrir l'écran de test pour vérifier les notifications
+                      </Text>
+                    </View>
+                  </View>
+                  <IconSymbol
+                    ios_icon_name="chevron.right"
+                    android_material_icon_name="chevron-right"
+                    size={20}
+                    color={theme.colors.textMuted}
+                  />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         )}
 
@@ -292,6 +324,12 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginVertical: 8,
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
   },
 });
 

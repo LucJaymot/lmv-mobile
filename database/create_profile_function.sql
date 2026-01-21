@@ -85,29 +85,45 @@ LANGUAGE plpgsql
 SECURITY DEFINER -- Permet de contourner RLS
 AS $$
 DECLARE
-  v_company client_companies%ROWTYPE;
+  v_company_id UUID;
+  v_result RECORD;
 BEGIN
   -- Vérifier que l'utilisateur existe dans auth.users
-  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_user_id) THEN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = p_user_id) THEN
     RAISE EXCEPTION 'User does not exist in auth.users';
   END IF;
 
   -- Insérer dans client_companies
   INSERT INTO client_companies (user_id, name, address, contact, phone, email)
   VALUES (p_user_id, p_name, p_address, p_contact, p_phone, p_email)
-  RETURNING * INTO v_company;
+  RETURNING client_companies.id INTO v_company_id;
 
-  -- Retourner les données complètes
-  RETURN QUERY SELECT 
-    v_company.id,
-    v_company.user_id,
-    v_company.name,
-    v_company.address,
-    v_company.contact,
-    v_company.phone,
-    v_company.email,
-    v_company.created_at,
-    v_company.updated_at;
+  -- Récupérer les données complètes dans un record pour éviter les ambiguïtés
+  SELECT
+    client_companies.id,
+    client_companies.user_id,
+    client_companies.name,
+    client_companies.address,
+    client_companies.contact,
+    client_companies.phone,
+    client_companies.email,
+    client_companies.created_at,
+    client_companies.updated_at
+  INTO v_result
+  FROM client_companies
+  WHERE client_companies.id = v_company_id;
+
+  -- Retourner le résultat en construisant explicitement chaque colonne
+  RETURN QUERY SELECT
+    v_result.id::UUID,
+    v_result.user_id::UUID,
+    v_result.name::TEXT,
+    v_result.address::TEXT,
+    v_result.contact::TEXT,
+    v_result.phone::TEXT,
+    v_result.email::TEXT,
+    v_result.created_at::TIMESTAMP WITH TIME ZONE,
+    v_result.updated_at::TIMESTAMP WITH TIME ZONE;
 END;
 $$;
 

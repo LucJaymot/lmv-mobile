@@ -22,7 +22,6 @@ import { useTheme } from '@/theme/hooks';
 import { washRequestService, providerService } from '@/services/databaseService';
 import { WashRequest } from '@/types'
 import { useAuth } from '@/contexts/AuthContextSupabase';
-import { pickInvoice, uploadInvoice } from '@/services/storageService';
 
 export default function RequestDetailScreen() {
   const router = useRouter();
@@ -33,7 +32,6 @@ export default function RequestDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [isUploadingInvoice, setIsUploadingInvoice] = useState(false);
 
   useEffect(() => {
     const loadWashRequest = async () => {
@@ -208,50 +206,6 @@ export default function RequestDetailScreen() {
     } catch (error: any) {
       console.error('❌ Erreur lors de la suppression de la demande:', error);
       Alert.alert('Erreur', error.message || 'Impossible d\'annuler la demande');
-    }
-  };
-
-  const handleUploadInvoice = async () => {
-    if (!washRequest || !washRequest.id || !user) {
-      return;
-    }
-
-    setIsUploadingInvoice(true);
-    try {
-      // Sélectionner le fichier PDF
-      const result = await pickInvoice();
-      
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        setIsUploadingInvoice(false);
-        return;
-      }
-
-      const asset = result.assets[0];
-      if (!asset.uri) {
-        setIsUploadingInvoice(false);
-        return;
-      }
-
-      // Vérifier que c'est bien un PDF
-      if (asset.mimeType !== 'application/pdf' && !asset.name?.endsWith('.pdf')) {
-        Alert.alert('Erreur', 'Veuillez sélectionner un fichier PDF');
-        setIsUploadingInvoice(false);
-        return;
-      }
-
-      // Uploader le PDF
-      const invoiceUrl = await uploadInvoice(asset.uri, washRequest.id);
-      
-      // Mettre à jour la demande avec l'URL de la facture
-      const updated = await washRequestService.update(washRequest.id, { invoiceUrl });
-      setWashRequest(updated);
-      
-      Alert.alert('Succès', 'Facture uploadée avec succès');
-    } catch (error: any) {
-      console.error('❌ Erreur lors de l\'upload de la facture:', error);
-      Alert.alert('Erreur', error.message || 'Impossible d\'uploader la facture');
-    } finally {
-      setIsUploadingInvoice(false);
     }
   };
 
@@ -451,19 +405,20 @@ export default function RequestDetailScreen() {
                   onPress={handleViewInvoice}
                   style={styles.invoiceButton}
                 >
-                  Voir les factures
+                  Voir la facture
                 </Button>
               ) : (
-                <Button
-                  variant="primary"
-                  size="md"
-                  onPress={handleUploadInvoice}
-                  disabled={isUploadingInvoice}
-                  loading={isUploadingInvoice}
-                  style={styles.invoiceButton}
-                >
-                        Déposer une facture (PDF)
-                </Button>
+                <View style={styles.noInvoiceContainer}>
+                  <IconSymbol
+                    ios_icon_name="doc.text"
+                    android_material_icon_name="description"
+                    size={24}
+                    color={theme.colors.textMuted}
+                  />
+                  <Text style={[styles.noInvoiceText, { color: theme.colors.textMuted }]}>
+                    Aucune facture déposée par le prestataire
+                  </Text>
+                </View>
               )}
             </View>
           </View>
@@ -643,5 +598,16 @@ const styles = StyleSheet.create({
   },
   invoiceButton: {
     width: '100%',
+  },
+  noInvoiceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+  },
+  noInvoiceText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

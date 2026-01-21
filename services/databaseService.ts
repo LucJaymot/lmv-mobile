@@ -147,8 +147,32 @@ export const authService = {
    * Déconnexion
    */
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      // Vérifier d'abord s'il y a une session active
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('⚠️ Aucune session active, déconnexion déjà effectuée');
+        return; // Pas d'erreur si pas de session
+      }
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        // Si l'erreur est "Auth session missing", on l'ignore car la session n'existe déjà plus
+        if (error.message?.includes('session missing') || error.message?.includes('Auth session missing')) {
+          console.log('⚠️ Session déjà absente, déconnexion effectuée');
+          return;
+        }
+        throw error;
+      }
+    } catch (error: any) {
+      // Si l'erreur est liée à une session manquante, on l'ignore
+      if (error?.message?.includes('session missing') || error?.message?.includes('Auth session missing')) {
+        console.log('⚠️ Session déjà absente, déconnexion effectuée');
+        return;
+      }
+      throw error;
+    }
   },
 
   /**
@@ -777,14 +801,21 @@ export const washRequestService = {
 
     // Envoyer une notification aux prestataires pour la nouvelle demande
     if (data.status === 'pending') {
-      // Notification push
+      // Notification push (via Realtime - côté prestataire)
       try {
         const { notifyProvidersOfNewRequest } = await import('./notificationService');
+        console.log('📢 Envoi de notification Realtime pour la demande:', result.id);
         await notifyProvidersOfNewRequest(result.id, result.address);
+        console.log('✅ Notification Realtime déclenchée (écoutée par les prestataires via Supabase Realtime)');
       } catch (notificationError) {
         // Ne pas faire échouer la création si la notification échoue
         console.error('❌ Erreur lors de l\'envoi des notifications push (non bloquant):', notificationError);
       }
+      
+      console.log('💡 Note: Les prestataires recevront une notification via Supabase Realtime si:');
+      console.log('   1. L\'app prestataire est ouverte et écoute les événements');
+      console.log('   2. Supabase Realtime est activé pour la table wash_requests');
+      console.log('   3. Les RLS permettent aux prestataires d\'écouter les INSERT');
 
       // Envoi d'email aux prestataires
       try {
@@ -835,7 +866,7 @@ export const washRequestService = {
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
 
-    // Charger les véhicules associés
+    // Charger les véhicules associés (inclure même les véhicules supprimés pour les prestations terminées)
     const { data: vehiclesData, error: vehiclesError } = await supabase
       .from('wash_request_vehicles')
       .select('*, vehicles(*)')
@@ -853,6 +884,8 @@ export const washRequestService = {
         brand: wrv.vehicles.brand,
         model: wrv.vehicles.model,
         type: wrv.vehicles.type,
+        year: wrv.vehicles.year || undefined,
+        imageUrl: wrv.vehicles.image_url || undefined,
       } : undefined,
     })) || [];
 
@@ -1649,6 +1682,21 @@ export const washRequestService = {
 
 export const vehicleService = {
   /**
+   * Indique si un véhicule est associé à au moins une prestation/demande
+   * (via la table d'association wash_request_vehicles)
+   */
+  async isUsedInAnyRequest(vehicleId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('wash_request_vehicles')
+      .select('id')
+      .eq('vehicle_id', vehicleId)
+      .limit(1);
+
+    if (error) throw error;
+    return Array.isArray(data) && data.length > 0;
+  },
+
+  /**
    * Crée un véhicule
    */
   async create(data: Omit<Vehicle, 'id'>): Promise<Vehicle> {
@@ -1711,13 +1759,14 @@ export const vehicleService = {
   },
 
   /**
-   * Récupère tous les véhicules d'une entreprise cliente
+   * Récupère tous les véhicules d'une entreprise cliente (non supprimés)
    */
   async getByClientCompanyId(clientCompanyId: string): Promise<Vehicle[]> {
     const { data, error } = await supabase
       .from('vehicles')
       .select('*')
       .eq('client_company_id', clientCompanyId)
+      .is('deleted_at', null) // Exclure les véhicules supprimés
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -1735,13 +1784,14 @@ export const vehicleService = {
   },
 
   /**
-   * Récupère un véhicule par ID
+   * Récupère un véhicule par ID (non supprimé)
    */
   async getById(id: string): Promise<Vehicle | null> {
     const { data, error } = await supabase
       .from('vehicles')
       .select('*')
       .eq('id', id)
+      .is('deleted_at', null) // Exclure les véhicules supprimés
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
@@ -1793,57 +1843,120 @@ export const vehicleService = {
   },
 
   /**
-   * Supprime un véhicule
+   * Supprime un véhicule (soft delete)
+   * Les véhicules associés à des prestations terminées sont conservés pour l'historique
    */
   async delete(id: string): Promise<void> {
     console.log('🔧 vehicleService.delete appelé');
     console.log('ID du véhicule à supprimer:', id);
-    
-    // Vérifier la session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log('Session:', session ? 'présente' : 'absente');
-    if (session) {
-      console.log('User ID de la session:', session.user.id);
+
+    // Vérifier si le véhicule est lié à une prestation/demande
+    const isUsed = await this.isUsedInAnyRequest(id);
+    if (isUsed) {
+      // Vérifier s'il y a des prestations terminées
+      const requests = await this.getWashRequestsByVehicleId(id);
+      const hasCompletedRequests = requests.some(r => r.status === 'completed');
+      
+      if (hasCompletedRequests) {
+        // Soft delete : marquer comme supprimé mais conserver pour les prestations terminées
+        console.log('⚠️ Véhicule associé à des prestations terminées, soft delete...');
+        const { error: updateError } = await supabase
+          .from('vehicles')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', id);
+
+        if (updateError) {
+          console.error('❌ Erreur lors du soft delete:', updateError);
+          throw updateError;
+        }
+        
+        console.log('✅ Véhicule marqué comme supprimé (soft delete)');
+        return;
+      } else {
+        // Si pas de prestations terminées, empêcher la suppression
+        throw new Error('Impossible de supprimer ce véhicule : il est associé à une prestation.');
+      }
     }
     
+    // Si pas associé à une prestation, soft delete normal
     try {
-      console.log('Exécution de la requête DELETE...');
-      const { data, error, count } = await supabase
+      console.log('Exécution du soft delete...');
+      const { error: updateError } = await supabase
         .from('vehicles')
-        .delete()
-        .eq('id', id)
-        .select();
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
 
-      console.log('Résultat DELETE - data:', data);
-      console.log('Résultat DELETE - count:', count);
-      console.log('Résultat DELETE - error:', error);
-
-      if (error) {
-        console.error('❌ Erreur vehicleService.delete:', error);
-        console.error('Code:', error.code);
-        console.error('Message:', error.message);
-        console.error('Details:', error.details);
-        console.error('Hint:', error.hint);
-        throw error;
+      if (updateError) {
+        console.error('❌ Erreur vehicleService.delete:', updateError);
+        console.error('Code:', updateError.code);
+        console.error('Message:', updateError.message);
+        console.error('Details:', updateError.details);
+        console.error('Hint:', updateError.hint);
+        throw updateError;
       }
       
-      // Vérifier que quelque chose a été supprimé
-      if (!data || data.length === 0) {
-        console.warn('⚠️ Aucune ligne supprimée - peut-être un problème RLS');
-        // Vérifier si le véhicule existe toujours
-        const stillExists = await this.getById(id);
-        if (stillExists) {
-          throw new Error('Le véhicule n\'a pas pu être supprimé. Vérifiez les politiques RLS.');
-        }
-      }
-      
-      console.log('✅ vehicleService.delete réussi');
+      console.log('✅ vehicleService.delete réussi (soft delete)');
     } catch (error: any) {
       console.error('❌ Exception dans vehicleService.delete:', error);
       console.error('Type:', error?.constructor?.name);
       console.error('Stack:', error?.stack);
       throw error;
     }
+  },
+
+  /**
+   * Récupère les demandes de lavage associées à un véhicule
+   */
+  async getWashRequestsByVehicleId(vehicleId: string): Promise<WashRequest[]> {
+    // Récupérer les wash_request_vehicles pour ce véhicule
+    const { data: wrvData, error: wrvError } = await supabase
+      .from('wash_request_vehicles')
+      .select('wash_request_id')
+      .eq('vehicle_id', vehicleId);
+
+    if (wrvError) throw wrvError;
+    if (!wrvData || wrvData.length === 0) return [];
+
+    const washRequestIds = wrvData.map((wrv: any) => wrv.wash_request_id);
+
+    // Récupérer les wash_requests correspondantes
+    const { data: requestsData, error: requestsError } = await supabase
+      .from('wash_requests')
+      .select('*')
+      .in('id', washRequestIds)
+      .order('created_at', { ascending: false });
+
+    if (requestsError) throw requestsError;
+    if (!requestsData) return [];
+
+    // Charger les informations du prestataire pour chaque demande
+    const requestsWithProvider = await Promise.all(
+      requestsData.map(async (wr) => {
+        let provider = undefined;
+        if (wr.provider_id) {
+          try {
+            provider = await providerService.getById(wr.provider_id);
+          } catch (error) {
+            console.error('Erreur lors du chargement du prestataire:', error);
+          }
+        }
+
+        return {
+          id: wr.id,
+          clientCompanyId: wr.client_company_id,
+          providerId: wr.provider_id || undefined,
+          address: wr.address,
+          dateTime: parseDate(wr.date_time),
+          status: wr.status,
+          notes: wr.notes || undefined,
+          invoiceUrl: wr.invoice_url || undefined,
+          createdAt: parseDate(wr.created_at),
+          provider,
+        };
+      })
+    );
+
+    return requestsWithProvider;
   },
 };
 

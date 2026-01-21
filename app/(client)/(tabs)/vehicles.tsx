@@ -28,6 +28,7 @@ export default function VehiclesScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [userMessage, setUserMessage] = useState<{ title: string; body: string } | null>(null);
 
   const loadVehicles = async () => {
     if (!clientCompany) {
@@ -80,6 +81,23 @@ export default function VehiclesScreen() {
         console.error('Message:', error?.message);
         console.error('Details:', error?.details);
         console.error('Stack:', error?.stack);
+        const msg = (error?.message || '').toLowerCase();
+        if (msg.includes('associé') || msg.includes('associe')) {
+          const title = 'Suppression impossible';
+          const body =
+            "Ce véhicule est associé à une prestation. Supprimez/annulez d'abord la prestation liée, puis réessayez.";
+
+          // Bannière in-app (fiable sur web et mobile)
+          setUserMessage({ title, body });
+          // Auto-hide après 6s
+          setTimeout(() => setUserMessage(null), 6000);
+
+          // Alert en plus (utile sur mobile)
+          if (Platform.OS !== 'web') {
+            Alert.alert(title, body);
+          }
+          return;
+        }
         Alert.alert('Erreur', error.message || 'Impossible de supprimer le véhicule');
       }
     };
@@ -149,6 +167,26 @@ export default function VehiclesScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {userMessage && (
+          <View style={[styles.messageBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.messageTitle, { color: theme.colors.text }]}>{userMessage.title}</Text>
+              <Text style={[styles.messageBody, { color: theme.colors.textMuted }]}>{userMessage.body}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setUserMessage(null)}
+              accessibilityRole="button"
+              style={styles.messageClose}
+            >
+              <IconSymbol
+                ios_icon_name="xmark"
+                android_material_icon_name="close"
+                size={18}
+                color={theme.colors.textMuted}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.accent} />
@@ -265,6 +303,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
+  },
+  messageBanner: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  messageTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  messageBody: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  messageClose: {
+    padding: 4,
   },
   scrollContent: {
     paddingHorizontal: 20,
