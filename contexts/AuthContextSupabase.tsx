@@ -9,6 +9,7 @@ import { User, UserRole, ClientCompany, Provider } from '@/types';
 import { authService, userService } from '@/services/databaseService';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 interface AuthContextType {
   user: User | null;
@@ -26,6 +27,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Clé pour stocker la session localement (fallback)
 const SESSION_STORAGE_KEY = '@lmv_session';
+const PROFILE_CACHE_KEY = '@lmv_profile_cache';
+const PROFILE_CACHE_TIMESTAMP_KEY = '@lmv_profile_cache_timestamp';
+
+// Durée de validité du cache (5 minutes)
+const CACHE_DURATION_MS = 5 * 60 * 1000;
+
+// Timeout adapté selon la plateforme (plus long sur web)
+const PROFILE_LOAD_TIMEOUT_MS = Platform.OS === 'web' ? 30000 : 15000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -151,17 +160,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, useCache: boolean = true) => {
     try {
       console.log('🔄 Chargement du profil pour user ID:', userId);
       
-      // Timeout de sécurité pour éviter que la fonction reste bloquée
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout lors du chargement du profil')), 15000); // 15 secondes max
-      });
+      // Vérifier le cache d'abord si demandé
+      if (useCache) {
+        try {
+          const cachedTimestamp = await AsyncStorage.getItem(PROFILE_CACHE_TIMESTAMP_KEY);
+          const cachedData = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+          
+          if (cachedTimestamp && cachedData) {
+            const timestamp = parseInt(cachedTimestamp, 10);
+            const now = Date.now();
+            
+            // Si le cache est récent (moins de 5 minutes) et correspond au même userId
+            if (now - timestamp < CACHE_DURATION_MS) {
+              const parsed = JSON.parse(cachedData);
+              if (parsed.userId === userId) {
+                console.log('✅ Utilisation du cache pour le profil');
+                setUser(parsed.user);
+                if (parsed.clientCompany) setClientCompany(parsed.clientCompany);
+                if (parsed.provider) setProvider(parsed.provider);
+                
+                // Charger en arrière-plan pour mettre à jour le cache
+                loadUserProfile(userId, false).catch(err => {
+                  console.warn('⚠️ Échec du rechargement en arrière-plan:', err);
+                });
+                return;
+              }
+            }
+          }
+        } catch (cacheError) {
+          console.warn('⚠️ Erreur lors de la lecture du cache (non bloquant):', cacheError);
+        }
+      }
       
-      const userDataPromise = userService.getUserById(userId);
-      const userData = await Promise.race([userDataPromise, timeoutPromise]) as any;
+      // Charger depuis AsyncStorage comme fallback immédiat pendant le chargement réseau
+      try {
+        const storedSession = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          if (parsed.user && parsed.user.id === userId) {
+            console.log('📦 Utilisation du fallback AsyncStorage pendant le chargement');
+            setUser(parsed.user);
+            if (parsed.clientCompany) setClientCompany(parsed.clientCompany);
+            if (parsed.provider) setProvider(parsed.provider);
+          }
+        }
+      } catch (fallbackError) {
+        console.warn('⚠️ Erreur lors du chargement du fallback (non bloquant):', fallbackError);
+      }
+      
+      // Fonction de retry avec backoff exponentiel
+      const retryWithBackoff = async <T,>(
+        fn: () => Promise<T>,
+        maxRetries: number = 2,
+        baseDelay: number = 1000
+      ): Promise<T> => {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error('Timeout lors du chargement du profil')), PROFILE_LOAD_TIMEOUT_MS);
+            });
+            
+            return await Promise.race([fn(), timeoutPromise]);
+          } catch (error: any) {
+            if (attempt === maxRetries) {
+              throw error;
+            }
+            
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.log(`⚠️ Tentative ${attempt + 1} échouée, nouvelle tentative dans ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+        throw new Error('Toutes les tentatives ont échoué');
+      };
+      
+      // Charger les données utilisateur avec retry
+      const userData = await retryWithBackoff(() => userService.getUserById(userId));
       
       if (!userData) {
         console.log('⚠️ User not found in database');
@@ -174,24 +252,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Charger le profil selon le rôle directement depuis les tables
       if (userData.role === 'client') {
         try {
-        const { clientCompanyService } = await import('@/services/databaseService');
-        const company = await clientCompanyService.getByUserId(userId);
-        if (company) {
-          console.log('✅ Client company loaded:', company.name);
-          setClientCompany(company);
+          const { clientCompanyService } = await import('@/services/databaseService');
+          const company = await retryWithBackoff(() => clientCompanyService.getByUserId(userId), 1, 500);
+          
+          if (company) {
+            console.log('✅ Client company loaded:', company.name);
+            setClientCompany(company);
             
-            // Sauvegarder en local (fallback) - seulement si on a réussi à charger
+            // Sauvegarder en local (fallback et cache)
             try {
-              await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+              const sessionData = {
                 user: userData,
                 clientCompany: company,
                 provider: null,
+              };
+              
+              await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+              
+              // Mettre à jour le cache avec timestamp
+              await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
+                userId,
+                ...sessionData,
               }));
+              await AsyncStorage.setItem(PROFILE_CACHE_TIMESTAMP_KEY, Date.now().toString());
             } catch (storageError) {
               console.warn('⚠️ Erreur lors de la sauvegarde dans AsyncStorage (non bloquant):', storageError);
             }
-        } else {
-          console.log('⚠️ No client company found for user');
+          } else {
+            console.log('⚠️ No client company found for user');
           }
         } catch (companyError) {
           console.error('❌ Erreur lors du chargement de la client company:', companyError);
@@ -199,25 +287,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else if (userData.role === 'provider') {
         try {
-        const { providerService } = await import('@/services/databaseService');
-          const providerData = await providerService.getByUserId(userId);
+          const { providerService } = await import('@/services/databaseService');
+          const providerData = await retryWithBackoff(() => providerService.getByUserId(userId), 1, 500);
+          
           if (providerData) {
             console.log('✅ Provider loaded:', providerData.name);
             setProvider(providerData);
             
-            // Sauvegarder en local (fallback) - seulement si on a réussi à charger
+            // Sauvegarder en local (fallback et cache)
             try {
-              await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+              const sessionData = {
                 user: userData,
                 clientCompany: null,
                 provider: providerData,
+              };
+              
+              await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+              
+              // Mettre à jour le cache avec timestamp
+              await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
+                userId,
+                ...sessionData,
               }));
+              await AsyncStorage.setItem(PROFILE_CACHE_TIMESTAMP_KEY, Date.now().toString());
             } catch (storageError) {
               console.warn('⚠️ Erreur lors de la sauvegarde dans AsyncStorage (non bloquant):', storageError);
             }
-        } else {
-          console.log('⚠️ No provider found for user');
-        }
+          } else {
+            console.log('⚠️ No provider found for user');
+          }
         } catch (providerError) {
           console.error('❌ Erreur lors du chargement du provider:', providerError);
           // Ne pas bloquer, continuer sans le provider
@@ -225,6 +323,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('❌ Error loading user profile:', error);
+      
+      // En cas d'erreur, essayer de charger depuis le cache/fallback
+      try {
+        const storedSession = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          if (parsed.user && parsed.user.id === userId) {
+            console.log('📦 Utilisation du fallback après erreur');
+            setUser(parsed.user);
+            if (parsed.clientCompany) setClientCompany(parsed.clientCompany);
+            if (parsed.provider) setProvider(parsed.provider);
+            // Ne pas throw l'erreur si on a réussi à charger depuis le cache
+            return;
+          }
+        }
+      } catch (fallbackError) {
+        console.warn('⚠️ Impossible de charger depuis le fallback:', fallbackError);
+      }
+      
       throw error;
     }
   };
@@ -443,9 +560,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
-      // Nettoyer le stockage local
+      // Nettoyer le stockage local et le cache
       try {
         await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+        await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+        await AsyncStorage.removeItem(PROFILE_CACHE_TIMESTAMP_KEY);
       } catch (storageError) {
         console.warn('⚠️ Erreur lors du nettoyage du stockage (non bloquant):', storageError);
       }
@@ -481,12 +600,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Provider updated');
       }
 
-      // Mettre à jour le stockage local
-      await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+      // Mettre à jour le stockage local et invalider le cache
+      const updatedData = {
         user,
         clientCompany: user.role === 'client' ? { ...clientCompany, ...data } : clientCompany,
         provider: user.role === 'provider' ? { ...provider, ...data } : provider,
-      }));
+      };
+      
+      await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedData));
+      
+      // Mettre à jour le cache avec le nouveau timestamp
+      try {
+        await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
+          userId: user.id,
+          ...updatedData,
+        }));
+        await AsyncStorage.setItem(PROFILE_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      } catch (cacheError) {
+        console.warn('⚠️ Erreur lors de la mise à jour du cache (non bloquant):', cacheError);
+      }
     } catch (error) {
       console.error('Update profile error:', error);
       throw error;

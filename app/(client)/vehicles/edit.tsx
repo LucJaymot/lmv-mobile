@@ -36,25 +36,37 @@ export default function EditVehicleScreen() {
   const [isFetchingImage, setIsFetchingImage] = useState(false);
   const [washRequests, setWashRequests] = useState<WashRequest[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [useOldFormat, setUseOldFormat] = useState(false); // Format ancien: XXXX-XX-XX
 
   const formatLicensePlate = (text: string): string => {
     // Supprimer tous les caractères non alphanumériques et les tirets
     const cleaned = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
     
-    // Limiter à 8 caractères
-    const limited = cleaned.slice(0, 8);
-    
-    // Insérer les tirets automatiquement après la 4ème et 6ème position
-    let formatted = '';
-    for (let i = 0; i < limited.length; i++) {
-      formatted += limited[i];
-      // Ajouter un tiret après le 4ème caractère (indice 3) et après le 6ème caractère (indice 5)
-      if (i === 3 || i === 5) {
-        formatted += '-';
+    if (useOldFormat) {
+      // Format ancien: XXXX-XX-XX (8 caractères)
+      const limited = cleaned.slice(0, 8);
+      let formatted = '';
+      for (let i = 0; i < limited.length; i++) {
+        formatted += limited[i];
+        // Ajouter un tiret après le 4ème caractère (indice 3) et après le 6ème caractère (indice 5)
+        if (i === 3 || i === 5) {
+          formatted += '-';
+        }
       }
+      return formatted;
+    } else {
+      // Format nouveau: XX-XXX-XX (7 caractères)
+      const limited = cleaned.slice(0, 7);
+      let formatted = '';
+      for (let i = 0; i < limited.length; i++) {
+        formatted += limited[i];
+        // Ajouter un tiret après le 2ème caractère (indice 1) et après le 5ème caractère (indice 4)
+        if (i === 1 || i === 4) {
+          formatted += '-';
+        }
+      }
+      return formatted;
     }
-    
-    return formatted;
   };
 
   // Charger le véhicule depuis la base de données
@@ -77,8 +89,37 @@ export default function EditVehicleScreen() {
         }
 
         console.log('Véhicule chargé:', vehicle);
-        // Formater la plaque d'immatriculation au format XXXX-XX-XX
-        const formattedPlate = formatLicensePlate(vehicle.licensePlate || '');
+        // Détecter automatiquement le format de la plaque (8 caractères = ancien format, 7 = nouveau)
+        const cleanedPlate = (vehicle.licensePlate || '').replace(/-/g, '');
+        const detectedOldFormat = cleanedPlate.length === 8;
+        setUseOldFormat(detectedOldFormat);
+        // Formater la plaque d'immatriculation avec le format détecté
+        // On utilise une fonction locale pour formater avec le bon format
+        const formatWithDetectedFormat = (text: string, isOld: boolean): string => {
+          const cleaned = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+          if (isOld) {
+            const limited = cleaned.slice(0, 8);
+            let formatted = '';
+            for (let i = 0; i < limited.length; i++) {
+              formatted += limited[i];
+              if (i === 3 || i === 5) {
+                formatted += '-';
+              }
+            }
+            return formatted;
+          } else {
+            const limited = cleaned.slice(0, 7);
+            let formatted = '';
+            for (let i = 0; i < limited.length; i++) {
+              formatted += limited[i];
+              if (i === 1 || i === 4) {
+                formatted += '-';
+              }
+            }
+            return formatted;
+          }
+        };
+        const formattedPlate = formatWithDetectedFormat(cleanedPlate, detectedOldFormat);
         setLicensePlate(formattedPlate);
         setBrand(vehicle.brand);
         setModel(vehicle.model);
@@ -112,6 +153,42 @@ export default function EditVehicleScreen() {
   const handleLicensePlateChange = (text: string) => {
     const formatted = formatLicensePlate(text);
     setLicensePlate(formatted);
+  };
+
+  const toggleFormat = () => {
+    const newFormat = !useOldFormat;
+    // Réinitialiser la plaque et reformater avec le nouveau format
+    if (licensePlate) {
+      const cleaned = licensePlate.replace(/-/g, '');
+      // Formater avec le nouveau format (pas encore mis à jour dans le state)
+      const formatWithFormat = (text: string, isOld: boolean): string => {
+        const cleaned = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        if (isOld) {
+          const limited = cleaned.slice(0, 8);
+          let formatted = '';
+          for (let i = 0; i < limited.length; i++) {
+            formatted += limited[i];
+            if (i === 3 || i === 5) {
+              formatted += '-';
+            }
+          }
+          return formatted;
+        } else {
+          const limited = cleaned.slice(0, 7);
+          let formatted = '';
+          for (let i = 0; i < limited.length; i++) {
+            formatted += limited[i];
+            if (i === 1 || i === 4) {
+              formatted += '-';
+            }
+          }
+          return formatted;
+        }
+      };
+      const formatted = formatWithFormat(cleaned, newFormat);
+      setLicensePlate(formatted);
+    }
+    setUseOldFormat(newFormat);
   };
 
   const fetchBrandLogo = async (brandName: string): Promise<string | undefined> => {
@@ -215,8 +292,10 @@ export default function EditVehicleScreen() {
     // Nettoyer la plaque d'immatriculation (enlever les tirets pour la validation)
     const cleanedPlate = licensePlate.replace(/-/g, '');
     
-    if (!cleanedPlate || cleanedPlate.length !== 8 || !brand || !model || !type) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs. La plaque doit contenir 8 caractères (format: XXXX-XX-XX)');
+    const expectedLength = useOldFormat ? 8 : 7;
+    const formatText = useOldFormat ? 'XXXX-XX-XX' : 'XX-XXX-XX';
+    if (!cleanedPlate || cleanedPlate.length !== expectedLength || !brand || !model || !type) {
+      Alert.alert('Erreur', `Veuillez remplir tous les champs. La plaque doit contenir ${expectedLength} caractères (format: ${formatText})`);
       return;
     }
 
@@ -278,7 +357,22 @@ export default function EditVehicleScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inputContainer}>
-          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Plaque d&apos;immatriculation *</Text>
+          <View style={styles.labelRow}>
+            <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Plaque d&apos;immatriculation *</Text>
+            <TouchableOpacity
+              onPress={toggleFormat}
+              style={[styles.formatToggleButton, { backgroundColor: theme.colors.elevated, borderColor: theme.colors.border }]}
+            >
+              <IconSymbol
+                android_material_icon_name="schedule"
+                size={16}
+                color={theme.colors.textMuted}
+              />
+              <Text style={[styles.formatToggleText, { color: theme.colors.textMuted }]}>
+                {useOldFormat ? 'Nouveau format' : 'Ancien format'}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={[
               commonStyles.input,
@@ -288,13 +382,13 @@ export default function EditVehicleScreen() {
                 color: theme.colors.text,
               },
             ]}
-            placeholder="XXXX-XX-XX"
+            placeholder={useOldFormat ? "XXXX-XX-XX" : "XX-XXX-XX"}
             placeholderTextColor={theme.colors.textMuted}
             value={licensePlate}
             onChangeText={handleLicensePlateChange}
             autoCapitalize="characters"
             editable={!isSaving}
-            maxLength={10}
+            maxLength={useOldFormat ? 10 : 9}
           />
         </View>
 
@@ -533,5 +627,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginTop: 4,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  formatToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 6,
+  },
+  formatToggleText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

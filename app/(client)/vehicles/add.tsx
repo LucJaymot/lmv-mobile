@@ -19,6 +19,7 @@ import { useTheme } from '@/theme/hooks';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
+import { IconSymbol } from '@/components/IconSymbol';
 
 export default function AddVehicleScreen() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function AddVehicleScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [useOldFormat, setUseOldFormat] = useState(false); // Format ancien: XXXX-XX-XX
   
   // États pour les erreurs de validation
   const [licensePlateError, setLicensePlateError] = useState('');
@@ -43,20 +45,31 @@ export default function AddVehicleScreen() {
     // Supprimer tous les caractères non alphanumériques et les tirets
     const cleaned = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
     
-    // Limiter à 8 caractères
-    const limited = cleaned.slice(0, 8);
-    
-    // Insérer les tirets automatiquement après la 4ème et 6ème position
-    let formatted = '';
-    for (let i = 0; i < limited.length; i++) {
-      formatted += limited[i];
-      // Ajouter un tiret après le 4ème caractère (indice 3) et après le 6ème caractère (indice 5)
-      if (i === 3 || i === 5) {
-        formatted += '-';
+    if (useOldFormat) {
+      // Format ancien: XXXX-XX-XX (8 caractères)
+      const limited = cleaned.slice(0, 8);
+      let formatted = '';
+      for (let i = 0; i < limited.length; i++) {
+        formatted += limited[i];
+        // Ajouter un tiret après le 4ème caractère (indice 3) et après le 6ème caractère (indice 5)
+        if (i === 3 || i === 5) {
+          formatted += '-';
+        }
       }
+      return formatted;
+    } else {
+      // Format nouveau: XX-XXX-XX (7 caractères)
+      const limited = cleaned.slice(0, 7);
+      let formatted = '';
+      for (let i = 0; i < limited.length; i++) {
+        formatted += limited[i];
+        // Ajouter un tiret après le 2ème caractère (indice 1) et après le 5ème caractère (indice 4)
+        if (i === 1 || i === 4) {
+          formatted += '-';
+        }
+      }
+      return formatted;
     }
-    
-    return formatted;
   };
 
   const handleLicensePlateChange = (text: string) => {
@@ -67,14 +80,53 @@ export default function AddVehicleScreen() {
       setLicensePlateError('');
     }
   };
+
+  const toggleFormat = () => {
+    const newFormat = !useOldFormat;
+    // Réinitialiser la plaque et reformater avec le nouveau format
+    if (licensePlate) {
+      const cleaned = licensePlate.replace(/-/g, '');
+      // Formater avec le nouveau format (pas encore mis à jour dans le state)
+      const formatWithFormat = (text: string, isOld: boolean): string => {
+        const cleaned = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        if (isOld) {
+          const limited = cleaned.slice(0, 8);
+          let formatted = '';
+          for (let i = 0; i < limited.length; i++) {
+            formatted += limited[i];
+            if (i === 3 || i === 5) {
+              formatted += '-';
+            }
+          }
+          return formatted;
+        } else {
+          const limited = cleaned.slice(0, 7);
+          let formatted = '';
+          for (let i = 0; i < limited.length; i++) {
+            formatted += limited[i];
+            if (i === 1 || i === 4) {
+              formatted += '-';
+            }
+          }
+          return formatted;
+        }
+      };
+      const formatted = formatWithFormat(cleaned, newFormat);
+      setLicensePlate(formatted);
+    }
+    setUseOldFormat(newFormat);
+    setLicensePlateError('');
+  };
   
   const validateForm = (): boolean => {
     let isValid = true;
     const cleanedPlate = licensePlate.replace(/-/g, '');
     
     // Validation de la plaque d'immatriculation
-    if (!cleanedPlate || cleanedPlate.length !== 8) {
-      setLicensePlateError('La plaque d\'immatriculation doit contenir 8 caractères (format: XXXX-XX-XX)');
+    const expectedLength = useOldFormat ? 8 : 7;
+    const formatText = useOldFormat ? 'XXXX-XX-XX' : 'XX-XXX-XX';
+    if (!cleanedPlate || cleanedPlate.length !== expectedLength) {
+      setLicensePlateError(`La plaque d'immatriculation doit contenir ${expectedLength} caractères (format: ${formatText})`);
       isValid = false;
     } else {
       setLicensePlateError('');
@@ -111,8 +163,10 @@ export default function AddVehicleScreen() {
     // Nettoyer la plaque d'immatriculation (enlever les tirets)
     const cleanedPlate = licensePlate.replace(/-/g, '');
     
-    if (!cleanedPlate || cleanedPlate.length !== 8) {
-      Alert.alert('Erreur', 'Veuillez saisir une plaque d\'immatriculation valide (format: XXXX-XX-XX)');
+    const expectedLength = useOldFormat ? 8 : 7;
+    const formatText = useOldFormat ? 'XXXX-XX-XX' : 'XX-XXX-XX';
+    if (!cleanedPlate || cleanedPlate.length !== expectedLength) {
+      Alert.alert('Erreur', `Veuillez saisir une plaque d'immatriculation valide (format: ${formatText})`);
       return;
     }
 
@@ -249,7 +303,22 @@ export default function AddVehicleScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inputContainer}>
-          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Plaque d&apos;immatriculation *</Text>
+          <View style={styles.labelRow}>
+            <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Plaque d&apos;immatriculation *</Text>
+            <TouchableOpacity
+              onPress={toggleFormat}
+              style={[styles.formatToggleButton, { backgroundColor: theme.colors.elevated, borderColor: theme.colors.border }]}
+            >
+              <IconSymbol
+                android_material_icon_name="schedule"
+                size={16}
+                color={theme.colors.textMuted}
+              />
+              <Text style={[styles.formatToggleText, { color: theme.colors.textMuted }]}>
+                {useOldFormat ? 'Nouveau format' : 'Ancien format'}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={[
               commonStyles.input,
@@ -260,12 +329,12 @@ export default function AddVehicleScreen() {
               },
               licensePlateError && styles.inputError
             ]}
-            placeholder="XXXX-XX-XX"
+            placeholder={useOldFormat ? "XXXX-XX-XX" : "XX-XXX-XX"}
             placeholderTextColor={theme.colors.textMuted}
             value={licensePlate}
             onChangeText={handleLicensePlateChange}
             autoCapitalize="characters"
-            maxLength={10}
+            maxLength={useOldFormat ? 10 : 9}
           />
           {licensePlateError ? (
             <Text style={[styles.errorText, { color: theme.colors.error }]}>{licensePlateError}</Text>
@@ -464,5 +533,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  formatToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 6,
+  },
+  formatToggleText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });

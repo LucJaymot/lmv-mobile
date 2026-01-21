@@ -108,7 +108,7 @@ export default function NotificationsScreen() {
                     ios_icon_name="bell.fill"
                     android_material_icon_name="notifications"
                     size={24}
-                    color={theme.colors.accent}
+                    color={theme.colors.text}
                   />
                 <View style={styles.settingText}>
                   <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Activer les notifications push</Text>
@@ -248,7 +248,7 @@ export default function NotificationsScreen() {
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={24}
-                  color={theme.colors.accent}
+                  color={theme.colors.text}
                 />
                 <View style={styles.settingText}>
                   <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Activer les notifications email</Text>
