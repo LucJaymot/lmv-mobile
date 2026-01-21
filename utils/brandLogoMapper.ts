@@ -4,7 +4,7 @@
  */
 
 // Import de tous les logos disponibles
-const brandLogos: Record<string, any> = {
+export const brandLogos: Record<string, any> = {
   '9ff': require('@/assets/optimized/9ff.png'),
   'abadal': require('@/assets/optimized/abadal.png'),
   'abarth': require('@/assets/optimized/abarth.png'),

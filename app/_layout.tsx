@@ -18,6 +18,8 @@ import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@/contexts/AuthContextSupabase";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { useTheme } from "@/theme/hooks";
+import { preloadAllImages } from "@/utils/imagePreloader";
+import { brandLogos } from "@/utils/brandLogoMapper";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,6 +36,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
+      // Précharger les images en arrière-plan
+      preloadAllImages(brandLogos).catch(() => {});
       SplashScreen.hideAsync();
     }
   }, [loaded]);

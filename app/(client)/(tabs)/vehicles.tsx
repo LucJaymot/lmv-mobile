@@ -322,6 +322,7 @@ export default function VehiclesScreen() {
                             source={localLogo}
                             style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
                             resizeMode="contain"
+                            fadeDuration={0}
                           />
                         );
                       }

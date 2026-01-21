@@ -457,6 +457,7 @@ export default function CreateRequestScreen() {
                         source={logoSource}
                         style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
                         resizeMode="contain"
+                        fadeDuration={0}
                       />
                     ) : (
                       <View style={[styles.vehicleIcon, { backgroundColor: theme.colors.elevated }]}>

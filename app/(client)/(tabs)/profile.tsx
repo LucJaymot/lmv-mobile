@@ -319,13 +319,19 @@ export default function ClientProfileScreen() {
             <Text style={[styles.actionText, { color: theme.colors.text }]}>
               {isDarkMode ? 'Dark mode' : 'Light mode'}
             </Text>
-            <Switch
-              value={isDarkMode}
-              onValueChange={handleThemeToggle}
-              trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
-              thumbColor={isDarkMode ? '#FFFFFF' : '#F4F3F4'}
-              ios_backgroundColor={theme.colors.border}
-            />
+            <View style={styles.switchContainer}>
+              <Switch
+                value={isDarkMode}
+                onValueChange={handleThemeToggle}
+                trackColor={{ 
+                  false: Platform.OS === 'ios' ? theme.colors.border : '#D1D5DB', 
+                  true: theme.colors.accent 
+                }}
+                thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : '#FFFFFF'}
+                ios_backgroundColor={Platform.OS === 'ios' ? theme.colors.border : undefined}
+                style={styles.switch}
+              />
+            </View>
           </View>
         </View>
 
@@ -450,5 +456,17 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  switchContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: Platform.OS === 'android' ? 50 : undefined,
+    overflow: 'hidden',
+  },
+  switch: {
+    ...(Platform.OS === 'android' && {
+      transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
+      marginRight: -8,
+    }),
   },
 });

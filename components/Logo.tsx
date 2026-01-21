@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, memo } from 'react';
 import { Image, ImageStyle, StyleSheet, View, ViewStyle } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { useTheme } from '@/theme/hooks';
@@ -33,7 +33,7 @@ const sizeMap: Record<LogoSize, number> = {
  * <Logo size="lg" withCircleBackground />
  * ```
  */
-export const Logo: React.FC<LogoProps> = ({
+const LogoComponent: React.FC<LogoProps> = ({
   size = 'md',
   containerStyle,
   imageStyle,
@@ -50,13 +50,16 @@ export const Logo: React.FC<LogoProps> = ({
     !forceStaticColors &&
     (mode === 'dark' || mode === 'trueBlack');
 
+  // Mémoriser les sources d'images pour éviter les re-renders
+  const logoSource = useMemo(() => {
+    return isDark
+      ? require('@/assets/images/logo_LMV_blanc.png')
+      : require('@/assets/images/logo_LMV.png');
+  }, [isDark]);
+
   const logoImage = (
     <Image
-      source={
-        isDark
-          ? require('@/assets/images/logo_LMV_blanc.png')
-          : require('@/assets/images/logo_LMV.png')
-      }
+      source={logoSource}
       style={[
         {
           width: logoSize,
@@ -67,6 +70,8 @@ export const Logo: React.FC<LogoProps> = ({
       ]}
       accessibilityLabel="Logo LMV - Lave ma voiture"
       accessibilityRole="image"
+      // Optimisations pour le chargement
+      fadeDuration={0} // Pas de fade pour un chargement instantané
     />
   );
 
@@ -116,3 +121,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Mémoriser le composant pour éviter les re-renders inutiles
+export const Logo = memo(LogoComponent);
