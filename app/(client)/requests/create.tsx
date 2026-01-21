@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
 import { washRequestService } from '@/services/databaseService';
 import { Vehicle } from '@/types';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 // Composant pour le sélecteur de date web
 const WebDateInput = ({ value, onChange, min, style, theme }: any) => {
@@ -170,6 +171,7 @@ export default function CreateRequestScreen() {
   const [city, setCity] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { getDataAttribute } = useWebAnimations('request-create');
   const [selectedTime, setSelectedTime] = useState<Date | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [notes, setNotes] = useState('');

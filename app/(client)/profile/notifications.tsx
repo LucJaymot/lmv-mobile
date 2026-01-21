@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 interface NotificationSettings {
   pushEnabled: boolean;
@@ -39,6 +40,7 @@ export default function NotificationsScreen() {
     statusUpdates: true,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const { getDataAttribute } = useWebAnimations('notifications');
 
   useEffect(() => {
     loadSettings();

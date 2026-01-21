@@ -20,6 +20,7 @@ import { vehicleService } from '@/services/databaseService';
 import { Vehicle, WashRequest } from '@/types';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 export default function EditVehicleScreen() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function EditVehicleScreen() {
   const [isFetchingImage, setIsFetchingImage] = useState(false);
   const [washRequests, setWashRequests] = useState<WashRequest[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const { getDataAttribute } = useWebAnimations('vehicle-edit');
   const [useOldFormat, setUseOldFormat] = useState(false); // Format ancien: XXXX-XX-XX
 
   const formatLicensePlate = (text: string): string => {

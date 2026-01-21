@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 export default function AddVehicleScreen() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function AddVehicleScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [useOldFormat, setUseOldFormat] = useState(false); // Format ancien: XXXX-XX-XX
+  const { getDataAttribute } = useWebAnimations('vehicle-add');
   
   // États pour les erreurs de validation
   const [licensePlateError, setLicensePlateError] = useState('');

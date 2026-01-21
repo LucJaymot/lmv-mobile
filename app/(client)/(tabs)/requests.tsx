@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -16,6 +17,7 @@ import { useTheme } from '@/theme/hooks';
 import { WashRequest, WashRequestStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { washRequestService, providerService } from '@/services/databaseService';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 export default function RequestsScreen() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function RequestsScreen() {
   const [requests, setRequests] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const lastLoadTimeRef = useRef<number>(0);
+  const { getDataAttribute } = useWebAnimations('requests');
 
   const loadRequests = async () => {
     if (!clientCompany) {
@@ -140,8 +143,10 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Mes demandes</Text>
+      <View style={styles.header} {...getDataAttribute('header')}>
+        <Text style={[styles.title, { color: theme.colors.text }]} {...getDataAttribute('title')}>
+          Mes demandes
+        </Text>
       </View>
 
       <View style={styles.filtersWrapper}>
@@ -161,8 +166,12 @@ export default function RequestsScreen() {
                   borderColor: isActive ? theme.colors.accent : theme.colors.border,
                   backgroundColor: isActive ? theme.colors.accent : theme.colors.surface,
                 },
+                Platform.OS === 'web' && {
+                  animationDelay: `${0.2 + index * 0.05}s`,
+                } as any,
               ]}
               onPress={() => setSelectedStatus(filter.value)}
+              {...getDataAttribute('filter')}
             >
               <Text
                 style={[
@@ -181,7 +190,7 @@ export default function RequestsScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
+        <View style={styles.loadingContainer} {...getDataAttribute('loading')}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement des demandes...</Text>
         </View>
@@ -192,11 +201,19 @@ export default function RequestsScreen() {
         >
           {filteredRequests.length > 0 ? (
             <React.Fragment>
-              {filteredRequests.map((request) => (
+              {filteredRequests.map((request, index) => (
                 <TouchableOpacity
                   key={request.id}
-                  style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}
+                  style={[
+                    commonStyles.card, 
+                    { backgroundColor: theme.colors.surface },
+                    Platform.OS === 'web' && styles.webCard,
+                    Platform.OS === 'web' && {
+                      animationDelay: `${0.2 + index * 0.1}s`,
+                    } as any,
+                  ]}
                   onPress={() => router.push(`/(client)/requests/detail?id=${request.id}`)}
+                  {...getDataAttribute('card')}
                 >
                   <View style={styles.requestHeader}>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) }]}>
@@ -220,7 +237,7 @@ export default function RequestsScreen() {
               ))}
             </React.Fragment>
           ) : (
-            <View style={styles.emptyState}>
+            <View style={styles.emptyState} {...getDataAttribute('empty-state')}>
               <IconSymbol
                 ios_icon_name="doc.text"
                 android_material_icon_name="description"
@@ -324,5 +341,10 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  webCard: {
+    ...(Platform.OS === 'web' ? {
+      cursor: 'pointer',
+    } : {}),
   },
 });

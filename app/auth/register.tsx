@@ -20,6 +20,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { Logo } from '@/components/Logo';
 import { UserRole } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/theme/hooks';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -43,6 +44,7 @@ const validatePhone = (phone: string): boolean => {
 export default function RegisterScreen() {
   const router = useRouter();
   const { register, user } = useAuth();
+  const { theme } = useTheme();
   const [step, setStep] = useState<'role' | 'credentials' | 'profile'>('role');
   const [role, setRole] = useState<UserRole>('client');
   const [email, setEmail] = useState('');
@@ -384,7 +386,7 @@ export default function RegisterScreen() {
                 ios_icon_name="building.2.fill"
                 android_material_icon_name="business"
                 size={48}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
               <Text style={styles.roleTitle}>Client</Text>
               <Text style={styles.roleDescription}>
@@ -400,7 +402,7 @@ export default function RegisterScreen() {
                 ios_icon_name="sparkles"
                 android_material_icon_name="local-car-wash"
                 size={48}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
               <Text style={styles.roleTitle}>Prestataire</Text>
               <Text style={styles.roleDescription}>

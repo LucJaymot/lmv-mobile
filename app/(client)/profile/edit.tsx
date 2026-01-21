@@ -17,6 +17,7 @@ import { commonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useTheme } from '@/theme/hooks';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -35,6 +36,7 @@ export default function EditProfileScreen() {
   const { clientCompany, updateProfile } = useAuth();
   const { theme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
+  const { getDataAttribute } = useWebAnimations('profile-edit');
   const [formData, setFormData] = useState({
     name: clientCompany?.name || '',
     contact: clientCompany?.contact || '',

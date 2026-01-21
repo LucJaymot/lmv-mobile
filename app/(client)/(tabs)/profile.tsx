@@ -19,6 +19,7 @@ import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { pickImage, uploadAvatar } from '@/services/storageService';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 export default function ClientProfileScreen() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function ClientProfileScreen() {
   const { theme, mode, setMode } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const { getDataAttribute } = useWebAnimations('profile');
   
   // Basculer entre light et dark mode
   const isDarkMode = mode === 'dark' || mode === 'trueBlack';
@@ -126,7 +128,7 @@ export default function ClientProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
+        <View style={styles.header} {...getDataAttribute('header')}>
           <TouchableOpacity
             style={[styles.avatarContainer, { backgroundColor: theme.colors.surface }]}
             onPress={handleAvatarPress}
@@ -164,8 +166,10 @@ export default function ClientProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Informations entreprise</Text>
-          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]} {...getDataAttribute('section-title')}>
+            Informations entreprise
+          </Text>
+          <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]} {...getDataAttribute('card')}>
             <View style={[styles.infoRow, { borderBottomColor: theme.colors.border }]}>
               <IconSymbol
                 ios_icon_name="person.fill"
@@ -218,10 +222,19 @@ export default function ClientProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]} {...getDataAttribute('section-title')}>
+            Actions
+          </Text>
           <TouchableOpacity 
-            style={[styles.actionItem, { backgroundColor: theme.colors.surface }]} 
+            style={[
+              styles.actionItem, 
+              { backgroundColor: theme.colors.surface },
+              Platform.OS === 'web' && {
+                animationDelay: '0.2s',
+              } as any,
+            ]} 
             onPress={() => router.push('/(client)/profile/edit')}
+            {...getDataAttribute('item')}
           >
             <IconSymbol
               ios_icon_name="pencil"
@@ -238,8 +251,15 @@ export default function ClientProfileScreen() {
             />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.actionItem, 
+              { backgroundColor: theme.colors.surface },
+              Platform.OS === 'web' && {
+                animationDelay: '0.3s',
+              } as any,
+            ]}
             onPress={() => router.push('/(client)/profile/notifications')}
+            {...getDataAttribute('item')}
           >
             <IconSymbol
               ios_icon_name="bell.fill"
@@ -256,8 +276,15 @@ export default function ClientProfileScreen() {
             />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.actionItem, 
+              { backgroundColor: theme.colors.surface },
+              Platform.OS === 'web' && {
+                animationDelay: '0.4s',
+              } as any,
+            ]}
             onPress={() => router.push('/(client)/(tabs)/invoices')}
+            {...getDataAttribute('item')}
           >
             <IconSymbol
               ios_icon_name="doc.text.fill"
@@ -273,7 +300,16 @@ export default function ClientProfileScreen() {
               color={theme.colors.textMuted}
             />
           </TouchableOpacity>
-          <View style={[styles.actionItem, { backgroundColor: theme.colors.surface }]}>
+          <View 
+            style={[
+              styles.actionItem, 
+              { backgroundColor: theme.colors.surface },
+              Platform.OS === 'web' && {
+                animationDelay: '0.5s',
+              } as any,
+            ]}
+            {...getDataAttribute('item')}
+          >
             <IconSymbol
               ios_icon_name={isDarkMode ? "moon.fill" : "sun.max.fill"}
               android_material_icon_name={isDarkMode ? "dark-mode" : "light-mode"}

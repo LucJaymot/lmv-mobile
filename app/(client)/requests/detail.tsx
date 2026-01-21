@@ -22,6 +22,7 @@ import { useTheme } from '@/theme/hooks';
 import { washRequestService, providerService } from '@/services/databaseService';
 import { WashRequest } from '@/types'
 import { useAuth } from '@/contexts/AuthContextSupabase';
+import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 export default function RequestDetailScreen() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function RequestDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const { getDataAttribute } = useWebAnimations('request-detail');
 
   useEffect(() => {
     const loadWashRequest = async () => {

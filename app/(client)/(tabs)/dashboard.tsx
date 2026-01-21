@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -26,6 +27,90 @@ export default function ClientDashboardScreen() {
   const [recentWashes, setRecentWashes] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const lastLoadTimeRef = useRef<number>(0);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Injecter les animations CSS pour web uniquement
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const styleId = 'dashboard-animations';
+      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+      if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+      }
+      
+      styleElement.textContent = `
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        [data-dashboard-header] {
+          animation: fadeInUp 0.6s ease-out;
+        }
+        
+        [data-dashboard-button] {
+          animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+        
+        [data-dashboard-button] > div[role="button"] {
+          transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+          cursor: pointer;
+        }
+        
+        [data-dashboard-button]:hover > div[role="button"] {
+          transform: translateY(-2px) scale(1.02) !important;
+          box-shadow: 0 8px 20px rgba(0, 43, 57, 0.25) !important;
+        }
+        
+        [data-dashboard-section-title] {
+          animation: fadeInUp 0.6s ease-out 0.3s both;
+        }
+        
+        [data-dashboard-card] {
+          animation: fadeInUp 0.5s ease-out both;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        [data-dashboard-card]:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-dashboard-empty-state] {
+          animation: fadeIn 0.6s ease-out 0.4s both;
+        }
+        
+        [data-dashboard-loading] {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `;
+      
+      setIsMounted(true);
+      
+      return () => {
+        // Ne pas supprimer le style car il peut être réutilisé
+      };
+    } else {
+      setIsMounted(true);
+    }
+  }, []);
 
   const loadWashRequests = async () => {
     if (!clientCompany) {
@@ -162,7 +247,10 @@ export default function ClientDashboardScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-        <View style={styles.loadingContainer}>
+        <View 
+          style={styles.loadingContainer}
+          {...(Platform.OS === 'web' ? { 'data-dashboard-loading': true } : {})}
+        >
           <ActivityIndicator size="large" color={theme.colors.accent} />
           <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement...</Text>
         </View>
@@ -176,7 +264,10 @@ export default function ClientDashboardScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
+        <View 
+          style={styles.header}
+          {...(Platform.OS === 'web' ? { 'data-dashboard-header': true } : {})}
+        >
           <View style={styles.headerLeft}>
           <Text style={[styles.greeting, { color: theme.colors.textMuted }]}>Bonjour,</Text>
           <Text style={[styles.companyName, { color: theme.colors.text }]}>{clientCompany?.name}</Text>
@@ -184,24 +275,41 @@ export default function ClientDashboardScreen() {
           <Logo size="sm" />
         </View>
 
-        <Button
-          variant="primary"
-          size="lg"
-          onPress={() => router.push('/(client)/requests/create')}
-          style={styles.createButton}
+        <View
+          {...(Platform.OS === 'web' ? { 'data-dashboard-button': true } : {})}
         >
-          Nouvelle demande de lavage
-        </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            onPress={() => router.push('/(client)/requests/create')}
+            style={styles.createButton}
+          >
+            Nouvelle demande de lavage
+          </Button>
+        </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Prochains lavages</Text>
+          <Text 
+            style={[styles.sectionTitle, { color: theme.colors.text }]}
+            {...(Platform.OS === 'web' ? { 'data-dashboard-section-title': true } : {})}
+          >
+            Prochains lavages
+          </Text>
           {recentWashes.length > 0 ? (
             <React.Fragment>
-              {recentWashes.map((wash) => (
+              {recentWashes.map((wash, index) => (
                 <TouchableOpacity
                   key={wash.id}
-                  style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}
+                  style={[
+                    commonStyles.card, 
+                    { backgroundColor: theme.colors.surface },
+                    Platform.OS === 'web' && styles.webCard,
+                    Platform.OS === 'web' && {
+                      animationDelay: `${0.4 + index * 0.1}s`,
+                    } as any,
+                  ]}
                   onPress={() => router.push(`/(client)/requests/detail?id=${wash.id}`)}
+                  {...(Platform.OS === 'web' ? { 'data-dashboard-card': true } : {})}
                 >
                   <View style={styles.washHeader}>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(wash.status) }]}>
@@ -249,7 +357,10 @@ export default function ClientDashboardScreen() {
               ))}
             </React.Fragment>
           ) : (
-            <View style={styles.emptyState}>
+            <View 
+              style={styles.emptyState}
+              {...(Platform.OS === 'web' ? { 'data-dashboard-empty-state': true } : {})}
+            >
               <IconSymbol
                 ios_icon_name="clock"
                 android_material_icon_name="schedule"
@@ -375,5 +486,11 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  webCard: {
+    // Styles supplémentaires pour web uniquement
+    ...(Platform.OS === 'web' ? {
+      cursor: 'pointer',
+    } : {}),
   },
 });

@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/Logo';
 import { IconSymbol } from '@/components/IconSymbol';
 import { authService } from '@/services/databaseService';
+import { useTheme } from '@/theme/hooks';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -29,6 +30,7 @@ const validateEmail = (email: string): boolean => {
 export default function LoginScreen() {
   const router = useRouter();
   const { login, user } = useAuth();
+  const { theme } = useTheme();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -294,7 +296,7 @@ export default function LoginScreen() {
                 disabled={isLoading}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
-                <Text style={styles.registerLink}>
+                <Text style={[styles.registerLink, { color: theme.colors.accent }]}>
                   S&apos;inscrire
                 </Text>
               </TouchableOpacity>

@@ -31,6 +31,76 @@ export default function VehiclesScreen() {
   const [userMessage, setUserMessage] = useState<{ title: string; body: string } | null>(null);
   const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLoadTimeRef = useRef<number>(0);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Injecter les animations CSS pour web uniquement
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const styleId = 'vehicles-animations';
+      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+      if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+      }
+      
+      styleElement.textContent = `
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        [data-vehicles-header] {
+          animation: fadeInUp 0.6s ease-out;
+        }
+        
+        [data-vehicles-card] {
+          animation: fadeInUp 0.5s ease-out both;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        [data-vehicles-card]:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-vehicles-empty-state] {
+          animation: fadeIn 0.6s ease-out 0.4s both;
+        }
+        
+        [data-vehicles-loading] {
+          animation: fadeIn 0.3s ease-out;
+        }
+        
+        [data-vehicles-message] {
+          animation: fadeInUp 0.4s ease-out;
+        }
+      `;
+      
+      setIsMounted(true);
+      
+      return () => {
+        // Ne pas supprimer le style car il peut être réutilisé
+      };
+    } else {
+      setIsMounted(true);
+    }
+  }, []);
 
   const loadVehicles = async () => {
     if (!clientCompany) {
@@ -159,7 +229,10 @@ export default function VehiclesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={styles.header}>
+      <View 
+        style={styles.header}
+        {...(Platform.OS === 'web' ? { 'data-vehicles-header': true } : {})}
+      >
         <Text style={[styles.title, { color: theme.colors.text }]}>Mes véhicules</Text>
         <Button
           variant="ghost"
@@ -191,7 +264,10 @@ export default function VehiclesScreen() {
         showsVerticalScrollIndicator={false}
       >
         {userMessage && (
-          <View style={[styles.messageBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View 
+            style={[styles.messageBanner, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            {...(Platform.OS === 'web' ? { 'data-vehicles-message': true } : {})}
+          >
             <View style={{ flex: 1 }}>
               <Text style={[styles.messageTitle, { color: theme.colors.text }]}>{userMessage.title}</Text>
               <Text style={[styles.messageBody, { color: theme.colors.textMuted }]}>{userMessage.body}</Text>
@@ -211,14 +287,28 @@ export default function VehiclesScreen() {
           </View>
         )}
         {isLoading ? (
-          <View style={styles.loadingContainer}>
+          <View 
+            style={styles.loadingContainer}
+            {...(Platform.OS === 'web' ? { 'data-vehicles-loading': true } : {})}
+          >
             <ActivityIndicator size="large" color={theme.colors.accent} />
             <Text style={[styles.loadingText, { color: theme.colors.textMuted }]}>Chargement des véhicules...</Text>
           </View>
         ) : vehicles.length > 0 ? (
           <React.Fragment>
-            {vehicles.map((vehicle) => (
-              <View key={vehicle.id} style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
+            {vehicles.map((vehicle, index) => (
+              <View 
+                key={vehicle.id} 
+                style={[
+                  commonStyles.card, 
+                  { backgroundColor: theme.colors.surface },
+                  Platform.OS === 'web' && styles.webCard,
+                  Platform.OS === 'web' && {
+                    animationDelay: `${0.2 + index * 0.1}s`,
+                  } as any,
+                ]}
+                {...(Platform.OS === 'web' ? { 'data-vehicles-card': true } : {})}
+              >
                 <View style={styles.vehicleHeader}>
                   {vehicle.imageUrl && !imageErrors.has(vehicle.id) ? (
                     <Image
@@ -283,7 +373,10 @@ export default function VehiclesScreen() {
             ))}
           </React.Fragment>
         ) : (
-          <View style={styles.emptyState}>
+          <View 
+            style={styles.emptyState}
+            {...(Platform.OS === 'web' ? { 'data-vehicles-empty-state': true } : {})}
+          >
             <IconSymbol
               ios_icon_name="car"
               android_material_icon_name="directions-car"
@@ -428,5 +521,11 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  webCard: {
+    // Styles supplémentaires pour web uniquement
+    ...(Platform.OS === 'web' ? {
+      cursor: 'pointer',
+    } : {}),
   },
 });
