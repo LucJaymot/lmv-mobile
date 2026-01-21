@@ -18,6 +18,7 @@ import { commonStyles, colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { authService } from '@/services/databaseService';
 import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/theme/hooks';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -27,6 +28,7 @@ const validateEmail = (email: string): boolean => {
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -163,7 +165,7 @@ export default function ForgotPasswordScreen() {
                 ios_icon_name="lock.fill"
                 android_material_icon_name="lock"
                 size={48}
-                color={colors.primary}
+                color={theme.colors.accent}
               />
             </View>
             <Text style={styles.title}>Mot de passe oublié</Text>
@@ -179,16 +181,16 @@ export default function ForgotPasswordScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.card,
-                  borderColor: emailError ? colors.error : (emailFocused ? colors.primary : colors.border),
+                  borderColor: emailError ? colors.error : (emailFocused ? theme.colors.accent : colors.border),
                 },
-                emailFocused && { borderColor: colors.primary },
+                emailFocused && { borderColor: theme.colors.accent },
                 emailError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? colors.error : (emailFocused ? colors.primary : colors.textSecondary)}
+                  color={emailError ? colors.error : (emailFocused ? theme.colors.accent : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput

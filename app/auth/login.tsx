@@ -39,6 +39,7 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -126,9 +127,12 @@ export default function LoginScreen() {
 
   const handleEmailChange = (text: string) => {
     setEmail(text);
-    // Réinitialiser l'erreur email quand l'utilisateur tape
+    // Réinitialiser l'erreur email et l'état de confirmation quand l'utilisateur tape
     if (emailError) {
       setEmailError(null);
+    }
+    if (confirmationEmailSent) {
+      setConfirmationEmailSent(false);
     }
   };
 
@@ -170,55 +174,90 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               editable={!isLoading}
-              error={emailError || undefined}
+              error={emailError && !emailError.includes('n\'a pas été confirmé') && !emailError.includes('not confirmed') ? emailError : undefined}
               forceStaticColors
               leftIcon={
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? colors.error : colors.textSecondary}
+                  color={emailError && !emailError.includes('n\'a pas été confirmé') && !emailError.includes('not confirmed') ? colors.error : colors.textSecondary}
                 />
               }
             />
             
-            {/* Bouton pour renvoyer l'email de confirmation si l'erreur est liée à la confirmation */}
+            {/* Message d'alerte pour email non confirmé */}
             {emailError && (emailError.includes('n\'a pas été confirmé') || emailError.includes('not confirmed')) && (
-              <View style={[styles.resendContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                <Text style={styles.resendText}>
-                  Vous n'avez pas reçu l'email ou le lien a expiré ?
-                </Text>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onPress={async () => {
-                    if (!email.trim()) {
-                      Alert.alert('Erreur', 'Veuillez entrer votre email');
-                      return;
-                    }
-                    setIsResendingConfirmation(true);
-                    try {
-                      await authService.resendConfirmationEmail(email.trim());
-                      Alert.alert(
-                        'Email envoyé',
-                        'Un nouvel email de confirmation a été envoyé. Vérifiez votre boîte de réception (et votre dossier spam).'
-                      );
-                    } catch (error: any) {
-                      console.error('Erreur lors du renvoi de l\'email:', error);
-                      Alert.alert(
-                        'Erreur',
-                        error.message || 'Impossible d\'envoyer l\'email de confirmation. Veuillez réessayer plus tard.'
-                      );
-                    } finally {
-                      setIsResendingConfirmation(false);
-                    }
-                  }}
-                  disabled={isResendingConfirmation || isLoading}
-                  loading={isResendingConfirmation}
-                  style={styles.resendButton}
-                >
-                  Renvoyer l'email de confirmation
-                </Button>
+              <View style={[styles.emailConfirmationAlert, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.alertHeader}>
+                  <View style={styles.alertContent}>
+                    <View style={styles.alertTitleContainer}>
+                      <Text style={[styles.alertTitle, { color: colors.text }]}>
+                        Email non confirmé
+                      </Text>
+                      <View style={[styles.alertIconContainer, { backgroundColor: colors.error + '15' }]}>
+                        <IconSymbol
+                          ios_icon_name="exclamationmark.triangle.fill"
+                          android_material_icon_name="warning"
+                          size={20}
+                          color={colors.error}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.alertMessageContainer}>
+                      <Text style={[styles.alertMessage, { color: colors.textSecondary }]}>
+                        Vérifiez votre boîte de réception et cliquez sur le lien de confirmation. Si vous avez déjà cliqué sur le lien, attendez quelques instants et réessayez.
+                      </Text>
+                      {confirmationEmailSent ? (
+                        <View style={styles.successContainer}>
+                          <IconSymbol
+                            ios_icon_name="checkmark.circle.fill"
+                            android_material_icon_name="check-circle"
+                            size={20}
+                            color={colors.success || '#10B981'}
+                          />
+                          <Text style={[styles.successText, { color: colors.success || '#10B981' }]}>
+                            Email envoyé avec succès
+                          </Text>
+                        </View>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onPress={async () => {
+                            if (!email.trim()) {
+                              Alert.alert('Erreur', 'Veuillez entrer votre email');
+                              return;
+                            }
+                            setIsResendingConfirmation(true);
+                            setConfirmationEmailSent(false);
+                            try {
+                              await authService.resendConfirmationEmail(email.trim());
+                              setConfirmationEmailSent(true);
+                              // Réinitialiser après 5 secondes pour permettre un nouveau renvoi
+                              setTimeout(() => {
+                                setConfirmationEmailSent(false);
+                              }, 5000);
+                            } catch (error: any) {
+                              console.error('Erreur lors du renvoi de l\'email:', error);
+                              Alert.alert(
+                                'Erreur',
+                                error.message || 'Impossible d\'envoyer l\'email de confirmation. Veuillez réessayer plus tard.'
+                              );
+                            } finally {
+                              setIsResendingConfirmation(false);
+                            }
+                          }}
+                          disabled={isResendingConfirmation || isLoading}
+                          loading={isResendingConfirmation}
+                          style={styles.resendButton}
+                        >
+                          Renvoyer l'email de confirmation
+                        </Button>
+                      )}
+                    </View>
+                  </View>
+                </View>
               </View>
             )}
 
@@ -381,22 +420,58 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  resendContainer: {
-    marginTop: 8,
-    marginBottom: 8,
+  emailConfirmationAlert: {
+    marginTop: 12,
+    marginBottom: 16,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
   },
-  resendText: {
+  alertHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  alertIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  alertMessageContainer: {
+    gap: 12,
+  },
+  alertMessage: {
     fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 8,
+    lineHeight: 20,
   },
   resendButton: {
     alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  successContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  successText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

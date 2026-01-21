@@ -454,16 +454,16 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.card,
-                  borderColor: emailError ? colors.error : (emailFocused ? colors.primary : colors.border),
+                  borderColor: emailError ? colors.error : (emailFocused ? theme.colors.accent : colors.border),
                 },
-                emailFocused && { borderColor: colors.primary },
+                emailFocused && { borderColor: theme.colors.accent },
                 emailError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="envelope.fill"
                   android_material_icon_name="email"
                   size={20}
-                  color={emailError ? colors.error : (emailFocused ? colors.primary : colors.textSecondary)}
+                  color={emailError ? colors.error : (emailFocused ? theme.colors.accent : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -501,16 +501,16 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.card,
-                  borderColor: passwordError ? colors.error : (passwordFocused ? colors.primary : colors.border),
+                  borderColor: passwordError ? colors.error : (passwordFocused ? theme.colors.accent : colors.border),
                 },
-                passwordFocused && { borderColor: colors.primary },
+                passwordFocused && { borderColor: theme.colors.accent },
                 passwordError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={passwordError ? colors.error : (passwordFocused ? colors.primary : colors.textSecondary)}
+                  color={passwordError ? colors.error : (passwordFocused ? theme.colors.accent : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -558,16 +558,16 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.card,
-                  borderColor: confirmPasswordError ? colors.error : (confirmPasswordFocused ? colors.primary : colors.border),
+                  borderColor: confirmPasswordError ? colors.error : (confirmPasswordFocused ? theme.colors.accent : colors.border),
                 },
-                confirmPasswordFocused && { borderColor: colors.primary },
+                confirmPasswordFocused && { borderColor: theme.colors.accent },
                 confirmPasswordError && { borderColor: colors.error },
               ]}>
                 <IconSymbol
                   ios_icon_name="lock.fill"
                   android_material_icon_name="lock"
                   size={20}
-                  color={confirmPasswordError ? colors.error : (confirmPasswordFocused ? colors.primary : colors.textSecondary)}
+                  color={confirmPasswordError ? colors.error : (confirmPasswordFocused ? theme.colors.accent : colors.textSecondary)}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -662,16 +662,16 @@ export default function RegisterScreen() {
                   styles.inputWrapper,
                   {
                     backgroundColor: colors.card,
-                    borderColor: clientNameError ? colors.error : (clientNameFocused ? colors.primary : colors.border),
+                    borderColor: clientNameError ? colors.error : (clientNameFocused ? theme.colors.accent : colors.border),
                   },
-                  clientNameFocused && { borderColor: colors.primary },
+                  clientNameFocused && { borderColor: theme.colors.accent },
                   clientNameError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="building.2.fill"
                     android_material_icon_name="business"
                     size={20}
-                    color={clientNameError ? colors.error : (clientNameFocused ? colors.primary : colors.textSecondary)}
+                    color={clientNameError ? colors.error : (clientNameFocused ? theme.colors.accent : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
@@ -709,16 +709,16 @@ export default function RegisterScreen() {
                   styles.inputWrapper,
                   {
                     backgroundColor: colors.card,
-                    borderColor: clientAddressError ? colors.error : (clientAddressFocused ? colors.primary : colors.border),
+                    borderColor: clientAddressError ? colors.error : (clientAddressFocused ? theme.colors.accent : colors.border),
                   },
-                  clientAddressFocused && { borderColor: colors.primary },
+                  clientAddressFocused && { borderColor: theme.colors.accent },
                   clientAddressError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="location.fill"
                     android_material_icon_name="location-on"
                     size={20}
-                    color={clientAddressError ? colors.error : (clientAddressFocused ? colors.primary : colors.textSecondary)}
+                    color={clientAddressError ? colors.error : (clientAddressFocused ? theme.colors.accent : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
@@ -756,16 +756,16 @@ export default function RegisterScreen() {
                   styles.inputWrapper,
                   {
                     backgroundColor: colors.card,
-                    borderColor: clientContactError ? colors.error : (clientContactFocused ? colors.primary : colors.border),
+                    borderColor: clientContactError ? colors.error : (clientContactFocused ? theme.colors.accent : colors.border),
                   },
-                  clientContactFocused && { borderColor: colors.primary },
+                  clientContactFocused && { borderColor: theme.colors.accent },
                   clientContactError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="person.fill"
                     android_material_icon_name="person"
                     size={20}
-                    color={clientContactError ? colors.error : (clientContactFocused ? colors.primary : colors.textSecondary)}
+                    color={clientContactError ? colors.error : (clientContactFocused ? theme.colors.accent : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
@@ -803,16 +803,16 @@ export default function RegisterScreen() {
                   styles.inputWrapper,
                   {
                     backgroundColor: colors.card,
-                    borderColor: clientPhoneError ? colors.error : (clientPhoneFocused ? colors.primary : colors.border),
+                    borderColor: clientPhoneError ? colors.error : (clientPhoneFocused ? theme.colors.accent : colors.border),
                   },
-                  clientPhoneFocused && { borderColor: colors.primary },
+                  clientPhoneFocused && { borderColor: theme.colors.accent },
                   clientPhoneError && { borderColor: colors.error },
                 ]}>
                   <IconSymbol
                     ios_icon_name="phone.fill"
                     android_material_icon_name="phone"
                     size={20}
-                    color={clientPhoneError ? colors.error : (clientPhoneFocused ? colors.primary : colors.textSecondary)}
+                    color={clientPhoneError ? colors.error : (clientPhoneFocused ? theme.colors.accent : colors.textSecondary)}
                     style={styles.inputIcon}
                   />
                   <TextInput
@@ -916,8 +916,8 @@ export default function RegisterScreen() {
                         style={[
                           styles.serviceChip,
                           {
-                    borderColor: isActive ? colors.primary : colors.border,
-                    backgroundColor: isActive ? colors.primary : colors.background,
+                    borderColor: isActive ? theme.colors.accent : colors.border,
+                    backgroundColor: isActive ? theme.colors.accent : colors.background,
                           },
                         ]}
                         onPress={() => toggleService(service)}

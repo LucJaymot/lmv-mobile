@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'web' ? 100 : 120,
+    paddingBottom: Platform.OS === 'web' ? 100 : 180,
   },
   header: {
     alignItems: 'center',

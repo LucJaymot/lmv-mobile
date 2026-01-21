@@ -12,6 +12,7 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  Image,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,7 @@ import { vehicleService } from '@/services/databaseService';
 import { washRequestService } from '@/services/databaseService';
 import { Vehicle } from '@/types';
 import { useWebAnimations } from '@/hooks/useWebAnimations';
+import { getBrandLogo } from '@/utils/brandLogoMapper';
 
 // Composant pour le sélecteur de date web
 const WebDateInput = ({ value, onChange, min, style, theme }: any) => {
@@ -434,10 +436,45 @@ export default function CreateRequestScreen() {
               style={styles.vehicleHeader}
               onPress={() => toggleVehicle(vehicle.id)}
             >
-              <View style={styles.vehicleInfo}>
-                <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>{vehicle.licensePlate}</Text>
-                <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>{vehicle.brand} {vehicle.model}</Text>
-              </View>
+              {(() => {
+                // Vérifier si c'est un logo local (format "local:xxx")
+                let logoSource = null;
+                if (vehicle.imageUrl?.startsWith('local:')) {
+                  const brandName = vehicle.imageUrl.replace('local:', '');
+                  logoSource = getBrandLogo(brandName);
+                } else if (vehicle.imageUrl) {
+                  // URL externe (pour compatibilité avec les anciennes données)
+                  logoSource = { uri: vehicle.imageUrl };
+                } else {
+                  // Essayer de récupérer le logo depuis la marque directement
+                  logoSource = getBrandLogo(vehicle.brand);
+                }
+
+                return (
+                  <>
+                    {logoSource ? (
+                      <Image
+                        source={logoSource}
+                        style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <View style={[styles.vehicleIcon, { backgroundColor: theme.colors.elevated }]}>
+                        <IconSymbol
+                          ios_icon_name="car.fill"
+                          android_material_icon_name="directions-car"
+                          size={24}
+                          color={theme.colors.accent}
+                        />
+                      </View>
+                    )}
+                    <View style={styles.vehicleInfo}>
+                      <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>{vehicle.licensePlate}</Text>
+                      <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>{vehicle.brand} {vehicle.model}</Text>
+                    </View>
+                  </>
+                );
+              })()}
               <View style={[
                 styles.checkbox,
                 { borderColor: theme.colors.border },
@@ -629,13 +666,14 @@ export default function CreateRequestScreen() {
                     }}
                   >
                     <View style={styles.pickerOverlay}>
-                      <View style={styles.pickerContainer}>
+                      <View style={[styles.pickerContainer, { backgroundColor: '#FFFFFF' }]}>
                         <DateTimePicker
                           value={selectedDate || getMinimumDate()}
                           mode="date"
                           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                           onChange={onDateChange}
                           minimumDate={getMinimumDate()}
+                          locale="fr-FR"
                         />
                         {Platform.OS === 'ios' && (
                           <View style={styles.iosPickerActions}>
@@ -715,12 +753,13 @@ export default function CreateRequestScreen() {
                     }}
                   >
                     <View style={styles.pickerOverlay}>
-                      <View style={[styles.pickerContainer, { backgroundColor: theme.colors.surface }]}>
+                      <View style={[styles.pickerContainer, { backgroundColor: '#FFFFFF' }]}>
                         <DateTimePicker
                           value={selectedTime || new Date()}
                           mode="time"
                           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                           onChange={onTimeChange}
+                          locale="fr-FR"
                         />
                         {Platform.OS === 'ios' && (
                           <View style={styles.iosPickerActions}>
@@ -806,6 +845,19 @@ const styles = StyleSheet.create({
   vehicleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  vehicleImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  vehicleIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   vehicleInfo: {
@@ -939,6 +991,7 @@ const styles = StyleSheet.create({
     padding: 20,
     minWidth: 300,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     ...Platform.select({
       ios: {
         shadowColor: '#000',

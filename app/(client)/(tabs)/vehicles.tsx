@@ -20,6 +20,7 @@ import { useTheme } from '@/theme/hooks';
 import { Vehicle } from '@/types';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { vehicleService } from '@/services/databaseService';
+import { getBrandLogo } from '@/utils/brandLogoMapper';
 
 export default function VehiclesScreen() {
   const router = useRouter();
@@ -310,26 +311,49 @@ export default function VehiclesScreen() {
                 {...(Platform.OS === 'web' ? { 'data-vehicles-card': true } : {})}
               >
                 <View style={styles.vehicleHeader}>
-                  {vehicle.imageUrl && !imageErrors.has(vehicle.id) ? (
-                    <Image
-                      source={{ uri: vehicle.imageUrl }}
-                      style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
-                      resizeMode="contain"
-                      onError={() => {
-                        console.warn('⚠️ Erreur lors du chargement de l\'image pour le véhicule:', vehicle.id);
-                        setImageErrors(prev => new Set(prev).add(vehicle.id));
-                      }}
-                    />
-                  ) : (
-                  <View style={[styles.vehicleIcon, { backgroundColor: theme.colors.elevated }]}>
-                    <IconSymbol
-                      ios_icon_name="car.fill"
-                      android_material_icon_name="directions-car"
-                      size={32}
-                      color={theme.colors.accent}
-                    />
-                  </View>
-                  )}
+                  {(() => {
+                    // Vérifier si c'est un logo local (format "local:xxx")
+                    if (vehicle.imageUrl?.startsWith('local:')) {
+                      const brandName = vehicle.imageUrl.replace('local:', '');
+                      const localLogo = getBrandLogo(brandName);
+                      if (localLogo) {
+                        return (
+                          <Image
+                            source={localLogo}
+                            style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
+                            resizeMode="contain"
+                          />
+                        );
+                      }
+                    }
+                    
+                    // Sinon, utiliser l'URL normale (pour compatibilité avec les anciennes données)
+                    if (vehicle.imageUrl && !imageErrors.has(vehicle.id)) {
+                      return (
+                        <Image
+                          source={{ uri: vehicle.imageUrl }}
+                          style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
+                          resizeMode="contain"
+                          onError={() => {
+                            console.warn('⚠️ Erreur lors du chargement de l\'image pour le véhicule:', vehicle.id);
+                            setImageErrors(prev => new Set(prev).add(vehicle.id));
+                          }}
+                        />
+                      );
+                    }
+                    
+                    // Fallback: icône par défaut
+                    return (
+                      <View style={[styles.vehicleIcon, { backgroundColor: theme.colors.elevated }]}>
+                        <IconSymbol
+                          ios_icon_name="car.fill"
+                          android_material_icon_name="directions-car"
+                          size={32}
+                          color={theme.colors.accent}
+                        />
+                      </View>
+                    );
+                  })()}
                   <View style={styles.vehicleInfo}>
                     <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>{vehicle.licensePlate}</Text>
                     <Text style={[styles.vehicleName, { color: theme.colors.text }]}>

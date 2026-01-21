@@ -12,6 +12,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   ViewStyle,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
@@ -23,6 +24,7 @@ import { washRequestService, providerService } from '@/services/databaseService'
 import { WashRequest } from '@/types'
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { useWebAnimations } from '@/hooks/useWebAnimations';
+import { getBrandLogo } from '@/utils/brandLogoMapper';
 
 export default function RequestDetailScreen() {
   const router = useRouter();
@@ -375,14 +377,55 @@ export default function RequestDetailScreen() {
             <View style={[commonStyles.card, { backgroundColor: theme.colors.surface }]}>
               {washRequest.vehicles.map((vehicle) => (
                 <View key={vehicle.id} style={styles.vehicleItem}>
-                  <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>
-                    {vehicle.vehicle?.licensePlate || 'Véhicule'}
-                  </Text>
-                  {vehicle.vehicle && (
-                    <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>
-                      {vehicle.vehicle.brand} {vehicle.vehicle.model}
-                    </Text>
-                  )}
+                  <View style={styles.vehicleHeader}>
+                    {(() => {
+                      if (!vehicle.vehicle) {
+                        return null;
+                      }
+
+                      // Vérifier si c'est un logo local (format "local:xxx")
+                      let logoSource = null;
+                      if (vehicle.vehicle.imageUrl?.startsWith('local:')) {
+                        const brandName = vehicle.vehicle.imageUrl.replace('local:', '');
+                        logoSource = getBrandLogo(brandName);
+                      } else if (vehicle.vehicle.imageUrl) {
+                        // URL externe (pour compatibilité avec les anciennes données)
+                        logoSource = { uri: vehicle.vehicle.imageUrl };
+                      } else {
+                        // Essayer de récupérer le logo depuis la marque directement
+                        logoSource = getBrandLogo(vehicle.vehicle.brand);
+                      }
+
+                      return (
+                        <>
+                          {logoSource ? (
+                            <Image
+                              source={logoSource}
+                              style={[styles.vehicleImage, { backgroundColor: theme.colors.elevated }]}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <View style={[styles.vehicleIcon, { backgroundColor: theme.colors.elevated }]}>
+                              <IconSymbol
+                                ios_icon_name="car.fill"
+                                android_material_icon_name="directions-car"
+                                size={24}
+                                color={theme.colors.accent}
+                              />
+                            </View>
+                          )}
+                          <View style={styles.vehicleInfo}>
+                            <Text style={[styles.vehiclePlate, { color: theme.colors.text }]}>
+                              {vehicle.vehicle.licensePlate}
+                            </Text>
+                            <Text style={[styles.vehicleName, { color: theme.colors.textMuted }]}>
+                              {vehicle.vehicle.brand} {vehicle.vehicle.model}
+                            </Text>
+                          </View>
+                        </>
+                      );
+                    })()}
+                  </View>
                   <Text style={[styles.serviceType, { color: theme.colors.text }]}>
                     Service: {getServiceTypeLabel(vehicle.serviceType)}
                   </Text>
@@ -562,6 +605,27 @@ const styles = StyleSheet.create({
   },
   vehicleItem: {
     paddingVertical: 8,
+  },
+  vehicleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  vehicleImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  vehicleIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vehicleInfo: {
+    flex: 1,
   },
   vehiclePlate: {
     fontSize: 16,

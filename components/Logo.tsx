@@ -43,9 +43,12 @@ export const Logo: React.FC<LogoProps> = ({
   const { theme, mode } = useTheme();
   const systemColorScheme = useColorScheme();
   const logoSize = sizeMap[size];
+  // En mode light, toujours utiliser logo_LMV.png (noir)
+  // En mode dark ou trueBlack, utiliser logo_LMV_blanc.png (blanc)
+  // Ne pas utiliser systemColorScheme pour éviter les conflits avec le mode choisi dans l'app
   const isDark =
     !forceStaticColors &&
-    (mode === 'dark' || mode === 'trueBlack' || systemColorScheme === 'dark');
+    (mode === 'dark' || mode === 'trueBlack');
 
   const logoImage = (
     <Image

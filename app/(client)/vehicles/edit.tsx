@@ -13,7 +13,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Constants from 'expo-constants';
 import { commonStyles } from '@/styles/commonStyles';
 import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/databaseService';
@@ -21,6 +20,7 @@ import { Vehicle, WashRequest } from '@/types';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useWebAnimations } from '@/hooks/useWebAnimations';
+import { getBrandLogo, normalizeBrandNameForStorage } from '@/utils/brandLogoMapper';
 
 export default function EditVehicleScreen() {
   const router = useRouter();
@@ -199,29 +199,20 @@ export default function EditVehicleScreen() {
     }
 
     try {
-      // Récupérer le CLIENT_ID Brandfetch depuis les variables d'environnement
-      const brandfetchClientId = Constants.expoConfig?.extra?.brandfetchClientId || 
-                                process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID;
+      // Utiliser les logos locaux depuis assets/optimized
+      const logo = getBrandLogo(brandName);
       
-      if (!brandfetchClientId) {
-        console.warn('⚠️ BRANDFETCH_CLIENT_ID non configurée');
+      if (logo) {
+        // Utiliser la fonction centralisée pour normaliser le nom de marque
+        const storageId = normalizeBrandNameForStorage(brandName);
+        console.log('🖼️ Logo local trouvé pour:', brandName, '->', storageId);
+        return storageId;
+      } else {
+        console.warn('⚠️ Logo local non trouvé pour:', brandName);
         return undefined;
       }
-
-      // Normaliser le nom de la marque (minuscules, sans espaces)
-      const normalizedBrand = brandName.toLowerCase().replace(/\s+/g, '');
-      
-      // Construire l'URL Brandfetch selon la documentation
-      const brandfetchUrl = `https://cdn.brandfetch.io/${normalizedBrand}.com/w/400/h/400/type/icon/fallback/transparent?c=${brandfetchClientId}`;
-      
-      console.log('🖼️ Récupération du logo Brandfetch pour:', brandName);
-      console.log('🌐 URL:', brandfetchUrl.replace(brandfetchClientId, '[CLIENT_ID_MASQUÉ]'));
-      
-      // Retourner l'URL directement - React Native Image gérera les erreurs avec onError
-      console.log('✅ URL du logo Brandfetch générée');
-      return brandfetchUrl;
     } catch (error: any) {
-      console.warn('⚠️ Erreur lors de la génération de l\'URL Brandfetch:', error.message);
+      console.warn('⚠️ Erreur lors de la récupération du logo local:', error.message);
       return undefined;
     }
   };
