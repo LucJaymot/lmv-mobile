@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { commonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContextSupabase';
@@ -241,7 +241,7 @@ export default function AddVehicleScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -249,21 +249,26 @@ export default function AddVehicleScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Plaque d&apos;immatriculation *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Plaque d&apos;immatriculation *</Text>
           <TextInput
             style={[
               commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: licensePlateError ? theme.colors.error : theme.colors.border,
+                color: theme.colors.text,
+              },
               licensePlateError && styles.inputError
             ]}
             placeholder="XXXX-XX-XX"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={licensePlate}
             onChangeText={handleLicensePlateChange}
             autoCapitalize="characters"
             maxLength={10}
           />
           {licensePlateError ? (
-            <Text style={styles.errorText}>{licensePlateError}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{licensePlateError}</Text>
           ) : null}
         </View>
 
@@ -296,14 +301,19 @@ export default function AddVehicleScreen() {
         {showManualEntry && (
           <>
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Marque *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Marque *</Text>
           <TextInput
             style={[
               commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: brandError ? theme.colors.error : theme.colors.border,
+                color: theme.colors.text,
+              },
               brandError && styles.inputError
             ]}
             placeholder="Renault"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={brand}
             onChangeText={(text) => {
               setBrand(text);
@@ -311,19 +321,24 @@ export default function AddVehicleScreen() {
             }}
           />
           {brandError ? (
-            <Text style={styles.errorText}>{brandError}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{brandError}</Text>
           ) : null}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Modèle *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Modèle *</Text>
           <TextInput
             style={[
               commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: modelError ? theme.colors.error : theme.colors.border,
+                color: theme.colors.text,
+              },
               modelError && styles.inputError
             ]}
             placeholder="Clio"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={model}
             onChangeText={(text) => {
               setModel(text);
@@ -331,19 +346,24 @@ export default function AddVehicleScreen() {
             }}
           />
           {modelError ? (
-            <Text style={styles.errorText}>{modelError}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{modelError}</Text>
           ) : null}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Type *</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Type *</Text>
           <TextInput
             style={[
               commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: typeError ? theme.colors.error : theme.colors.border,
+                color: theme.colors.text,
+              },
               typeError && styles.inputError
             ]}
             placeholder="Berline"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={type}
             onChangeText={(text) => {
               setType(text);
@@ -351,16 +371,23 @@ export default function AddVehicleScreen() {
             }}
           />
           {typeError ? (
-            <Text style={styles.errorText}>{typeError}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{typeError}</Text>
           ) : null}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={commonStyles.inputLabel}>Année</Text>
+          <Text style={[commonStyles.inputLabel, { color: theme.colors.text }]}>Année</Text>
           <TextInput
-            style={commonStyles.input}
+            style={[
+              commonStyles.input,
+              {
+                backgroundColor: theme.colors.elevated,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              }
+            ]}
             placeholder="2024"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.colors.textMuted}
             value={year}
             onChangeText={setYear}
             keyboardType="numeric"
@@ -388,7 +415,6 @@ export default function AddVehicleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: 20,
@@ -397,7 +423,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   searchButton: {
-    backgroundColor: colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -433,11 +458,9 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   inputError: {
-    borderColor: colors.error,
     borderWidth: 1,
   },
   errorText: {
-    color: colors.error,
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,

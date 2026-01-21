@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ export default function ClientDashboardScreen() {
   const { theme } = useTheme();
   const [recentWashes, setRecentWashes] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const lastLoadTimeRef = useRef<number>(0);
 
   const loadWashRequests = async () => {
     if (!clientCompany) {
@@ -60,6 +61,7 @@ export default function ClientDashboardScreen() {
         .map(req => ({ ...req, provider: req.provider || undefined })) as WashRequest[];
 
       setRecentWashes(pendingWashes);
+      lastLoadTimeRef.current = Date.now();
     } catch (error: any) {
       console.error('Erreur lors du chargement des demandes:', error);
     } finally {
@@ -72,10 +74,14 @@ export default function ClientDashboardScreen() {
     loadWashRequests();
   }, [clientCompany]);
 
-  // Recharger quand on revient sur la page
+  // Recharger quand on revient sur la page (avec cache de 30s)
   useFocusEffect(
     React.useCallback(() => {
-      loadWashRequests();
+      const now = Date.now();
+      // Ne recharger que si les données ont plus de 30 secondes
+      if (now - lastLoadTimeRef.current > 30000) {
+        loadWashRequests();
+      }
     }, [clientCompany])
   );
 
@@ -221,9 +227,9 @@ export default function ClientDashboardScreen() {
                         ios_icon_name="car.fill"
                         android_material_icon_name="directions-car"
                         size={16}
-                        color={theme.colors.accent}
+                        color={theme.colors.text}
                       />
-                      <Text style={[styles.serviceTypeText, { color: theme.colors.accent }]}>
+                      <Text style={[styles.serviceTypeText, { color: theme.colors.text }]}>
                         {getServiceTypesForRequest(wash)}
                       </Text>
                     </View>

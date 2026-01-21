@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ export default function RequestsScreen() {
   const [selectedStatus, setSelectedStatus] = useState<WashRequestStatus | 'all'>('all');
   const [requests, setRequests] = useState<WashRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const lastLoadTimeRef = useRef<number>(0);
 
   const loadRequests = async () => {
     if (!clientCompany) {
@@ -59,6 +60,7 @@ export default function RequestsScreen() {
       );
 
       setRequests(requestsWithProviders);
+      lastLoadTimeRef.current = Date.now();
     } catch (error: any) {
       console.error('Erreur lors du chargement des demandes:', error);
     } finally {
@@ -72,7 +74,11 @@ export default function RequestsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadRequests();
+      const now = Date.now();
+      // Ne recharger que si les données ont plus de 30 secondes
+      if (now - lastLoadTimeRef.current > 30000) {
+        loadRequests();
+      }
     }, [clientCompany])
   );
 

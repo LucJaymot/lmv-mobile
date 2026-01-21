@@ -324,11 +324,11 @@ export default function RequestDetailScreen() {
                 ios_icon_name="location.fill"
                 android_material_icon_name="location-on"
                 size={20}
-                color={theme.colors.accent}
+                color={theme.colors.textMuted}
               />
               <View style={styles.detailContent}>
                 <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Lieu</Text>
-                <Text style={[styles.detailValue, styles.clickableAddress, { color: theme.colors.accent }]}>{washRequest.address}</Text>
+                <Text style={[styles.detailValue, styles.clickableAddress, { color: theme.colors.text }]}>{washRequest.address}</Text>
               </View>
             </TouchableOpacity>
             <View style={[styles.detailRow, { borderBottomColor: theme.colors.border }]}>
@@ -381,7 +381,7 @@ export default function RequestDetailScreen() {
                       {vehicle.vehicle.brand} {vehicle.vehicle.model}
                     </Text>
                   )}
-                  <Text style={[styles.serviceType, { color: theme.colors.accent }]}>
+                  <Text style={[styles.serviceType, { color: theme.colors.text }]}>
                     Service: {getServiceTypeLabel(vehicle.serviceType)}
                   </Text>
                 </View>

@@ -216,17 +216,33 @@ export default function FloatingTabBar({
                   activeOpacity={0.7}
                 >
                   <View key={index} style={styles.tabContent}>
+                    {/*
+                     * Sur web en dark mode, on veut l'onglet actif en blanc (et non en bleu "primary")
+                     * pour un meilleur contraste dans la barre menu.
+                     */}
+                    {(() => {
+                      const inactiveColor = theme.dark ? '#98989D' : '#000000';
+                      const activeColor =
+                        Platform.OS === 'web' && theme.dark ? theme.colors.text : theme.colors.primary;
+
+                      return (
                     <IconSymbol
                       android_material_icon_name={androidIcon}
                       ios_icon_name={iosIcon}
                       size={24}
-                      color={isActive ? theme.colors.primary : (theme.dark ? '#98989D' : '#000000')}
+                          color={isActive ? activeColor : inactiveColor}
                     />
+                      );
+                    })()}
                     <Text
                       style={[
                         styles.tabLabel,
                         { color: theme.dark ? '#98989D' : '#8E8E93' },
-                        isActive && { color: theme.colors.primary, fontWeight: '600' },
+                        isActive && {
+                          color:
+                            Platform.OS === 'web' && theme.dark ? theme.colors.text : theme.colors.primary,
+                          fontWeight: '600',
+                        },
                       ]}
                     >
                       {tab.label}

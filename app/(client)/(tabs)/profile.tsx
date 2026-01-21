@@ -227,7 +227,7 @@ export default function ClientProfileScreen() {
               ios_icon_name="pencil"
               android_material_icon_name="edit"
               size={20}
-              color={theme.colors.accent}
+              color={theme.colors.textMuted}
             />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>Modifier le profil</Text>
             <IconSymbol
@@ -245,7 +245,7 @@ export default function ClientProfileScreen() {
               ios_icon_name="bell.fill"
               android_material_icon_name="notifications"
               size={20}
-              color={theme.colors.accent}
+              color={theme.colors.textMuted}
             />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>Notifications</Text>
             <IconSymbol
@@ -263,7 +263,7 @@ export default function ClientProfileScreen() {
               ios_icon_name="doc.text.fill"
               android_material_icon_name="description"
               size={20}
-              color={theme.colors.accent}
+              color={theme.colors.textMuted}
             />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>Factures</Text>
             <IconSymbol
@@ -278,7 +278,7 @@ export default function ClientProfileScreen() {
               ios_icon_name={isDarkMode ? "moon.fill" : "sun.max.fill"}
               android_material_icon_name={isDarkMode ? "dark-mode" : "light-mode"}
               size={20}
-              color={theme.colors.accent}
+              color={theme.colors.textMuted}
             />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>
               {isDarkMode ? 'Dark mode' : 'Light mode'}

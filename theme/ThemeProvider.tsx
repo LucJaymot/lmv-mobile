@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Theme, ThemeMode, defaultTheme, trueBlackTheme, lightTheme, darkTheme } from './theme';
 
@@ -81,6 +81,24 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
   };
 
   const theme = getTheme();
+
+  // Sur web, éviter le "vert" par défaut des inputs checkbox/switch en forçant l'accent-color
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const styleId = 'rnw-accent-color';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    styleElement.textContent = `
+      input[type="checkbox"] { accent-color: ${theme.colors.accent} !important; }
+      input[type="checkbox"].react-native-switch-input { accent-color: ${theme.colors.accent} !important; }
+    `;
+  }, [theme.colors.accent]);
 
   // Ne pas rendre les enfants tant que le thème n'est pas chargé
   if (!isLoaded) {

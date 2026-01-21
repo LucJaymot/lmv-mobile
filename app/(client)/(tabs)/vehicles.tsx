@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,8 @@ export default function VehiclesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [userMessage, setUserMessage] = useState<{ title: string; body: string } | null>(null);
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastLoadTimeRef = useRef<number>(0);
 
   const loadVehicles = async () => {
     if (!clientCompany) {
@@ -41,6 +43,7 @@ export default function VehiclesScreen() {
       const vehiclesData = await vehicleService.getByClientCompanyId(clientCompany.id);
       console.log('Véhicules chargés:', vehiclesData.length);
       setVehicles(vehiclesData);
+      lastLoadTimeRef.current = Date.now();
     } catch (error: any) {
       console.error('Erreur lors du chargement des véhicules:', error);
       Alert.alert('Erreur', 'Impossible de charger les véhicules');
@@ -52,12 +55,24 @@ export default function VehiclesScreen() {
   // Charger les véhicules au montage du composant
   useEffect(() => {
     loadVehicles();
+    
+    // Nettoyer le timeout lors du démontage
+    return () => {
+      if (messageTimeoutRef.current) {
+        clearTimeout(messageTimeoutRef.current);
+        messageTimeoutRef.current = null;
+      }
+    };
   }, [clientCompany]);
 
-  // Recharger les véhicules quand on revient sur la page
+  // Recharger les véhicules quand on revient sur la page (avec cache de 30s)
   useFocusEffect(
     React.useCallback(() => {
-      loadVehicles();
+      const now = Date.now();
+      // Ne recharger que si les données ont plus de 30 secondes
+      if (now - lastLoadTimeRef.current > 30000) {
+        loadVehicles();
+      }
     }, [clientCompany])
   );
 
@@ -89,8 +104,15 @@ export default function VehiclesScreen() {
 
           // Bannière in-app (fiable sur web et mobile)
           setUserMessage({ title, body });
+          // Nettoyer le timeout précédent s'il existe
+          if (messageTimeoutRef.current) {
+            clearTimeout(messageTimeoutRef.current);
+          }
           // Auto-hide après 6s
-          setTimeout(() => setUserMessage(null), 6000);
+          messageTimeoutRef.current = setTimeout(() => {
+            setUserMessage(null);
+            messageTimeoutRef.current = null;
+          }, 6000);
 
           // Alert en plus (utile sur mobile)
           if (Platform.OS !== 'web') {
@@ -145,20 +167,21 @@ export default function VehiclesScreen() {
           onPress={() => router.push('/(client)/vehicles/add')}
           style={{
             ...styles.addButton,
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.elevated,
             borderColor: theme.colors.border,
+            borderWidth: 1.5,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
+            shadowOpacity: 0.1,
             shadowRadius: 4,
-            elevation: 2,
+            elevation: 3,
           }}
         >
           <IconSymbol
             ios_icon_name="plus"
             android_material_icon_name="add"
             size={22}
-            color={theme.colors.accent}
+            color={theme.colors.text}
           />
         </Button>
       </View>
@@ -234,9 +257,9 @@ export default function VehiclesScreen() {
                       ios_icon_name="pencil"
                       android_material_icon_name="edit"
                       size={20}
-                      color={theme.colors.accent}
+                      color={theme.colors.text}
                     />
-                    <Text style={[styles.actionButtonText, { color: theme.colors.accent }]}>Modifier</Text>
+                    <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Modifier</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.actionButton}
