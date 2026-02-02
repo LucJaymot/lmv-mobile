@@ -143,6 +143,11 @@ export default function FloatingTabBar({
     };
   });
 
+  // Calculate indicator border radius to match container
+  // Container has borderRadius, indicator has top: 4 and bottom: 4
+  // So indicator borderRadius should be container borderRadius - vertical padding
+  const indicatorBorderRadius = borderRadius - 4;
+
   // Dynamic styles based on theme
   const dynamicStyles = {
     blurContainer: {
@@ -177,6 +182,7 @@ export default function FloatingTabBar({
         ? 'rgba(255, 255, 255, 0.08)' // Subtle white overlay in dark mode
         : 'rgba(0, 0, 0, 0.04)', // Subtle black overlay in light mode
       width: `${tabWidthPercent}%` as `${number}%`, // Dynamic width based on number of tabs
+      borderRadius: indicatorBorderRadius, // Match container borderRadius minus vertical padding
     },
   };
 
@@ -286,7 +292,7 @@ const styles = StyleSheet.create({
     top: 4,
     left: 2,
     bottom: 4,
-    borderRadius: 27,
+    // borderRadius will be set dynamically to match container
     width: `${(100 / 2) - 1}%`, // Default for 2 tabs, will be overridden by dynamic styles
     // Dynamic styling applied in component
   },

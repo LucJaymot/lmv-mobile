@@ -6,7 +6,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useColorScheme, Alert } from "react-native";
+import { useColorScheme, Alert, LogBox } from "react-native";
 import { useNetworkState } from "expo-network";
 import {
   DarkTheme,
@@ -22,6 +22,9 @@ import { preloadAllImages } from "@/utils/imagePreloader";
 import { brandLogos } from "@/utils/brandLogoMapper";
 
 SplashScreen.preventAutoHideAsync();
+
+// Ne pas afficher l'écran d'erreur rouge pour les échecs réseau (mobile hors ligne / même Wi‑Fi)
+LogBox.ignoreLogs(["Network request failed", "TypeError: Network request failed"]);
 
 export const unstable_settings = {
   initialRouteName: "auth",

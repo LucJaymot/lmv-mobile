@@ -132,6 +132,37 @@ export default function RequestsScreen() {
     }).format(date);
   };
 
+  const getServiceTypeLabel = (serviceType: string) => {
+    switch (serviceType) {
+      case 'exterior':
+        return 'Extérieur';
+      case 'interior':
+        return 'Intérieur';
+      case 'complete':
+        return 'Complet';
+      default:
+        return serviceType;
+    }
+  };
+
+  const getServiceTypesForRequest = (request: WashRequest): string => {
+    if (!request.vehicles || request.vehicles.length === 0) {
+      return 'Aucun véhicule';
+    }
+    
+    // Récupérer tous les types de service uniques
+    const serviceTypes = request.vehicles.map(v => v.serviceType);
+    const uniqueServiceTypes = [...new Set(serviceTypes)];
+    
+    // Si tous les véhicules ont le même type de service, afficher une seule fois
+    if (uniqueServiceTypes.length === 1) {
+      return getServiceTypeLabel(uniqueServiceTypes[0]);
+    }
+    
+    // Sinon, afficher tous les types séparés par des virgules
+    return uniqueServiceTypes.map(st => getServiceTypeLabel(st)).join(', ');
+  };
+
   const statusFilters: { value: WashRequestStatus | 'all'; label: string }[] = [
     { value: 'all', label: 'Tous' },
     { value: 'pending', label: 'En attente' },
@@ -233,6 +264,22 @@ export default function RequestsScreen() {
                     />
                     <Text style={[styles.requestAddress, { color: theme.colors.textMuted }]}>{request.address}</Text>
                   </View>
+                  {request.vehicles && request.vehicles.length > 0 && (
+                    <View style={[styles.serviceTypeContainer, { borderTopColor: theme.colors.border }]}>
+                      <IconSymbol
+                        ios_icon_name="car.fill"
+                        android_material_icon_name="directions-car"
+                        size={16}
+                        color={theme.colors.text}
+                      />
+                      <Text style={[styles.serviceTypeText, { color: theme.colors.text }]}>
+                        {getServiceTypesForRequest(request)}
+                      </Text>
+                      <Text style={[styles.vehicleCount, { color: theme.colors.textMuted }]}>
+                        ({request.vehicles.length} {request.vehicles.length === 1 ? 'véhicule' : 'véhicules'})
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               ))}
             </React.Fragment>
@@ -322,6 +369,22 @@ const styles = StyleSheet.create({
   requestAddress: {
     fontSize: 14,
     flex: 1,
+  },
+  serviceTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+  },
+  serviceTypeText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  vehicleCount: {
+    fontSize: 13,
+    marginLeft: 4,
   },
   emptyState: {
     alignItems: 'center',

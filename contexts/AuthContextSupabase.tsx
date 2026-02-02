@@ -36,6 +36,13 @@ const CACHE_DURATION_MS = 5 * 60 * 1000;
 // Timeout adapté selon la plateforme (plus long sur web)
 const PROFILE_LOAD_TIMEOUT_MS = Platform.OS === 'web' ? 30000 : 15000;
 
+/** Détecte une erreur réseau (requête impossible depuis le device/simulateur) */
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError && error.message === 'Network request failed') return true;
+  if (error && typeof error === 'object' && 'message' in error && String((error as Error).message) === 'Network request failed') return true;
+  return false;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [clientCompany, setClientCompany] = useState<ClientCompany | null>(null);
@@ -77,10 +84,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isLoadingProfileRef.current = true;
           await loadUserProfile(session.user.id);
         } catch (error) {
-          console.error('❌ Erreur lors du chargement du profil dans onAuthStateChange:', error);
-          // Ne pas réinitialiser si la session existe toujours - juste logger l'erreur
-          // La session Supabase est toujours valide, donc on ne doit pas déconnecter l'utilisateur
-          console.warn('⚠️ Erreur lors du chargement du profil, mais session toujours valide');
+          if (isNetworkError(error)) {
+            console.warn('⚠️ Réseau indisponible - profil non chargé. Vérifiez la connexion.');
+          } else {
+            console.error('❌ Erreur lors du chargement du profil dans onAuthStateChange:', error);
+          }
         } finally {
           isLoadingProfileRef.current = false;
         }
@@ -155,7 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      if (isNetworkError(error)) {
+        console.warn('⚠️ Pas de connexion réseau. Vérifiez le Wi‑Fi ou les données mobiles (même réseau que le PC en dev).');
+      } else {
+        console.error('Error checking auth status:', error);
+      }
       setIsLoading(false);
     }
   };
@@ -322,7 +334,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('❌ Error loading user profile:', error);
+      if (isNetworkError(error)) {
+        console.warn('⚠️ Réseau indisponible - profil non chargé.');
+      } else {
+        console.error('❌ Error loading user profile:', error);
+      }
       
       // En cas d'erreur, essayer de charger depuis le cache/fallback
       try {
@@ -334,7 +350,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(parsed.user);
             if (parsed.clientCompany) setClientCompany(parsed.clientCompany);
             if (parsed.provider) setProvider(parsed.provider);
-            // Ne pas throw l'erreur si on a réussi à charger depuis le cache
             return;
           }
         }
@@ -342,7 +357,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('⚠️ Impossible de charger depuis le fallback:', fallbackError);
       }
       
-      throw error;
+      // Ne pas relancer les erreurs réseau pour éviter l'affichage rouge
+      if (!isNetworkError(error)) throw error;
     }
   };
 

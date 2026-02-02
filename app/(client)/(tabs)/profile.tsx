@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { useTheme } from '@/theme/hooks';
 import { IconSymbol } from '@/components/IconSymbol';
 import { pickImage, uploadAvatar } from '@/services/storageService';
+import { supabase } from '@/lib/supabase';
 import { useWebAnimations } from '@/hooks/useWebAnimations';
 
 export default function ClientProfileScreen() {
@@ -27,7 +28,198 @@ export default function ClientProfileScreen() {
   const { theme, mode, setMode } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(null);
   const { getDataAttribute } = useWebAnimations('profile');
+
+  const isNetworkError = (e: unknown) =>
+    e instanceof TypeError && e.message === 'Network request failed';
+  
+  // Debug: Afficher les données du clientCompany
+  useEffect(() => {
+    console.log('🔍 ===== DEBUG CLIENT COMPANY =====');
+    console.log('🔍 clientCompany complet:', JSON.stringify(clientCompany, null, 2));
+    console.log('🔍 clientCompany existe?', !!clientCompany);
+    console.log('🔍 avatarUrl:', clientCompany?.avatarUrl);
+    console.log('🔍 avatarUrl est défini?', clientCompany?.avatarUrl !== undefined);
+    console.log('🔍 avatarUrl est null?', clientCompany?.avatarUrl === null);
+    console.log('🔍 avatarUrl est vide?', clientCompany?.avatarUrl === '');
+    console.log('🔍 Type avatarUrl:', typeof clientCompany?.avatarUrl);
+    if (clientCompany?.avatarUrl) {
+      console.log('🔍 Longueur avatarUrl:', clientCompany.avatarUrl.length);
+      console.log('🔍 Premiers caractères:', clientCompany.avatarUrl.substring(0, 50));
+      console.log('🔍 Derniers caractères:', clientCompany.avatarUrl.substring(Math.max(0, clientCompany.avatarUrl.length - 50)));
+      console.log('🔍 Commence par http?', clientCompany.avatarUrl.startsWith('http'));
+      console.log('🔍 Contient "supabase"?', clientCompany.avatarUrl.includes('supabase'));
+    }
+    console.log('🔍 user:', user);
+    console.log('🔍 ===============================');
+  }, [clientCompany, user]);
+  
+  // Fonction pour obtenir l'URL de l'avatar (régénère si nécessaire)
+  const getAvatarUrl = async (avatarUrl: string | undefined): Promise<string | null> => {
+    console.log('🔧 ===== getAvatarUrl APPELÉ =====');
+    console.log('🔧 Paramètre avatarUrl:', avatarUrl);
+    console.log('🔧 Type:', typeof avatarUrl);
+    console.log('🔧 Est undefined?', avatarUrl === undefined);
+    console.log('🔧 Est null?', avatarUrl === null);
+    console.log('🔧 Est vide?', avatarUrl === '');
+    
+    if (!avatarUrl) {
+      console.log('❌ getAvatarUrl: avatarUrl est undefined, null ou vide');
+      console.log('🔧 ===============================');
+      return null;
+    }
+    
+    console.log('🔧 avatarUrl valide, longueur:', avatarUrl.length);
+    console.log('🔧 Contenu complet:', avatarUrl);
+    
+    // Nettoyer l'URL si elle contient une URL blob locale concaténée
+    // Format problématique: ...blob:http://localhost:8081/...
+    let cleanedUrl = avatarUrl;
+    let needsCleaning = cleanedUrl.includes('.blob:http://') || cleanedUrl.includes('.blob:https://');
+    
+    if (needsCleaning) {
+      console.log('🧹 Nettoyage de l\'URL - détection de blob local');
+      
+      // Extraire le userId depuis l'URL
+      const userIdMatch = cleanedUrl.match(/\/avatars\/([^\/]+)\//);
+      if (userIdMatch && userIdMatch[1]) {
+        const userId = userIdMatch[1];
+        console.log('🧹 userId extrait:', userId);
+        
+        // Essayer de trouver le fichier réel en listant les fichiers dans le dossier
+        try {
+          const { data: files, error: listError } = await supabase.storage
+            .from('avatars')
+            .list(userId);
+          
+          if (!listError && files && files.length > 0) {
+            console.log('📁 Fichiers trouvés dans le dossier:', files.map(f => f.name));
+            
+            // Trier les fichiers par date de modification (le plus récent en premier)
+            // et filtrer pour ne garder que ceux qui ont une extension d'image valide
+            const imageFiles = files
+              .filter(file => {
+                // Vérifier si le fichier a une extension d'image valide
+                // Même si le nom contient .blob, on peut quand même l'utiliser
+                const hasImageExt = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+                return hasImageExt;
+              })
+              .sort((a, b) => {
+                // Trier par date de modification (le plus récent en premier)
+                const dateA = a.updated_at || a.created_at || '';
+                const dateB = b.updated_at || b.created_at || '';
+                return dateB.localeCompare(dateA);
+              });
+            
+            if (imageFiles.length > 0) {
+              // Utiliser le fichier le plus récent
+              const mostRecentFile = imageFiles[0];
+              const correctPath = `${userId}/${mostRecentFile.name}`;
+              console.log('✅ Utilisation du fichier image le plus récent:', mostRecentFile.name);
+              console.log('✅ Chemin complet:', correctPath);
+              
+              const { data: urlData } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(correctPath);
+              
+              if (urlData?.publicUrl) {
+                console.log('✅ URL publique générée:', urlData.publicUrl);
+                cleanedUrl = urlData.publicUrl;
+              } else {
+                console.error('❌ Impossible de générer l\'URL publique pour:', correctPath);
+              }
+            } else {
+              console.warn('⚠️ Aucun fichier image trouvé dans le dossier');
+            }
+          } else if (listError) {
+            console.error('❌ Erreur lors de la liste des fichiers:', listError);
+          }
+        } catch (listError) {
+          if (isNetworkError(listError)) return null;
+          console.warn('⚠️ Exception lors de la liste des fichiers:', listError);
+        }
+      }
+    }
+    
+    // Si l'URL est déjà une URL complète (commence par http), l'utiliser telle quelle
+    // MAIS seulement si elle ne contient pas de blob local
+    if ((cleanedUrl.startsWith('http://') || cleanedUrl.startsWith('https://')) && 
+        !cleanedUrl.includes('.blob:http://') && !cleanedUrl.includes('.blob:https://')) {
+      console.log('✅ URL complète et valide détectée, utilisation directe');
+      console.log('🔧 URL retournée:', cleanedUrl);
+      console.log('🔧 ===============================');
+      return cleanedUrl;
+    }
+    
+    // Si l'URL contient encore du blob local après nettoyage, retourner null
+    if (cleanedUrl.includes('.blob:http://') || cleanedUrl.includes('.blob:https://')) {
+      console.error('❌ URL contient encore du blob local après nettoyage:', cleanedUrl);
+      return null;
+    }
+    
+    // Sinon, essayer de régénérer l'URL depuis le chemin
+    // Le format devrait être: userId/filename.jpg
+    console.log('🔄 Tentative de régénération de l\'URL depuis le chemin');
+    console.log('🔄 Chemin fourni:', avatarUrl);
+    console.log('🔄 Supabase client existe?', !!supabase);
+    console.log('🔄 Supabase storage existe?', !!supabase.storage);
+    
+    try {
+      const result = supabase.storage
+        .from('avatars')
+        .getPublicUrl(avatarUrl);
+      
+      console.log('🔄 Résultat getPublicUrl:', result);
+      console.log('🔄 result.data:', result.data);
+      console.log('🔄 result.data?.publicUrl:', result.data?.publicUrl);
+      
+      if (result.data?.publicUrl) {
+        console.log('✅ URL régénérée avec succès');
+        console.log('✅ URL originale:', avatarUrl);
+        console.log('✅ URL régénérée:', result.data.publicUrl);
+        console.log('🔧 ===============================');
+        return result.data.publicUrl;
+      }
+      
+      // Si getPublicUrl ne retourne pas d'URL, retourner l'URL originale
+      console.warn('⚠️ getPublicUrl n\'a pas retourné d\'URL');
+      console.warn('⚠️ Retour de l\'URL originale:', avatarUrl);
+      console.log('🔧 ===============================');
+      return avatarUrl;
+    } catch (error) {
+      if (isNetworkError(error)) return null;
+      console.error('❌ Exception lors de la génération de l\'URL');
+      console.error('❌ Erreur:', error);
+      console.error('❌ Type erreur:', typeof error);
+      console.error('❌ Message:', (error as any)?.message);
+      console.error('❌ Stack:', (error as any)?.stack);
+      console.log('🔧 Retour de l\'URL originale:', avatarUrl);
+      console.log('🔧 ===============================');
+      return avatarUrl;
+    }
+  };
+  
+  // Réinitialiser l'erreur d'avatar et résoudre l'URL quand l'URL change
+  useEffect(() => {
+    if (clientCompany?.avatarUrl) {
+      setAvatarError(false);
+      getAvatarUrl(clientCompany.avatarUrl).then((finalUrl) => {
+        console.log('🖼️ ===== DEBUG AVATAR =====');
+        console.log('🖼️ Avatar URL depuis DB:', clientCompany.avatarUrl);
+        console.log('🖼️ Type:', typeof clientCompany.avatarUrl);
+        console.log('🖼️ Longueur:', clientCompany.avatarUrl?.length);
+        console.log('🖼️ Avatar URL finale:', finalUrl);
+        console.log('🖼️ ========================');
+        setResolvedAvatarUrl(finalUrl);
+      });
+    } else {
+      console.log('⚠️ Pas d\'avatarUrl dans clientCompany');
+      console.log('⚠️ clientCompany:', clientCompany);
+      setResolvedAvatarUrl(null);
+    }
+  }, [clientCompany?.avatarUrl]);
   
   // Basculer entre light et dark mode
   const isDarkMode = mode === 'dark' || mode === 'trueBlack';
@@ -54,6 +246,9 @@ export default function ClientProfileScreen() {
       
       // Mettre à jour le profil avec la nouvelle URL
       await updateProfile({ avatarUrl });
+      
+      // Réinitialiser l'erreur d'avatar
+      setAvatarError(false);
       
       Alert.alert('Succès', 'Photo de profil mise à jour avec succès');
     } catch (error: any) {
@@ -137,19 +332,98 @@ export default function ClientProfileScreen() {
           >
             {isUploadingAvatar ? (
               <ActivityIndicator size="large" color={theme.colors.accent} />
-            ) : clientCompany?.avatarUrl ? (
-              <Image
-                source={{ uri: clientCompany.avatarUrl }}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <IconSymbol
-                ios_icon_name="building.2.fill"
-                android_material_icon_name="business"
-                size={48}
-                color={theme.colors.accent}
-              />
-            )}
+            ) : (() => {
+              console.log('🎨 ===== RENDU AVATAR =====');
+              console.log('🎨 clientCompany existe?', !!clientCompany);
+              console.log('🎨 clientCompany?.avatarUrl:', clientCompany?.avatarUrl);
+              console.log('🎨 avatarError:', avatarError);
+              
+              const avatarUrl = resolvedAvatarUrl;
+              console.log('🎨 avatarUrl résolue:', avatarUrl);
+              console.log('🎨 avatarUrl est truthy?', !!avatarUrl);
+              console.log('🎨 Condition (avatarUrl && !avatarError):', !!(avatarUrl && !avatarError));
+              
+              if (avatarUrl && !avatarError) {
+                console.log('🎨 Affichage de l\'image');
+                console.log('🎨 URL utilisée:', avatarUrl);
+                
+                // Test de l'URL dans le navigateur (web uniquement)
+                if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                  console.log('🌐 ===== TEST URL ACCESSIBILITÉ =====');
+                  console.log('🌐 URL à tester:', avatarUrl);
+                  // Tester si l'URL est accessible
+                  fetch(avatarUrl, { method: 'HEAD', mode: 'no-cors' })
+                    .then((response) => {
+                      console.log('🌐 Réponse fetch (mode no-cors):', response);
+                    })
+                    .catch((error) => {
+                      console.error('🌐 Erreur fetch (mode no-cors):', error);
+                    });
+                  
+                  // Test avec mode cors
+                  fetch(avatarUrl, { method: 'HEAD' })
+                    .then((response) => {
+                      console.log('🌐 Réponse fetch (mode cors):', response);
+                      console.log('🌐 Status:', response.status);
+                      console.log('🌐 OK?', response.ok);
+                      if (response.ok) {
+                        console.log('✅ URL accessible (status:', response.status, ')');
+                      } else {
+                        console.error('❌ URL non accessible (status:', response.status, ')');
+                        console.error('❌ Status text:', response.statusText);
+                      }
+                    })
+                    .catch((error) => {
+                      console.error('❌ Erreur lors du test de l\'URL:', error);
+                      console.error('❌ Type erreur:', typeof error);
+                      console.error('❌ Message:', error.message);
+                    });
+                  console.log('🌐 ====================================');
+                }
+                
+                console.log('🎨 Création du composant Image');
+                return (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatarImage}
+                    onError={(error) => {
+                      console.error('❌ ===== ERREUR CHARGEMENT IMAGE =====');
+                      console.error('❌ Erreur complète:', error);
+                      console.error('❌ Erreur native:', error.nativeEvent);
+                      console.error('❌ Erreur native error:', error.nativeEvent?.error);
+                      console.error('❌ URL originale (DB):', clientCompany?.avatarUrl);
+                      console.error('❌ URL finale utilisée:', avatarUrl);
+                      console.error('❌ Type URL:', typeof avatarUrl);
+                      console.error('❌ ====================================');
+                      setAvatarError(true);
+                    }}
+                    onLoad={() => {
+                      console.log('✅ ===== IMAGE CHARGÉE AVEC SUCCÈS =====');
+                      console.log('✅ URL:', avatarUrl);
+                      console.log('✅ ====================================');
+                      setAvatarError(false);
+                    }}
+                    onLoadStart={() => {
+                      console.log('🔄 Début du chargement de l\'image...');
+                      console.log('🔄 URL:', avatarUrl);
+                    }}
+                    resizeMode="cover"
+                  />
+                );
+              }
+              
+              console.log('🎨 Affichage de l\'icône par défaut');
+              console.log('🎨 Raison: avatarUrl=', avatarUrl, 'avatarError=', avatarError);
+              console.log('🎨 ===============================');
+              return (
+                <IconSymbol
+                  ios_icon_name="building.2.fill"
+                  android_material_icon_name="business"
+                  size={48}
+                  color={theme.colors.accent}
+                />
+              );
+            })()}
             {!isUploadingAvatar && (
               <View style={styles.avatarOverlay}>
                 <IconSymbol

@@ -340,6 +340,9 @@ export default function ClientDashboardScreen() {
                       <Text style={[styles.serviceTypeText, { color: theme.colors.text }]}>
                         {getServiceTypesForRequest(wash)}
                       </Text>
+                      <Text style={[styles.vehicleCount, { color: theme.colors.textMuted }]}>
+                        ({wash.vehicles.length} {wash.vehicles.length === 1 ? 'véhicule' : 'véhicules'})
+                      </Text>
                     </View>
                   )}
                   {wash.status === 'completed' && (
@@ -457,6 +460,10 @@ const styles = StyleSheet.create({
   serviceTypeText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  vehicleCount: {
+    fontSize: 13,
+    marginLeft: 4,
   },
   rateButton: {
     flexDirection: 'row',

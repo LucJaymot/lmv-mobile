@@ -185,12 +185,19 @@ export const authService = {
   },
 
   /**
-   * Récupère la session actuelle
+   * Récupère la session actuelle.
+   * En cas d'erreur réseau (mobile hors ligne), retourne null au lieu de lever une exception.
    */
   async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    return session;
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return session;
+    } catch (e) {
+      const isNetworkError = e instanceof TypeError && e.message === 'Network request failed';
+      if (isNetworkError) return null;
+      throw e;
+    }
   },
 
   /**
