@@ -1,0 +1,21 @@
+# Routing SPA pour Expo / lavemavoiture.fr
+# Redirige toutes les requêtes vers index.html pour le routage côté client
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Cache des assets statiques (optionnel)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType text/css "access plus 1 month"
+</IfModule>

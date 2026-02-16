@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,8 +20,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Href } from 'expo-router';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 export interface TabBarItem {
   name: string;
@@ -47,9 +45,13 @@ interface FloatingTabBarProps {
   bottomMargin?: number;
 }
 
+// Largeur max de la barre sur web (évite qu'elle soit trop large sur grands écrans)
+const WEB_TAB_BAR_MAX_WIDTH = 480;
+const MOBILE_HORIZONTAL_PADDING = 40;
+
 export default function FloatingTabBar({
   tabs,
-  containerWidth = Platform.OS === 'web' ? screenWidth / 2 : screenWidth - 40,
+  containerWidth: propContainerWidth,
   borderRadius = 35,
   bottomMargin
 }: FloatingTabBarProps) {
@@ -57,6 +59,14 @@ export default function FloatingTabBar({
   const pathname = usePathname();
   const theme = useTheme();
   const animatedValue = useSharedValue(0);
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Responsive : sur web, adapte à la largeur avec un max ; sur mobile, pleine largeur moins padding
+  const containerWidth = (propContainerWidth != null ? propContainerWidth : (
+    Platform.OS === 'web'
+      ? Math.min(screenWidth - MOBILE_HORIZONTAL_PADDING, WEB_TAB_BAR_MAX_WIDTH)
+      : screenWidth - MOBILE_HORIZONTAL_PADDING
+  ));
 
   // Hide tab bar on modal/detail screens
   const shouldHideTabBar = React.useMemo(() => {
@@ -74,9 +84,19 @@ export default function FloatingTabBar({
     return hiddenRoutes.some(route => pathnameStr.includes(route));
   }, [pathname]);
 
+  // Routes qui appartiennent au tab Profil (ex: factures accessibles depuis Profil)
+  const profileRelatedPaths = ['/invoices'];
+
   // Improved active tab detection with better path matching
   const activeTabIndex = React.useMemo(() => {
-    // Find the best matching tab based on the current pathname
+    const pathnameStr = typeof pathname === 'string' ? pathname : String(pathname);
+
+    // Si on est sur une route liée au Profil (ex: factures), sélectionner le tab Profil
+    if (profileRelatedPaths.some(path => pathnameStr.includes(path))) {
+      const profileIndex = tabs.findIndex(tab => tab.name === 'profile');
+      if (profileIndex >= 0) return profileIndex;
+    }
+
     let bestMatch = -1;
     let bestMatchScore = 0;
 
@@ -84,20 +104,21 @@ export default function FloatingTabBar({
       let score = 0;
 
       // Exact route match gets highest score
-      if (pathname === tab.route) {
+      if (pathnameStr === String(tab.route)) {
         score = 100;
       }
       // Check if pathname starts with tab route (for nested routes)
-      else if (pathname.startsWith(tab.route as string)) {
+      else if (pathnameStr.startsWith(String(tab.route))) {
         score = 80;
       }
       // Check if pathname contains the tab name
-      else if (pathname.includes(tab.name)) {
+      else if (pathnameStr.includes(tab.name)) {
         score = 60;
       }
       // Check for partial matches in the route
-      else if (tab.route.includes('/(tabs)/') && pathname.includes(tab.route.split('/(tabs)/')[1])) {
-        score = 40;
+      else if (String(tab.route).includes('/(tabs)/')) {
+        const routePart = String(tab.route).split('/(tabs)/')[1];
+        if (routePart && pathnameStr.includes(routePart)) score = 40;
       }
 
       if (score > bestMatchScore) {
@@ -106,7 +127,6 @@ export default function FloatingTabBar({
       }
     });
 
-    // Default to first tab if no match found
     return bestMatch >= 0 ? bestMatch : 0;
   }, [pathname, tabs]);
 
@@ -126,17 +146,24 @@ export default function FloatingTabBar({
 
   // Remove unnecessary tabBarStyle animation to prevent flickering
 
-  const tabWidthPercent = ((100 / tabs.length) - 1).toFixed(2);
+  // Légèrement plus large pour combler le gap à droite sur le dernier onglet
+  const tabWidthPercent = (100 / tabs.length).toFixed(2);
+
+  // Padding asymétrique
+  const paddingLeft = 4;
+  const paddingRight = 6;
+  const extraRightOffset = 6; // Extension à droite pour que l'indicateur touche le bord sur Profil
 
   const indicatorStyle = useAnimatedStyle(() => {
-    const tabWidth = (containerWidth - 8) / tabs.length; // Account for container padding (4px on each side)
+    const tabWidth = (containerWidth - paddingLeft - paddingRight) / tabs.length;
+    const maxTranslateX = tabWidth * (tabs.length - 1) + extraRightOffset;
     return {
       transform: [
         {
           translateX: interpolate(
             animatedValue.value,
             [0, tabs.length - 1],
-            [0, tabWidth * (tabs.length - 1)]
+            [0, maxTranslateX]
           ),
         },
       ],
@@ -144,9 +171,7 @@ export default function FloatingTabBar({
   });
 
   // Calculate indicator border radius to match container
-  // Container has borderRadius, indicator has top: 4 and bottom: 4
-  // So indicator borderRadius should be container borderRadius - vertical padding
-  const indicatorBorderRadius = borderRadius - 4;
+  const indicatorBorderRadius = borderRadius - 2;
 
   // Dynamic styles based on theme
   const dynamicStyles = {
@@ -289,9 +314,9 @@ const styles = StyleSheet.create({
   },
   indicator: {
     position: 'absolute',
-    top: 4,
+    top: 2,
     left: 2,
-    bottom: 4,
+    bottom: 2,
     // borderRadius will be set dynamically to match container
     width: `${(100 / 2) - 1}%`, // Default for 2 tabs, will be overridden by dynamic styles
     // Dynamic styling applied in component
@@ -300,7 +325,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: Platform.OS === 'web' ? 60 : 68,
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingLeft: 4,
+    paddingRight: 6,
   },
   tab: {
     flex: 1,

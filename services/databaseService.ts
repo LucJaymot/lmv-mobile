@@ -37,12 +37,14 @@ export const authService = {
     console.log('Email normalisé:', normalizedEmail);
     
     // Déterminer l'URL de redirection après confirmation d'email
+    // EXPO_PUBLIC_APP_URL permet de forcer l'URL en production (ex: https://lavemavoiture.fr)
+    const appUrl = process.env.EXPO_PUBLIC_APP_URL;
     let emailRedirectTo: string | undefined;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      // Sur web, utiliser l'URL actuelle
+    if (appUrl) {
+      emailRedirectTo = `${appUrl.replace(/\/$/, '')}/auth/login`;
+    } else if (Platform.OS === 'web' && typeof window !== 'undefined') {
       emailRedirectTo = `${window.location.origin}/auth/login`;
     } else {
-      // Sur mobile, utiliser le deep link
       emailRedirectTo = 'lmv://auth/login';
     }
 
@@ -247,7 +249,10 @@ export const authService = {
     
     let emailRedirectTo: string | undefined = redirectTo;
     if (!emailRedirectTo) {
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const appUrl = process.env.EXPO_PUBLIC_APP_URL;
+      if (appUrl) {
+        emailRedirectTo = `${appUrl.replace(/\/$/, '')}/auth/login`;
+      } else if (Platform.OS === 'web' && typeof window !== 'undefined') {
         emailRedirectTo = `${window.location.origin}/auth/login`;
       } else {
         emailRedirectTo = 'lmv://auth/login';
@@ -1206,7 +1211,7 @@ export const washRequestService = {
     console.log('🔧 washRequestService.delete appelé');
     console.log('ID de la demande à supprimer:', id);
     
-    // Récupérer les informations de la demande avant suppression pour envoyer l'email
+    // Récupérer les informations de la demande avant suppression pour envoyer les emails
     const { data: requestData, error: fetchError } = await supabase
       .from('wash_requests')
       .select('id, address, date_time, provider_id, client_company_id')
@@ -1267,7 +1272,7 @@ export const washRequestService = {
             console.error('   Erreur lors de la récupération de l\'email:', emailFetchError);
           }
 
-          // Récupérer le nom du client
+          // Récupérer le nom du client (pour l'email au prestataire)
           let clientCompanyName: string | undefined;
           if (requestData.client_company_id) {
             const { data: clientData } = await supabase
@@ -1320,7 +1325,33 @@ export const washRequestService = {
         // Ne pas bloquer la suppression si l'email échoue
       }
     } else {
-      console.log('ℹ️ Aucun prestataire assigné à cette demande, pas d\'email à envoyer');
+      console.log('ℹ️ Aucun prestataire assigné à cette demande, pas d\'email au prestataire');
+    }
+
+    // Toujours envoyer l'email de confirmation au client (même sans prestataire assigné)
+    if (requestData?.client_company_id) {
+      const { data: clientData } = await supabase
+        .from('client_companies')
+        .select('name, email')
+        .eq('id', requestData.client_company_id)
+        .single();
+      if (clientData?.email && clientData?.name) {
+        setTimeout(async () => {
+          try {
+            const { sendCancellationConfirmationToClient } = await import('@/services/emailService');
+            await sendCancellationConfirmationToClient(
+              clientData.email,
+              clientData.name,
+              {
+                address: requestData.address,
+                dateTime: parseDate(requestData.date_time),
+              }
+            );
+          } catch (e: any) {
+            console.error('❌ Erreur envoi email confirmation client (non bloquant):', e);
+          }
+        }, 0);
+      }
     }
 
     // Supprimer la demande

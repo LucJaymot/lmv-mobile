@@ -33,7 +33,7 @@ export default function AddVehicleScreen() {
   const [year, setYear] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(true);
   const [useOldFormat, setUseOldFormat] = useState(false); // Format ancien: XXXX-XX-XX
   const { getDataAttribute } = useWebAnimations('vehicle-add');
   
@@ -344,15 +344,6 @@ export default function AddVehicleScreen() {
             ) : (
               <Text style={styles.searchButtonText}>Rechercher les informations de la voiture</Text>
             )}
-          </TouchableOpacity>
-        )}
-
-        {!showManualEntry && (
-          <TouchableOpacity
-            style={[styles.manualEntryButton, { backgroundColor: theme.colors.accent }]}
-            onPress={() => setShowManualEntry(true)}
-          >
-            <Text style={styles.manualEntryButtonText}>Saisie manuelle</Text>
           </TouchableOpacity>
         )}
 

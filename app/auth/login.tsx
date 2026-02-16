@@ -20,6 +20,7 @@ import { Logo } from '@/components/Logo';
 import { IconSymbol } from '@/components/IconSymbol';
 import { authService } from '@/services/databaseService';
 import { useTheme } from '@/theme/hooks';
+import { supabase } from '@/lib/supabase';
 
 // Validation email
 const validateEmail = (email: string): boolean => {
@@ -53,6 +54,37 @@ export default function LoginScreen() {
       }
     }
   }, [user]);
+
+  // Gérer le retour après confirmation d'email (lien cliqué dans l'email d'inscription)
+  // Supabase redirige vers /auth/login#access_token=...&type=signup
+  React.useEffect(() => {
+    const handleEmailConfirmationRedirect = async () => {
+      if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+      const hash = window.location.hash;
+      if (!hash || !hash.includes('access_token')) return;
+
+      const hashParams = new URLSearchParams(hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
+      if (type !== 'signup' || !accessToken || !refreshToken) return;
+
+      try {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!error) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } catch (e) {
+        console.error('Erreur lors du traitement de la confirmation d\'email:', e);
+      }
+    };
+
+    handleEmailConfirmationRedirect();
+  }, []);
 
   const validateForm = (): boolean => {
     let isValid = true;

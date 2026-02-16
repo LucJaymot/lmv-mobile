@@ -255,6 +255,69 @@ L'équipe Lave ma voiture
 }
 
 /**
+ * Envoie un email de confirmation d'annulation au client
+ * @param clientEmail Email du client
+ * @param clientCompanyName Nom de l'entreprise cliente
+ * @param jobDetails Détails du job annulé
+ */
+export async function sendCancellationConfirmationToClient(
+  clientEmail: string,
+  clientCompanyName: string,
+  jobDetails: {
+    address: string;
+    dateTime: Date;
+  },
+  checkPreferences: boolean = true
+): Promise<void> {
+  try {
+    console.log('📧 Envoi d\'email de confirmation d\'annulation au client:', clientEmail);
+
+    const formattedDate = new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(jobDetails.dateTime);
+
+    const emailSubject = `Confirmation d'annulation - ${jobDetails.address}`;
+    const emailBody = `
+Bonjour ${clientCompanyName},
+
+Nous vous confirmons l'annulation de votre demande de lavage.
+
+Détails de la prestation annulée :
+- Adresse : ${jobDetails.address}
+- Date et heure prévue : ${formattedDate}
+
+Le prestataire concerné a été notifié de cette annulation.
+
+Cordialement,
+L'équipe Lave ma voiture
+    `.trim();
+
+    const { error } = await invokeSendEmailFunction({
+      to: clientEmail,
+      subject: emailSubject,
+      html: emailBody.replace(/\n/g, '<br>'),
+      text: emailBody,
+    }, checkPreferences);
+
+    if (error?.code === 'EMAIL_DISABLED') {
+      console.log('📧 Email de confirmation non envoyé (notifications désactivées)');
+      return;
+    }
+    if (error) {
+      console.warn('⚠️ Erreur envoi email confirmation annulation au client:', error);
+    } else {
+      console.log('✅ Email de confirmation d\'annulation envoyé au client');
+    }
+  } catch (error: any) {
+    console.error('❌ Erreur envoi email confirmation annulation:', error);
+  }
+}
+
+/**
  * Envoie un email au prestataire lorsqu'une prestation est annulée par le client
  * @param providerEmail Email du prestataire
  * @param providerName Nom du prestataire

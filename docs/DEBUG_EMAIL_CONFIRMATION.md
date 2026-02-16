@@ -66,6 +66,23 @@ Dans le Dashboard Supabase :
 - Allez dans **Logs** > **Auth Logs**
 - Vérifiez si des erreurs d'envoi d'email apparaissent
 
+## Bug corrigé : Redirection après clic sur le lien
+
+Si le lien de confirmation fonctionne mais que l'utilisateur reste sur la page de connexion sans être connecté :
+
+**Cause** : La page de login ne traitait pas le hash `#access_token=...&type=signup` présent dans l'URL après le clic.
+
+**Correction** : La page `/auth/login` traite maintenant explicitement ce hash et crée la session automatiquement.
+
+**À vérifier** : Dans Supabase > Authentication > URL Configuration > Redirect URLs, ajoutez :
+- `https://lavemavoiture.fr/auth/login` (production)
+- `http://localhost:8081/auth/login` (développement)
+
+Pour forcer l'URL de redirection en production, ajoutez dans `.env` :
+```
+EXPO_PUBLIC_APP_URL=https://lavemavoiture.fr
+```
+
 ## Solutions rapides
 
 ### Solution 1 : Activer la confirmation d'email (Recommandé)

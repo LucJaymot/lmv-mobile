@@ -182,6 +182,13 @@ export default function CreateRequestScreen() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVehicleError, setShowVehicleError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    address?: string;
+    city?: string;
+    dateTime?: string;
+    services?: string;
+  }>({});
 
   // Calculer la date minimale (demain) pour empêcher la sélection de la date du jour
   const getMinimumDate = (): Date => {
@@ -223,11 +230,19 @@ export default function CreateRequestScreen() {
       setSelectedServices(newServices);
     } else {
       setSelectedVehicles([...selectedVehicles, vehicleId]);
+      setShowVehicleError(false);
     }
   };
 
   const setServiceForVehicle = (vehicleId: string, service: string) => {
     setSelectedServices({ ...selectedServices, [vehicleId]: service });
+    if (fieldErrors.services) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.services;
+        return next;
+      });
+    }
   };
 
   const formatDate = (date: Date | null): string => {
@@ -246,24 +261,32 @@ export default function CreateRequestScreen() {
     return `${year}-${month}-${day}`;
   };
 
+  const clearFieldError = (field: keyof typeof fieldErrors) => {
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const onDateChange = (event: any, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
-    // Fermer le sélecteur d'heure si ouvert
     setShowTimePicker(false);
     if (date) {
       setSelectedDate(date);
+      clearFieldError('dateTime');
     }
   };
 
   const onWebDateChange = (event: any) => {
     const dateValue = event.target?.value;
     if (dateValue) {
-      // Format attendu: YYYY-MM-DD
       const date = new Date(dateValue + 'T00:00:00');
       if (!isNaN(date.getTime())) {
         setSelectedDate(date);
+        clearFieldError('dateTime');
       }
     }
   };
@@ -286,21 +309,21 @@ export default function CreateRequestScreen() {
     if (Platform.OS === 'android') {
       setShowTimePicker(false);
     }
-    // Fermer le sélecteur de date si ouvert
     setShowDatePicker(false);
     if (time) {
       setSelectedTime(time);
+      clearFieldError('dateTime');
     }
   };
 
   const onWebTimeChange = (event: any) => {
     const timeValue = event.target?.value;
     if (timeValue) {
-      // Format attendu: HH:MM
       const [hours, minutes] = timeValue.split(':');
       const time = new Date();
       time.setHours(parseInt(hours) || 0, parseInt(minutes) || 0, 0, 0);
       setSelectedTime(time);
+      clearFieldError('dateTime');
     }
   };
 
@@ -310,32 +333,52 @@ export default function CreateRequestScreen() {
       return;
     }
 
+    const errors: string[] = [];
+    const newFieldErrors: typeof fieldErrors = {};
+
     if (selectedVehicles.length === 0) {
-      Alert.alert('Erreur', 'Veuillez sélectionner au moins un véhicule');
-      return;
+      setShowVehicleError(true);
+      errors.push('Véhicule(s)');
+    } else {
+      setShowVehicleError(false);
     }
 
     if (!address || !address.trim()) {
-      Alert.alert('Erreur', 'Veuillez renseigner l\'adresse');
-      return;
+      newFieldErrors.address = 'Veuillez renseigner l\'adresse';
+      errors.push('Adresse');
+    }
+
+    if (!city || !city.trim()) {
+      newFieldErrors.city = 'Veuillez renseigner la ville';
+      errors.push('Ville');
     }
 
     if (!selectedDate || !selectedTime) {
-      Alert.alert('Erreur', 'Veuillez renseigner la date et l&apos;heure');
-      return;
+      newFieldErrors.dateTime = 'Veuillez renseigner la date et l\'heure';
+      errors.push('Date et heure');
     }
 
     const missingServices = selectedVehicles.filter(id => !selectedServices[id]);
     if (missingServices.length > 0) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un service pour chaque véhicule');
+      newFieldErrors.services = 'Veuillez sélectionner un service pour chaque véhicule';
+      errors.push('Type de service');
+    }
+
+    setFieldErrors(newFieldErrors);
+
+    if (errors.length > 0) {
       return;
     }
 
     setIsSubmitting(true);
+    const date = selectedDate;
+    const time = selectedTime;
+    if (!date || !time) return;
+
     try {
       // Combiner la date et l'heure sélectionnées
-      const dateTime = new Date(selectedDate);
-      dateTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+      const dateTime = new Date(date);
+      dateTime.setHours(time.getHours(), time.getMinutes(), 0, 0);
 
       if (isNaN(dateTime.getTime())) {
         Alert.alert('Erreur', 'Date ou heure invalide');
@@ -346,7 +389,7 @@ export default function CreateRequestScreen() {
       // Vérifier que la date sélectionnée n'est pas aujourd'hui
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const selectedDateOnly = new Date(selectedDate);
+      const selectedDateOnly = new Date(date);
       selectedDateOnly.setHours(0, 0, 0, 0);
       
       if (selectedDateOnly.getTime() <= today.getTime()) {
@@ -429,7 +472,7 @@ export default function CreateRequestScreen() {
           </View>
         ) : (
           <>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Véhicules</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Véhicules <Text style={styles.required}>*</Text></Text>
             {vehicles.map((vehicle) => (
           <View key={vehicle.id} style={[styles.vehicleCard, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity
@@ -496,7 +539,7 @@ export default function CreateRequestScreen() {
             </TouchableOpacity>
             {selectedVehicles.includes(vehicle.id) && (
               <View style={[styles.servicesContainer, { borderTopColor: theme.colors.border }]}>
-                <Text style={[styles.serviceLabel, { color: theme.colors.text }]}>Type de service :</Text>
+                <Text style={[styles.serviceLabel, { color: theme.colors.text }]}>Type de service <Text style={styles.required}>*</Text> :</Text>
                 <View style={styles.serviceButtons}>
                   <TouchableOpacity
                     style={[
@@ -569,44 +612,70 @@ export default function CreateRequestScreen() {
             )}
           </View>
         ))}
+            {showVehicleError && (
+              <Text style={[styles.errorText, { color: theme.colors.error || '#E53935', marginTop: 4, marginBottom: 8 }]}>
+                Veuillez sélectionner au moins un véhicule
+              </Text>
+            )}
+            {fieldErrors.services && (
+              <Text style={[styles.errorText, { color: theme.colors.error || '#E53935', marginTop: 4, marginBottom: 8 }]}>
+                {fieldErrors.services}
+              </Text>
+            )}
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Lieu</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Lieu <Text style={styles.required}>*</Text></Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={[
               commonStyles.input,
               {
                 backgroundColor: theme.colors.elevated,
-                borderColor: theme.colors.border,
+                borderColor: fieldErrors.address ? (theme.colors.error || '#E53935') : theme.colors.border,
                 color: theme.colors.text,
               },
             ]}
-            placeholder="Adresse"
+            placeholder="Adresse *"
             placeholderTextColor={theme.colors.textMuted}
             value={address}
-            onChangeText={setAddress}
+            onChangeText={(text) => {
+              setAddress(text);
+              if (fieldErrors.address) clearFieldError('address');
+            }}
           />
+          {fieldErrors.address && (
+            <Text style={[styles.errorText, { color: theme.colors.error || '#E53935', marginTop: 6 }]}>
+              {fieldErrors.address}
+            </Text>
+          )}
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Ville</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Ville <Text style={styles.required}>*</Text></Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={[
               commonStyles.input,
               {
                 backgroundColor: theme.colors.elevated,
-                borderColor: theme.colors.border,
+                borderColor: fieldErrors.city ? (theme.colors.error || '#E53935') : theme.colors.border,
                 color: theme.colors.text,
               },
             ]}
-            placeholder="Paris"
+            placeholder="Paris *"
             placeholderTextColor={theme.colors.textMuted}
             value={city}
-            onChangeText={setCity}
+            onChangeText={(text) => {
+              setCity(text);
+              if (fieldErrors.city) clearFieldError('city');
+            }}
           />
+          {fieldErrors.city && (
+            <Text style={[styles.errorText, { color: theme.colors.error || '#E53935', marginTop: 6 }]}>
+              {fieldErrors.city}
+            </Text>
+          )}
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Date et heure</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Date et heure <Text style={styles.required}>*</Text></Text>
         <View style={styles.dateTimeContainer}>
           <View style={styles.dateTimeInput}>
             {Platform.OS === 'web' ? (
@@ -783,6 +852,11 @@ export default function CreateRequestScreen() {
             )}
           </View>
         </View>
+        {fieldErrors.dateTime && (
+          <Text style={[styles.errorText, { color: theme.colors.error || '#E53935', marginTop: 4 }]}>
+            {fieldErrors.dateTime}
+          </Text>
+        )}
 
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notes (optionnel)</Text>
         <View style={styles.inputContainer}>
@@ -835,6 +909,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 12,
+  },
+  required: {
+    color: '#E53935',
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 14,
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   vehicleCard: {
     borderRadius: 12,

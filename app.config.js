@@ -59,8 +59,8 @@ console.log('');
 
 module.exports = {
   expo: {
-    name: "WashFleet",
-    slug: "WashFleet",
+    name: "Lavemavoiture",
+    slug: "Lavemavoiture",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/logo_LMV.png",
