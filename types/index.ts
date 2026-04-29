@@ -17,6 +17,10 @@ export interface ClientCompany {
   phone: string;
   email: string;
   avatarUrl?: string;
+  isApproved?: boolean;
+  approvedAt?: Date | null;
+  rejectedAt?: Date | null;
+  rejectionReason?: string | null;
 }
 
 export interface Provider {
@@ -31,6 +35,10 @@ export interface Provider {
   averageRating?: number;
   totalRatings?: number;
   avatarUrl?: string;
+  isApproved?: boolean;
+  approvedAt?: Date | null;
+  rejectedAt?: Date | null;
+  rejectionReason?: string | null;
 }
 
 export type ServiceType = 'exterior' | 'interior' | 'complete';

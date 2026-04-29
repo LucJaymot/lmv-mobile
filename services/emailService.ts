@@ -500,6 +500,135 @@ L'équipe Lave ma voiture
 }
 
 /**
+ * Envoie un email lorsque le compte est approuvé par un administrateur
+ * (à utiliser après validation dans le dashboard admin).
+ */
+export async function sendAccountApprovedEmail(
+  toEmail: string,
+  displayName: string,
+  role: 'client' | 'provider'
+): Promise<void> {
+  try {
+    const subject = `Votre compte est approuvé — Lave ma voiture`;
+    const roleLabel = role === 'provider' ? 'prestataire' : 'client';
+    const roleNextStep =
+      role === 'provider'
+        ? 'Vous pouvez maintenant accéder à votre espace prestataire pour consulter et accepter des demandes.'
+        : 'Vous pouvez maintenant accéder à votre espace client pour créer et suivre vos demandes.';
+
+    const appUrl = process.env.EXPO_PUBLIC_APP_URL;
+    const loginUrl = appUrl ? `${appUrl.replace(/\/$/, '')}/auth/login` : undefined;
+
+    const preheader = `Bonne nouvelle : votre compte ${roleLabel} a été approuvé.`;
+
+    const textBody = `
+Bonjour ${displayName},
+
+Bonne nouvelle : votre compte ${roleLabel} a été approuvé par notre équipe LMV.
+
+${roleNextStep}
+${loginUrl ? `\nSe connecter : ${loginUrl}\n` : ''}
+
+Si vous n’êtes pas à l’origine de cette demande, vous pouvez ignorer cet email.
+
+Cordialement,
+L’équipe Lave ma voiture
+    `.trim();
+
+    const htmlBody = `
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>${subject}</title>
+    <style>
+      body { margin: 0; padding: 0; background: #f6f7fb; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+      a { color: inherit; }
+      .wrap { width: 100%; padding: 24px 12px; }
+      .card { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; }
+      .header { padding: 20px 20px 12px; background: linear-gradient(135deg, #002B39 0%, #000022 100%); color: #ffffff; }
+      .brand { font-weight: 800; letter-spacing: 0.2px; font-size: 16px; opacity: 0.95; }
+      .content { padding: 18px 20px 8px; color: #0f172a; }
+      .h1 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 800; }
+      .p { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #334155; }
+      .badge { display: inline-block; margin-top: 12px; padding: 6px 10px; border-radius: 999px; background: #ecfeff; color: #0e7490; font-weight: 700; font-size: 12px; }
+      .ctaWrap { padding: 14px 20px 6px; }
+      .btn { display: inline-block; padding: 12px 16px; border-radius: 12px; background: #0ea5e9; color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; }
+      .link { margin: 10px 0 0; font-size: 12px; color: #64748b; word-break: break-all; }
+      .footer { padding: 14px 20px 18px; font-size: 12px; line-height: 1.5; color: #64748b; }
+      .hr { height: 1px; background: #e5e7eb; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+      ${preheader}
+    </div>
+    <div class="wrap">
+      <div class="card">
+        <div class="header">
+          <div class="brand">Lave ma voiture</div>
+        </div>
+        <div class="content">
+          <div class="h1">Votre compte est approuvé</div>
+          <div class="badge">Compte ${roleLabel}</div>
+          <p class="p">Bonjour <strong>${escapeHtml(displayName)}</strong>,</p>
+          <p class="p">Bonne nouvelle : votre compte ${roleLabel} a été approuvé par notre équipe LMV.</p>
+          <p class="p">${escapeHtml(roleNextStep)}</p>
+        </div>
+        ${
+          loginUrl
+            ? `
+        <div class="ctaWrap">
+          <a class="btn" href="${loginUrl}" target="_blank" rel="noopener noreferrer">Se connecter</a>
+          <div class="link">Si le bouton ne fonctionne pas, copiez/collez ce lien :<br/>${loginUrl}</div>
+        </div>
+        `
+            : ''
+        }
+        <div class="hr"></div>
+        <div class="footer">
+          Si vous n’êtes pas à l’origine de cette demande, vous pouvez ignorer cet email.<br/>
+          Cordialement,<br/>
+          L’équipe Lave ma voiture
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+    `.trim();
+
+    const { error } = await invokeSendEmailFunction(
+      {
+        to: toEmail,
+        subject,
+        html: htmlBody,
+        text: textBody,
+      },
+      false
+    );
+
+    if (error) {
+      console.warn('⚠️ Erreur envoi email compte approuvé:', error);
+    } else {
+      console.log('✅ Email compte approuvé envoyé à:', toEmail);
+    }
+  } catch (e: any) {
+    console.error('❌ Erreur envoi email compte approuvé:', e);
+  }
+}
+
+function escapeHtml(input: string): string {
+  return input
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+/**
  * Envoie un email à tous les prestataires lorsqu'une nouvelle demande est créée
  */
 export async function sendNewRequestEmailToProviders(

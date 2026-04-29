@@ -13,27 +13,73 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContextSupabase';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
   const { logout } = useAuth();
+  const [stats, setStats] = React.useState({
+    clients: 0,
+    providers: 0,
+    requests: 0,
+    completed: 0,
+  });
+  const [statsLoading, setStatsLoading] = React.useState(true);
+
+  const loadStats = React.useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const [clientsRes, providersRes, requestsRes, completedRes] = await Promise.all([
+        supabase.from('client_companies').select('id', { count: 'exact', head: true }),
+        supabase.from('providers').select('id', { count: 'exact', head: true }),
+        supabase.from('wash_requests').select('id', { count: 'exact', head: true }),
+        supabase
+          .from('wash_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'completed'),
+      ]);
+
+      if (clientsRes.error) throw clientsRes.error;
+      if (providersRes.error) throw providersRes.error;
+      if (requestsRes.error) throw requestsRes.error;
+      if (completedRes.error) throw completedRes.error;
+
+      setStats({
+        clients: clientsRes.count ?? 0,
+        providers: providersRes.count ?? 0,
+        requests: requestsRes.count ?? 0,
+        completed: completedRes.count ?? 0,
+      });
+    } catch (e: any) {
+      console.error('Erreur chargement stats admin:', e);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Déconnexion',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            console.log('Logged out');
-          },
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+      if (!confirmed) return;
+      logout().then(() => console.log('Logged out'));
+      return;
+    }
+
+    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Déconnexion',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          console.log('Logged out');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -55,17 +101,17 @@ export default function AdminDashboardScreen() {
               size={32}
               color={colors.primary}
             />
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statValue}>{statsLoading ? '—' : String(stats.clients)}</Text>
             <Text style={styles.statLabel}>Clients</Text>
           </View>
           <View style={styles.statCard}>
             <IconSymbol
               ios_icon_name="sparkles"
-              android_material_icon_name="local_car_wash"
+              android_material_icon_name="local-car-wash"
               size={32}
               color={colors.accent}
             />
-            <Text style={styles.statValue}>8</Text>
+            <Text style={styles.statValue}>{statsLoading ? '—' : String(stats.providers)}</Text>
             <Text style={styles.statLabel}>Prestataires</Text>
           </View>
         </View>
@@ -78,24 +124,39 @@ export default function AdminDashboardScreen() {
               size={32}
               color={colors.info}
             />
-            <Text style={styles.statValue}>45</Text>
+            <Text style={styles.statValue}>{statsLoading ? '—' : String(stats.requests)}</Text>
             <Text style={styles.statLabel}>Demandes</Text>
           </View>
           <View style={styles.statCard}>
             <IconSymbol
               ios_icon_name="checkmark.circle.fill"
-              android_material_icon_name="check_circle"
+              android_material_icon_name="check-circle"
               size={32}
               color={colors.accent}
             />
-            <Text style={styles.statValue}>38</Text>
+            <Text style={styles.statValue}>{statsLoading ? '—' : String(stats.completed)}</Text>
             <Text style={styles.statLabel}>Terminées</Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(admin)/approvals')}>
+            <IconSymbol
+              ios_icon_name="person.badge.plus"
+              android_material_icon_name="person-add"
+              size={20}
+              color={colors.text}
+            />
+            <Text style={styles.actionText}>Demandes d'inscription</Text>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(admin)/users')}>
             <IconSymbol
               ios_icon_name="person.2.fill"
               android_material_icon_name="people"
@@ -105,12 +166,12 @@ export default function AdminDashboardScreen() {
             <Text style={styles.actionText}>Gérer les utilisateurs</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
+              android_material_icon_name="chevron-right"
               size={20}
               color={colors.textSecondary}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(admin)/all-requests')}>
             <IconSymbol
               ios_icon_name="list.bullet"
               android_material_icon_name="list"
@@ -120,22 +181,22 @@ export default function AdminDashboardScreen() {
             <Text style={styles.actionText}>Voir toutes les demandes</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
+              android_material_icon_name="chevron-right"
               size={20}
               color={colors.textSecondary}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={[styles.actionItem, styles.actionItemDisabled]} disabled>
             <IconSymbol
               ios_icon_name="chart.bar.fill"
-              android_material_icon_name="bar_chart"
+              android_material_icon_name="bar-chart"
               size={20}
               color={colors.text}
             />
             <Text style={styles.actionText}>Statistiques</Text>
             <IconSymbol
               ios_icon_name="chevron.right"
-              android_material_icon_name="chevron_right"
+              android_material_icon_name="chevron-right"
               size={20}
               color={colors.textSecondary}
             />
@@ -221,6 +282,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 2,
+  },
+  actionItemDisabled: {
+    opacity: 0.45,
+    filter: 'grayscale(1)',
   },
   actionText: {
     flex: 1,

@@ -389,6 +389,10 @@ export const clientCompanyService = {
       contact: companyData.contact,
       phone: companyData.phone,
       email: companyData.email,
+      isApproved: companyData.is_approved ?? undefined,
+      approvedAt: companyData.approved_at ? parseDate(companyData.approved_at) : null,
+      rejectedAt: companyData.rejected_at ? parseDate(companyData.rejected_at) : null,
+      rejectionReason: companyData.rejection_reason ?? null,
     };
   },
 
@@ -410,6 +414,7 @@ export const clientCompanyService = {
           contact: data.contact,
           phone: data.phone,
           email: data.email,
+          is_approved: false,
         })
         .select()
         .single();
@@ -436,6 +441,10 @@ export const clientCompanyService = {
         contact: result.contact,
         phone: result.phone,
         email: result.email,
+        isApproved: result.is_approved ?? undefined,
+        approvedAt: result.approved_at ? parseDate(result.approved_at) : null,
+        rejectedAt: result.rejected_at ? parseDate(result.rejected_at) : null,
+        rejectionReason: result.rejection_reason ?? null,
       };
     } catch (error: any) {
       // Si erreur RLS, utiliser la fonction SQL
@@ -469,6 +478,10 @@ export const clientCompanyService = {
       phone: data.phone,
       email: data.email,
       avatarUrl: data.avatar_url || undefined,
+      isApproved: data.is_approved ?? undefined,
+      approvedAt: data.approved_at ? parseDate(data.approved_at) : null,
+      rejectedAt: data.rejected_at ? parseDate(data.rejected_at) : null,
+      rejectionReason: data.rejection_reason ?? null,
     };
   },
 
@@ -502,6 +515,10 @@ export const clientCompanyService = {
       phone: data.phone,
       email: data.email,
       avatarUrl: data.avatar_url || undefined,
+      isApproved: data.is_approved ?? undefined,
+      approvedAt: data.approved_at ? parseDate(data.approved_at) : null,
+      rejectedAt: data.rejected_at ? parseDate(data.rejected_at) : null,
+      rejectionReason: data.rejection_reason ?? null,
     };
   },
 };
@@ -574,6 +591,10 @@ export const providerService = {
       services: providerData.services || [],
       averageRating: providerData.average_rating || 0,
       totalRatings: providerData.total_ratings || 0,
+      isApproved: providerData.is_approved ?? undefined,
+      approvedAt: providerData.approved_at ? parseDate(providerData.approved_at) : null,
+      rejectedAt: providerData.rejected_at ? parseDate(providerData.rejected_at) : null,
+      rejectionReason: providerData.rejection_reason ?? null,
     };
   },
 
@@ -596,6 +617,7 @@ export const providerService = {
           phone: data.phone,
           description: data.description,
           services: data.services,
+          is_approved: false,
         })
         .select()
         .single();
@@ -625,6 +647,10 @@ export const providerService = {
         services: result.services,
         averageRating: result.average_rating || 0,
         totalRatings: result.total_ratings || 0,
+        isApproved: result.is_approved ?? undefined,
+        approvedAt: result.approved_at ? parseDate(result.approved_at) : null,
+        rejectedAt: result.rejected_at ? parseDate(result.rejected_at) : null,
+        rejectionReason: result.rejection_reason ?? null,
       };
     } catch (error: any) {
       // Si erreur RLS, utiliser la fonction SQL
@@ -661,6 +687,10 @@ export const providerService = {
       averageRating: data.average_rating || 0,
       totalRatings: data.total_ratings || 0,
       avatarUrl: data.avatar_url || undefined,
+      isApproved: data.is_approved ?? undefined,
+      approvedAt: data.approved_at ? parseDate(data.approved_at) : null,
+      rejectedAt: data.rejected_at ? parseDate(data.rejected_at) : null,
+      rejectionReason: data.rejection_reason ?? null,
     };
   },
 
@@ -689,6 +719,10 @@ export const providerService = {
       averageRating: data.average_rating || 0,
       totalRatings: data.total_ratings || 0,
       avatarUrl: data.avatar_url || undefined,
+      isApproved: data.is_approved ?? undefined,
+      approvedAt: data.approved_at ? parseDate(data.approved_at) : null,
+      rejectedAt: data.rejected_at ? parseDate(data.rejected_at) : null,
+      rejectionReason: data.rejection_reason ?? null,
     };
   },
 
@@ -1970,10 +2004,10 @@ export const vehicleService = {
     // Charger les informations du prestataire pour chaque demande
     const requestsWithProvider = await Promise.all(
       requestsData.map(async (wr) => {
-        let provider = undefined;
+        let provider: Provider | undefined = undefined;
         if (wr.provider_id) {
           try {
-            provider = await providerService.getById(wr.provider_id);
+            provider = (await providerService.getById(wr.provider_id)) || undefined;
           } catch (error) {
             console.error('Erreur lors du chargement du prestataire:', error);
           }
@@ -1989,6 +2023,7 @@ export const vehicleService = {
           notes: wr.notes || undefined,
           invoiceUrl: wr.invoice_url || undefined,
           createdAt: parseDate(wr.created_at),
+          vehicles: [],
           provider,
         };
       })

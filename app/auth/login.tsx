@@ -128,6 +128,15 @@ export default function LoginScreen() {
       
       // Analyser le message d'erreur pour afficher un message spécifique
       const errorMessage = error.message || '';
+
+      // Compte en attente d'approbation
+      if (errorMessage.toLowerCase().includes('attente') && errorMessage.toLowerCase().includes('approb')) {
+        router.replace({
+          pathname: '/auth/pending-approval',
+          params: { email: email.trim() },
+        });
+        return;
+      }
       
       // Email non confirmé
       if (errorMessage.includes('email n\'a pas été confirmé') || 

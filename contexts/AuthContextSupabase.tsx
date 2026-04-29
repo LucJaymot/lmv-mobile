@@ -270,6 +270,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (company) {
             console.log('✅ Client company loaded:', company.name);
             setClientCompany(company);
+
+            // Blocage si compte non approuvé (sauf admin)
+            if (company.isApproved === false) {
+              console.log('⛔ Compte client non approuvé, déconnexion');
+              await authService.signOut().catch(() => {});
+              setUser(null);
+              setClientCompany(null);
+              setProvider(null);
+              return;
+            }
             
             // Sauvegarder en local (fallback et cache)
             try {
@@ -305,6 +315,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (providerData) {
             console.log('✅ Provider loaded:', providerData.name);
             setProvider(providerData);
+
+            // Blocage si compte non approuvé
+            if (providerData.isApproved === false) {
+              console.log('⛔ Compte prestataire non approuvé, déconnexion');
+              await authService.signOut().catch(() => {});
+              setUser(null);
+              setClientCompany(null);
+              setProvider(null);
+              return;
+            }
             
             // Sauvegarder en local (fallback et cache)
             try {
@@ -377,6 +397,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Charger le profil utilisateur
       await loadUserProfile(authUser.id);
+
+      // Après chargement, si l'utilisateur a été déconnecté (non approuvé), bloquer la connexion
+      // (loadUserProfile met user à null et signOut)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Votre compte est en attente d’approbation par l’équipe LMV.');
+      }
       
       console.log('Login completed successfully');
     } catch (error: any) {

@@ -84,25 +84,11 @@ export default function RegisterScreen() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [userConfirmed, setUserConfirmed] = useState<boolean>(false);
   const isRegisteringRef = useRef(false);
 
-  // Empêcher la redirection automatique pendant l'inscription
-  useEffect(() => {
-    if (user && !isRegisteringRef.current && !emailSent) {
-      // Si l'utilisateur est connecté mais qu'on n'est pas en train de s'inscrire,
-      // rediriger vers le dashboard (cas normal de connexion)
-      console.log('User connected, redirecting to dashboard...');
-      if (user.role === 'client') {
-        router.replace('/(client)/(tabs)/dashboard');
-      } else if (user.role === 'provider') {
-        router.replace('/(provider)/(tabs)/dashboard');
-      } else if (user.role === 'admin') {
-        router.replace('/(admin)/dashboard');
-      }
-    }
-  }, [user, emailSent]);
+  // Note: pas de redirection automatique ici.
+  // Supabase peut créer une session brièvement pendant l'inscription, ce qui provoque un flash vers le dashboard.
+  // On laisse la navigation être pilotée uniquement par le flux d'inscription.
 
   // Note: On ne redirige plus automatiquement vers le dashboard après inscription
   // L'utilisateur sera redirigé vers la page de connexion pour se connecter
@@ -255,16 +241,12 @@ export default function RegisterScreen() {
       console.log('Appel de register()...');
       const result = await register(email, password, role, profileData);
       console.log('✅ Registration successful...');
-      
-      // Vérifier si l'utilisateur est déjà confirmé (auto-confirm activé)
-      // Si oui, aucun email n'est envoyé
-      const isConfirmed = result?.user?.email_confirmed_at !== null && result?.user?.email_confirmed_at !== undefined;
-      setUserConfirmed(isConfirmed);
-      
-      console.log('User confirmed:', isConfirmed ? 'OUI (auto-confirm activé)' : 'NON (email envoyé)');
-      
-      // Afficher le message de confirmation d'email
-      setEmailSent(true);
+
+      // Redirection vers la page "en attente d'approbation"
+      router.replace({
+        pathname: '/auth/pending-approval',
+        params: { email },
+      });
       
     } catch (error: any) {
       console.error('❌ Registration error:', error);
@@ -294,66 +276,6 @@ export default function RegisterScreen() {
         : [...prev.services, service],
     }));
   };
-
-  // Afficher l'écran de confirmation après l'inscription réussie
-  if (emailSent) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <View style={styles.successContainer}>
-              <View style={styles.successIconContainer}>
-                <IconSymbol
-                  ios_icon_name="checkmark.circle.fill"
-                  android_material_icon_name="check-circle"
-                  size={64}
-                  color={colors.success}
-                />
-              </View>
-              <Text style={styles.successTitle}>Inscription réussie !</Text>
-              <Text style={styles.successText}>
-                {userConfirmed ? (
-                  <>
-                    Votre compte a été créé avec succès !{'\n\n'}
-                    <Text style={styles.emailText}>{email}</Text>
-                    {'\n\n'}
-                    <Text style={{ fontWeight: '600', color: colors.text }}>
-                      ⚠️ Aucun email de confirmation n'a été envoyé car la confirmation automatique est activée dans Supabase.
-                    </Text>
-                    {'\n\n'}
-                    Vous pouvez vous connecter immédiatement avec vos identifiants.
-                    {'\n\n'}
-                    <Text style={{ fontSize: 12, fontStyle: 'italic', color: colors.textSecondary }}>
-                      Pour recevoir des emails de confirmation, activez &quot;Enable email confirmations&quot; dans Supabase {'>'} Authentication {'>'} Settings.
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    Un email de confirmation a été envoyé à{'\n'}
-                    <Text style={styles.emailText}>{email}</Text>
-                    {'\n\n'}
-                    Veuillez vérifier votre boîte de réception (et votre dossier spam) et cliquer sur le lien de confirmation pour activer votre compte.
-                    {'\n\n'}
-                    <Text style={{ fontSize: 12, fontStyle: 'italic', color: colors.textSecondary }}>
-                      Si vous ne recevez pas l'email dans quelques minutes, vérifiez vos paramètres Supabase ou contactez le support.
-                    </Text>
-                  </>
-                )}
-              </Text>
-              <Button
-                variant="primary"
-                size="lg"
-                onPress={() => router.replace('/auth/login')}
-                style={styles.button}
-              >
-                Retour à la connexion
-              </Button>
-            </View>
-          </ScrollView>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (step === 'role') {
     return (
