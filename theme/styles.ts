@@ -6,12 +6,14 @@ import { Theme } from './theme';
  */
 export const createTextStyles = (theme: Theme) => {
   const { typography, colors } = theme;
+  const fonts = typography.fontFamily;
 
   return StyleSheet.create({
     // Titres
     h1: {
       fontSize: typography.fontSize['3xl'],
       fontWeight: typography.fontWeight.bold,
+      fontFamily: fonts.bold,
       lineHeight: typography.lineHeight['3xl'],
       color: colors.text,
       letterSpacing: typography.letterSpacing.tight,
@@ -19,6 +21,7 @@ export const createTextStyles = (theme: Theme) => {
     h2: {
       fontSize: typography.fontSize['2xl'],
       fontWeight: typography.fontWeight.bold,
+      fontFamily: fonts.bold,
       lineHeight: typography.lineHeight['2xl'],
       color: colors.text,
       letterSpacing: typography.letterSpacing.tight,
@@ -26,6 +29,7 @@ export const createTextStyles = (theme: Theme) => {
     h3: {
       fontSize: typography.fontSize.xl,
       fontWeight: typography.fontWeight.semibold,
+      fontFamily: fonts.bold,
       lineHeight: typography.lineHeight.xl,
       color: colors.text,
       letterSpacing: typography.letterSpacing.normal,
@@ -33,6 +37,7 @@ export const createTextStyles = (theme: Theme) => {
     h4: {
       fontSize: typography.fontSize.lg,
       fontWeight: typography.fontWeight.semibold,
+      fontFamily: fonts.bold,
       lineHeight: typography.lineHeight.lg,
       color: colors.text,
       letterSpacing: typography.letterSpacing.normal,
@@ -42,6 +47,7 @@ export const createTextStyles = (theme: Theme) => {
     body: {
       fontSize: typography.fontSize.base,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.base,
       color: colors.text,
       letterSpacing: typography.letterSpacing.normal,
@@ -49,6 +55,7 @@ export const createTextStyles = (theme: Theme) => {
     bodyMedium: {
       fontSize: typography.fontSize.base,
       fontWeight: typography.fontWeight.medium,
+      fontFamily: fonts.medium,
       lineHeight: typography.lineHeight.base,
       color: colors.text,
       letterSpacing: typography.letterSpacing.normal,
@@ -56,6 +63,7 @@ export const createTextStyles = (theme: Theme) => {
     bodySmall: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.sm,
       color: colors.textMuted,
       letterSpacing: typography.letterSpacing.normal,
@@ -63,6 +71,7 @@ export const createTextStyles = (theme: Theme) => {
     bodyXSmall: {
       fontSize: typography.fontSize.xs,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.xs,
       color: colors.textMuted,
       letterSpacing: typography.letterSpacing.normal,
@@ -72,6 +81,7 @@ export const createTextStyles = (theme: Theme) => {
     accent: {
       fontSize: typography.fontSize.base,
       fontWeight: typography.fontWeight.medium,
+      fontFamily: fonts.medium,
       lineHeight: typography.lineHeight.base,
       color: colors.accent,
       letterSpacing: typography.letterSpacing.normal,
@@ -79,6 +89,7 @@ export const createTextStyles = (theme: Theme) => {
     accentSmall: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.medium,
+      fontFamily: fonts.medium,
       lineHeight: typography.lineHeight.sm,
       color: colors.accent,
       letterSpacing: typography.letterSpacing.normal,
@@ -88,6 +99,7 @@ export const createTextStyles = (theme: Theme) => {
     label: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.medium,
+      fontFamily: fonts.medium,
       lineHeight: typography.lineHeight.sm,
       color: colors.text,
       letterSpacing: typography.letterSpacing.normal,
@@ -95,6 +107,7 @@ export const createTextStyles = (theme: Theme) => {
     labelSmall: {
       fontSize: typography.fontSize.xs,
       fontWeight: typography.fontWeight.medium,
+      fontFamily: fonts.medium,
       lineHeight: typography.lineHeight.xs,
       color: colors.textMuted,
       letterSpacing: typography.letterSpacing.normal,
@@ -104,6 +117,7 @@ export const createTextStyles = (theme: Theme) => {
     error: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.sm,
       color: colors.error,
       letterSpacing: typography.letterSpacing.normal,
@@ -111,6 +125,7 @@ export const createTextStyles = (theme: Theme) => {
     success: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.sm,
       color: colors.success,
       letterSpacing: typography.letterSpacing.normal,
@@ -118,6 +133,7 @@ export const createTextStyles = (theme: Theme) => {
     warning: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.sm,
       color: colors.warning,
       letterSpacing: typography.letterSpacing.normal,
@@ -125,9 +141,19 @@ export const createTextStyles = (theme: Theme) => {
     disabled: {
       fontSize: typography.fontSize.base,
       fontWeight: typography.fontWeight.regular,
+      fontFamily: fonts.regular,
       lineHeight: typography.lineHeight.base,
       color: colors.disabledText,
       letterSpacing: typography.letterSpacing.normal,
+    } as TextStyle,
+
+    // Marque (logo texte)
+    brand: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.bold,
+      fontFamily: fonts.extraBold,
+      color: colors.text,
+      letterSpacing: typography.letterSpacing.logo,
     } as TextStyle,
   });
 };
@@ -159,9 +185,9 @@ export const createButtonStyles = (theme: Theme) => {
       opacity: 0.5,
     } as ViewStyle,
 
-    // Secondary - Utilise la couleur secondary de la charte (#000022)
+    // Secondary - Utilise la couleur secondary de la charte
     secondary: {
-      backgroundColor: colors.secondary, // #000022 (couleur de marque exacte)
+      backgroundColor: colors.secondary,
       height: button.height.md,
       paddingHorizontal: button.paddingHorizontal.md,
       borderRadius: button.borderRadius,
@@ -170,7 +196,7 @@ export const createButtonStyles = (theme: Theme) => {
       minWidth: button.minWidth,
     } as ViewStyle,
     secondaryPressed: {
-      backgroundColor: colors.secondaryDark || colors.secondary, // Nuance plus foncée (#000022 plus foncé)
+      backgroundColor: colors.secondaryDark || colors.secondary,
       opacity: 0.9,
     } as ViewStyle,
     secondaryDisabled: {
@@ -312,7 +338,7 @@ export const createInputStyles = (theme: Theme) => {
 
     // Input focused - Bordure accent (couleur de marque)
     inputFocused: {
-      borderColor: colors.accent, // #002B39 (couleur de marque)
+      borderColor: colors.accent,
       borderWidth: 1.5, // Légèrement plus épais au focus
     } as ViewStyle,
 

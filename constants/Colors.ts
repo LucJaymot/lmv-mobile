@@ -1,4 +1,4 @@
-const tintColorLight = "#0a7ea4";
+const tintColorLight = "#2D8FD6";
 const tintColorDark = "#fff";
 
 export const zincColors = {

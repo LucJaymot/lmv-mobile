@@ -7,9 +7,7 @@ function loadEnv() {
   const env = {};
   
   if (fs.existsSync(envPath)) {
-    console.log('📄 Fichier .env trouvé:', envPath);
     const envFile = fs.readFileSync(envPath, 'utf8');
-    console.log('📄 Contenu du .env:', envFile);
     
     envFile.split('\n').forEach((line, index) => {
       // Ignorer les lignes vides et les commentaires
@@ -31,7 +29,6 @@ function loadEnv() {
         }
         
         env[key] = value;
-        console.log(`✅ Variable chargée: ${key} = ${value.substring(0, 10)}...`);
       } else {
         console.log(`⚠️ Ligne ${index + 1} ignorée (format invalide): ${trimmedLine}`);
       }
@@ -40,22 +37,10 @@ function loadEnv() {
     console.error('❌ Fichier .env non trouvé à:', envPath);
   }
   
-  console.log('📦 Variables chargées:', Object.keys(env));
   return env;
 }
 
 const env = loadEnv();
-
-console.log('');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('📋 CONFIGURATION EXPO - Variables d\'environnement');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('EXPO_PUBLIC_CARSXE_API_KEY depuis .env:', env.EXPO_PUBLIC_CARSXE_API_KEY ? 
-  `✅ ${env.EXPO_PUBLIC_CARSXE_API_KEY.substring(0, 15)}...` : '❌ NON TROUVÉE');
-console.log('EXPO_PUBLIC_CARSXE_API_KEY depuis process.env:', process.env.EXPO_PUBLIC_CARSXE_API_KEY ? 
-  `✅ ${process.env.EXPO_PUBLIC_CARSXE_API_KEY.substring(0, 15)}...` : '❌ NON TROUVÉE');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('');
 
 module.exports = {
   expo: {
@@ -116,6 +101,5 @@ module.exports = {
       brandfetchClientId: env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID || process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID,
     }
   },
-  scheme: "WashFleet"
 };
 

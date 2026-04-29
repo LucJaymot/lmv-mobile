@@ -202,9 +202,9 @@ function statusColor(status: AdminRequest['status'], theme: any): string {
     case 'pending':
       return theme.colors.warning || '#F59E0B';
     case 'accepted':
-      return theme.colors.accent || '#0EA5E9';
+      return theme.colors.accent || '#2D8FD6';
     case 'in_progress':
-      return theme.colors.info || '#3B82F6';
+      return theme.colors.info || '#1A6DA8';
     case 'completed':
       return theme.colors.success || '#22C55E';
     case 'cancelled':

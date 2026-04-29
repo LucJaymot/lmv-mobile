@@ -20,6 +20,12 @@ import { ThemeProvider } from "@/theme/ThemeProvider";
 import { useTheme } from "@/theme/hooks";
 import { preloadAllImages } from "@/utils/imagePreloader";
 import { brandLogos } from "@/utils/brandLogoMapper";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+} from "@expo-google-fonts/inter";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,6 +40,10 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const networkState = useNetworkState();
   const [loaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_700Bold,
+    Inter_800ExtraBold,
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 

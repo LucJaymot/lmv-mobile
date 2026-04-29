@@ -544,18 +544,18 @@ L’équipe Lave ma voiture
     <meta name="x-apple-disable-message-reformatting" />
     <title>${subject}</title>
     <style>
-      body { margin: 0; padding: 0; background: #f6f7fb; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+      body { margin: 0; padding: 0; background: #f6f7fb; font-family: 'Inter', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
       a { color: inherit; }
       .wrap { width: 100%; padding: 24px 12px; }
       .card { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; }
-      .header { padding: 20px 20px 12px; background: linear-gradient(135deg, #002B39 0%, #000022 100%); color: #ffffff; }
-      .brand { font-weight: 800; letter-spacing: 0.2px; font-size: 16px; opacity: 0.95; }
+      .header { padding: 20px 20px 12px; background: linear-gradient(135deg, #2D8FD6 0%, #1A6DA8 100%); color: #ffffff; }
+      .brand { font-family: 'Inter', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-weight: 800; letter-spacing: -0.025em; font-size: 16px; opacity: 0.95; }
       .content { padding: 18px 20px 8px; color: #0f172a; }
       .h1 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 800; }
       .p { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #334155; }
       .badge { display: inline-block; margin-top: 12px; padding: 6px 10px; border-radius: 999px; background: #ecfeff; color: #0e7490; font-weight: 700; font-size: 12px; }
       .ctaWrap { padding: 14px 20px 6px; }
-      .btn { display: inline-block; padding: 12px 16px; border-radius: 12px; background: #0ea5e9; color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; }
+      .btn { display: inline-block; padding: 12px 16px; border-radius: 12px; background: #2D8FD6; color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; }
       .link { margin: 10px 0 0; font-size: 12px; color: #64748b; word-break: break-all; }
       .footer { padding: 14px 20px 18px; font-size: 12px; line-height: 1.5; color: #64748b; }
       .hr { height: 1px; background: #e5e7eb; margin: 0; }

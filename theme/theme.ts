@@ -1,11 +1,11 @@
 /**
  * Design System - Thème Premium White-First
- * 
- * Palette de base (UNIQUEMENT pour accents/détails) :
- * - #000022 (bleu nuit profond)
- * - #002B39 (bleu-vert pétrole)
- * - #040F16 (noir bleuté / charbon)
- * 
+ *
+ * Palette de marque (accents/CTA) :
+ * - #2D8FD6 (bleu principal)
+ * - #1A6DA8 (bleu foncé : hover/pressed)
+ * - #040F16 (noir doux / charbon pour le texte)
+ *
  * Design moderne, épuré, premium "white-first" :
  * - Fonds majoritairement blancs/transparents
  * - Surfaces très claires (blanc cassé / gris très clair)
@@ -20,7 +20,7 @@
 /**
  * Génère des nuances d'une couleur (tints/shades)
  */
-const generateColorScale = (base: string, name: string) => {
+const generateColorScale = (base: string): Record<string, string> => {
   // Conversion hex vers RGB
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -69,15 +69,15 @@ const generateColorScale = (base: string, name: string) => {
   return scale;
 };
 
-// Couleurs de base
-const midnightBlue = '#000022';
-const petrolBlue = '#002B39';
+// Couleurs de base (charte)
+const brandBlue = '#2D8FD6';
+const brandBlueDark = '#1A6DA8';
 const charcoalBlue = '#040F16';
 
 // Échelles de couleurs
-const midnightBlueScale = generateColorScale(midnightBlue, 'midnightBlue');
-const petrolBlueScale = generateColorScale(petrolBlue, 'petrolBlue');
-const charcoalBlueScale = generateColorScale(charcoalBlue, 'charcoalBlue');
+const brandBlueScale = generateColorScale(brandBlue);
+const brandBlueDarkScale = generateColorScale(brandBlueDark);
+const charcoalBlueScale = generateColorScale(charcoalBlue);
 
 // Couleurs neutres pour texte
 const offWhite = '#F5F5F7'; // Blanc cassé
@@ -86,18 +86,18 @@ const blueGray = '#6B7A8A'; // Gris bleuté
 // Palette complète
 export const colorPalette = {
   // Couleurs primaires
-  midnightBlue: {
-    ...midnightBlueScale,
-    500: midnightBlue,
-  },
-  petrolBlue: {
-    ...petrolBlueScale,
-    500: petrolBlue,
-  },
+  brandBlue: {
+    ...(brandBlueScale as Record<string, string>),
+    500: brandBlue,
+  } as Record<string, string>,
+  brandBlueDark: {
+    ...(brandBlueDarkScale as Record<string, string>),
+    500: brandBlueDark,
+  } as Record<string, string>,
   charcoalBlue: {
-    ...charcoalBlueScale,
+    ...(charcoalBlueScale as Record<string, string>),
     500: charcoalBlue,
-  },
+  } as Record<string, string>,
 
   // Neutres
   offWhite,
@@ -153,18 +153,18 @@ export const lightColors = {
   elevated: '#FFFFFF', // Blanc pur pour surfaces élevées
   overlay: 'rgba(255, 255, 255, 0.9)',
 
-  // Primary & Secondary - Couleurs de marque EXACTES de la charte
-  primary: petrolBlue, // #002B39 (couleur de marque exacte)
-  primaryLight: colorPalette.petrolBlue[400], // Nuance plus claire pour hover
-  primaryDark: colorPalette.petrolBlue[600], // Nuance plus foncée pour pressed
-  secondary: midnightBlue, // #000022 (couleur de marque exacte)
-  secondaryLight: colorPalette.midnightBlue[400],
-  secondaryDark: colorPalette.midnightBlue[600],
+  // Primary & Secondary - Couleurs de marque
+  primary: brandBlue, // #2D8FD6
+  primaryLight: colorPalette.brandBlue[400], // Nuance plus claire pour hover
+  primaryDark: brandBlueDark, // #1A6DA8 (pressed/hover)
+  secondary: brandBlueDark, // #1A6DA8
+  secondaryLight: colorPalette.brandBlueDark[400],
+  secondaryDark: colorPalette.brandBlueDark[600],
 
-  // Accent (pour CTA, toggles, liens, focus) - Utilise #002B39 directement
-  accent: petrolBlue, // #002B39 (couleur de marque exacte pour CTA)
-  accentLight: colorPalette.petrolBlue[400],
-  accentDark: colorPalette.petrolBlue[600],
+  // Accent (pour CTA, toggles, liens, focus)
+  accent: brandBlue, // #2D8FD6
+  accentLight: colorPalette.brandBlue[400],
+  accentDark: brandBlueDark, // #1A6DA8
 
   // Text - NOIR DOUX / TRÈS SOMBRE sur fond blanc
   text: colorPalette.charcoalBlue[500], // #040F16 (noir doux)
@@ -188,7 +188,7 @@ export const lightColors = {
   errorDark: colorPalette.error[700],
 
   // États
-  pressed: 'rgba(0, 43, 57, 0.08)', // Très subtil pour feedback tactile
+  pressed: 'rgba(45, 143, 214, 0.10)', // Très subtil pour feedback tactile
   disabled: '#F3F4F6', // Gris très clair
   disabledText: '#9CA3AF', // Gris moyen
 };
@@ -204,18 +204,18 @@ export const darkColors = {
   elevated: colorPalette.charcoalBlue[700], // Légèrement plus clair
   overlay: 'rgba(0, 0, 0, 0.7)',
 
-  // Primary & Secondary - Couleurs de marque EXACTES
-  primary: petrolBlue, // #002B39
-  primaryLight: colorPalette.petrolBlue[400],
-  primaryDark: colorPalette.petrolBlue[600],
-  secondary: colorPalette.charcoalBlue[500], // #040F16 au lieu de #000022
+  // Primary & Secondary - Couleurs de marque
+  primary: brandBlue, // #2D8FD6
+  primaryLight: colorPalette.brandBlue[400],
+  primaryDark: brandBlueDark, // #1A6DA8
+  secondary: colorPalette.charcoalBlue[500], // #040F16
   secondaryLight: colorPalette.charcoalBlue[400],
   secondaryDark: colorPalette.charcoalBlue[700],
 
-  // Accent (pour CTA, toggles, liens) - Utilise #002B39 directement
-  accent: petrolBlue, // #002B39 (couleur de marque exacte)
-  accentLight: colorPalette.petrolBlue[400],
-  accentDark: colorPalette.petrolBlue[600],
+  // Accent (pour CTA, toggles, liens)
+  accent: brandBlue, // #2D8FD6
+  accentLight: colorPalette.brandBlue[400],
+  accentDark: brandBlueDark, // #1A6DA8
 
   // Text
   text: colorPalette.offWhite, // #F5F5F7
@@ -223,9 +223,9 @@ export const darkColors = {
   textSecondary: colorPalette.charcoalBlue[300], // Nuance de charcoalBlue
 
   // Borders & Dividers
-  border: colorPalette.petrolBlue[700], // Très subtil
+  border: colorPalette.brandBlueDark[700], // Très subtil
   divider: colorPalette.charcoalBlue[700], // Nuance de charcoalBlue
-  borderLight: colorPalette.petrolBlue[600],
+  borderLight: colorPalette.brandBlueDark[600],
 
   // Sémantiques
   success: colorPalette.success[500],
@@ -239,7 +239,7 @@ export const darkColors = {
   errorDark: colorPalette.error[600],
 
   // États
-  pressed: 'rgba(0, 168, 181, 0.1)',
+  pressed: 'rgba(26, 109, 168, 0.18)',
   disabled: colorPalette.charcoalBlue[800], // Nuance de charcoalBlue
   disabledText: colorPalette.blueGray,
 };
@@ -260,6 +260,14 @@ export const trueBlackColors = {
 // ============================================
 
 export const typography = {
+  // Familles de polices (chargées via expo-font)
+  fontFamily: {
+    regular: 'Inter_400Regular',
+    medium: 'Inter_500Medium',
+    bold: 'Inter_700Bold',
+    extraBold: 'Inter_800ExtraBold',
+    mono: 'SpaceMono',
+  },
   // Échelle de tailles
   fontSize: {
     xs: 12,
@@ -300,6 +308,9 @@ export const typography = {
     normal: 0,
     wide: 0.5,
     wider: 1,
+    // Tracking “logo” -25 (≈ -0.025em). En RN, letterSpacing est en points.
+    // À 16px ≈ -0.4 ; à 20px ≈ -0.5.
+    logo: -0.4,
   },
 };
 
